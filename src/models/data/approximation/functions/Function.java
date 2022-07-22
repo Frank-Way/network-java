@@ -1,12 +1,15 @@
 package models.data.approximation.functions;
 
+import com.sun.istack.internal.NotNull;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
 import java.util.List;
 
 public abstract class Function {
-    protected final String expression;
-    protected final List<VariableRange> variableRanges;
+    private final String expression;
+    private final List<VariableRange> variableRanges;
 
-    public Function(String expression, List<VariableRange> variableRanges) {
+    public Function(@NotNull String expression, @NotNull List<VariableRange> variableRanges) {
         this.expression = expression;
         this.variableRanges = variableRanges;
     }
@@ -23,5 +26,9 @@ public abstract class Function {
         return variableRanges;
     }
 
-    public abstract double calculate(double[] arguments);
+    public abstract double calculate(@NotNull double[] arguments);
+
+    protected static List<VariableRange> getDefaultVariableRanges() {
+        throw new NotImplementedException();
+    }
 }

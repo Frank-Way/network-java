@@ -1,16 +1,26 @@
 package models.trainers;
 
+import com.sun.istack.internal.NotNull;
+import models.interfaces.Copyable;
 import models.networks.Network;
-import utils.Debuggable;
+import models.interfaces.Debuggable;
 
 import java.util.*;
 
-public class FitResults implements Cloneable, Debuggable {
-    private Map<Integer, Double> testLossesMap;
+public class FitResults implements Copyable<FitResults>, Debuggable {
+    private final Map<Integer, Double> testLossesMap;
     private Network bestNetwork;
 
     public FitResults() {
         this.testLossesMap = new HashMap<>();
+    }
+
+    /***
+     * copy-constructor
+     */
+    private FitResults(Map<Integer, Double> testLossesMap, Network bestNetwork) {
+        this.testLossesMap = testLossesMap;
+        this.bestNetwork = bestNetwork;
     }
 
     public Map<Integer, Double> getTestLossesMap() {
@@ -21,21 +31,22 @@ public class FitResults implements Cloneable, Debuggable {
         return bestNetwork;
     }
 
-    public void setBestNetwork(Network bestNetwork) {
+    public void setBestNetwork(@NotNull Network bestNetwork) {
         this.bestNetwork = bestNetwork;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof FitResults)) return false;
         FitResults that = (FitResults) o;
-        return Objects.equals(getTestLossesMap(), that.getTestLossesMap()) && Objects.equals(getBestNetwork(), that.getBestNetwork());
+        return Objects.equals(getTestLossesMap(), that.getTestLossesMap()) &&
+               Objects.equals(getBestNetwork(), that.getBestNetwork());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getTestLossesMap(), getBestNetwork());
+        return Objects.hash(testLossesMap, bestNetwork);
     }
 
     @Override
@@ -56,14 +67,7 @@ public class FitResults implements Cloneable, Debuggable {
     }
 
     @Override
-    public FitResults clone() {
-        try {
-            FitResults clone = (FitResults) super.clone();
-            clone.testLossesMap = new HashMap<>(testLossesMap);
-            clone.bestNetwork = bestNetwork.clone();
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError();
-        }
+    public FitResults copy() {
+        return new FitResults(new HashMap<>(testLossesMap), bestNetwork.copy());
     }
 }

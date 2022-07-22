@@ -1,4 +1,4 @@
-package utils;
+package options;
 
 public abstract class DefaultParameters {
     public static final int RETRIES = 1;

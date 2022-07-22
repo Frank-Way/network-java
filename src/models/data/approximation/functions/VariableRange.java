@@ -4,8 +4,8 @@ import models.math.Matrix;
 import models.math.MatrixOperations;
 
 public class VariableRange {
-    protected final double left;
-    protected final double right;
+    private final double left;
+    private final double right;
 
     public VariableRange(double left, double right) {
         this.left = left;

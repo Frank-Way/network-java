@@ -1,20 +1,22 @@
 package models.optimizers;
 
+import com.sun.istack.internal.NotNull;
+import models.interfaces.Copyable;
 import models.layers.Layer;
 import models.math.Matrix;
 import models.networks.Network;
 import models.operations.Operation;
 import models.operations.ParametrizedOperation;
-import utils.Debuggable;
+import models.interfaces.Debuggable;
 
 import java.util.Objects;
 
-public abstract class Optimizer implements Cloneable, Debuggable {
+public abstract class Optimizer implements Copyable<Optimizer>, Debuggable {
     protected Network network;
     protected double learningRate;
     protected double decayLR;
-    protected double startLR;
-    protected double stopLR;
+    protected final double startLR;
+    protected final double stopLR;
     protected int epochs;
 
     public Optimizer(double startLR, double stopLR) {
@@ -23,7 +25,23 @@ public abstract class Optimizer implements Cloneable, Debuggable {
         this.stopLR = stopLR;
     }
 
-    public void setNetwork(Network network) {
+    /***
+     * copy-constructor
+     */
+    protected Optimizer(Network network, double learningRate, double decayLR, double startLR, double stopLR, int epochs) {
+        this.network = network;
+        this.learningRate = learningRate;
+        this.decayLR = decayLR;
+        this.startLR = startLR;
+        this.stopLR = stopLR;
+        this.epochs = epochs;
+    }
+
+    public Network getNetwork() {
+        return network;
+    }
+
+    public void setNetwork(@NotNull Network network) {
         this.network = network;
     }
 
@@ -32,8 +50,9 @@ public abstract class Optimizer implements Cloneable, Debuggable {
     }
 
     public void step() {
-        for (Layer layer: network.getLayers()) {
-            for (int i = 0; i < layer.getOperations().size(); i++) {
+        for (int l = 0; l < network.layersCount(); l++) {
+            Layer layer = network.getLayer(l);
+            for (int i = 0; i < layer.operationsCount(); i++) {
                 Operation operation = layer.getOperation(i);
                 if (operation instanceof ParametrizedOperation) {
                     ParametrizedOperation parametrizedOperation = (ParametrizedOperation)operation;
@@ -51,39 +70,27 @@ public abstract class Optimizer implements Cloneable, Debuggable {
         learningRate -= decayLR;
     }
 
-    protected abstract Matrix update(Matrix parameters, Matrix parameterGradients);
+    protected abstract Matrix update(@NotNull Matrix parameters, @NotNull Matrix parameterGradients);
 
     @Override
-    public Optimizer clone() {
-        try {
-            Optimizer clone = (Optimizer) super.clone();
-            clone.network = network.clone();
-            clone.learningRate = learningRate;
-            clone.decayLR = decayLR;
-            clone.startLR = startLR;
-            clone.stopLR = stopLR;
-            clone.epochs = epochs;
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError();
-        }
-    }
-
-    public Network getNetwork() {
-        return network;
-    }
+    public abstract Optimizer copy();
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Optimizer optimizer = (Optimizer) o;
-        return Double.compare(optimizer.learningRate, learningRate) == 0 && Double.compare(optimizer.decayLR, decayLR) == 0 && Double.compare(optimizer.startLR, startLR) == 0 && Double.compare(optimizer.stopLR, stopLR) == 0 && epochs == optimizer.epochs && getNetwork().equals(optimizer.getNetwork());
+        return Double.compare(optimizer.learningRate, learningRate) == 0 &&
+               Double.compare(optimizer.decayLR, decayLR) == 0 &&
+               Double.compare(optimizer.startLR, startLR) == 0 &&
+               Double.compare(optimizer.stopLR, stopLR) == 0 &&
+               epochs == optimizer.epochs &&
+               network.equals(optimizer.network);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getNetwork(), learningRate, decayLR, startLR, stopLR, epochs);
+        return Objects.hash(network, learningRate, decayLR, startLR, stopLR, epochs);
     }
 
     @Override

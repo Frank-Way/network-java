@@ -1,26 +1,40 @@
 package models.operations;
 
+import com.sun.istack.internal.NotNull;
+import models.interfaces.Copyable;
 import models.math.Matrix;
 import models.math.MatrixOperations;
-import utils.Debuggable;
+import models.interfaces.Debuggable;
 
 import java.util.Objects;
 
-public abstract class Operation implements Cloneable, Debuggable {
+public abstract class Operation implements Copyable<Operation>, Debuggable {
     protected Matrix input;
     protected Matrix output;
     protected Matrix outputGradient;
     protected Matrix inputGradient;
 
-    public Matrix forward(Matrix input) {
-        this.input = input.clone();
+    public Operation() {}
+
+    /***
+     * copy-constructor
+     */
+    protected Operation(Matrix input, Matrix output, Matrix outputGradient, Matrix inputGradient) {
+        this.input = input;
+        this.output = output;
+        this.outputGradient = outputGradient;
+        this.inputGradient = inputGradient;
+    }
+
+    public Matrix forward(@NotNull Matrix input) {
+        this.input = input.copy();
         output = computeOutput(this.input);
 
         return output;
     };
 
-    public Matrix backward(Matrix outputGradient) {
-        this.outputGradient = outputGradient.clone();
+    public Matrix backward(@NotNull Matrix outputGradient) {
+        this.outputGradient = outputGradient.copy();
         MatrixOperations.assertSameShape(output, this.outputGradient);
 
         inputGradient = computeInputGradient(this.outputGradient);
@@ -29,33 +43,22 @@ public abstract class Operation implements Cloneable, Debuggable {
         return inputGradient;
     };
 
-    protected abstract Matrix computeOutput(Matrix input);
-    protected abstract Matrix computeInputGradient(Matrix outputGradient);
+    protected abstract Matrix computeOutput(@NotNull Matrix input);
+
+    protected abstract Matrix computeInputGradient(@NotNull Matrix outputGradient);
 
     @Override
-    public Operation clone() {
-        try {
-            Operation clone = (Operation) super.clone();
-            if (input != null)
-                clone.input = input.clone();
-            if (output != null)
-                clone.output = output.clone();
-            if (inputGradient != null)
-                clone.inputGradient = inputGradient.clone();
-            if (outputGradient != null)
-                clone.outputGradient = outputGradient.clone();
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError();
-        }
-    }
+    public abstract Operation copy();
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Operation)) return false;
         Operation operation = (Operation) o;
-        return input.equals(operation.input) && output.equals(operation.output) && outputGradient.equals(operation.outputGradient) && inputGradient.equals(operation.inputGradient);
+        return Objects.equals(input, operation.input) &&
+               Objects.equals(output, operation.output) &&
+               Objects.equals(outputGradient, operation.outputGradient) &&
+               Objects.equals(inputGradient, operation.inputGradient);
     }
 
     @Override

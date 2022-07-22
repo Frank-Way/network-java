@@ -1,5 +1,6 @@
 package models.operations;
 
+import com.sun.istack.internal.NotNull;
 import models.math.Matrix;
 import models.math.MatrixOperations;
 
@@ -9,13 +10,28 @@ public abstract class ParametrizedOperation extends Operation {
     protected Matrix parameter;
     protected Matrix parameterGradient;
 
-    protected ParametrizedOperation(Matrix parameter) {
+    protected ParametrizedOperation(@NotNull Matrix parameter) {
+        super();
         this.parameter = parameter;
     }
 
+    /***
+     * copy-constructor
+     */
+    protected ParametrizedOperation(Matrix input,
+                                 Matrix output,
+                                 Matrix outputGradient,
+                                 Matrix inputGradient,
+                                 Matrix parameter,
+                                 Matrix parameterGradient) {
+        super(input, output, outputGradient, inputGradient);
+        this.parameter = parameter;
+        this.parameterGradient = parameterGradient;
+    }
+
     @Override
-    public Matrix backward(Matrix outputGradient) {
-        this.outputGradient = outputGradient.clone();
+    public Matrix backward(@NotNull Matrix outputGradient) {
+        this.outputGradient = outputGradient.copy();
         MatrixOperations.assertSameShape(output, this.outputGradient);
 
         inputGradient = computeInputGradient(this.outputGradient);
@@ -28,16 +44,9 @@ public abstract class ParametrizedOperation extends Operation {
     }
 
     @Override
-    public ParametrizedOperation clone() {
-        ParametrizedOperation clone = (ParametrizedOperation) super.clone();
-        if (parameter != null)
-            clone.parameter = parameter.clone();
-        if (parameterGradient != null)
-            clone.parameterGradient = parameterGradient.clone();
-        return clone;
-    }
+    public abstract ParametrizedOperation copy();
 
-    protected abstract Matrix computeParameterGradient(Matrix outputGradient);
+    protected abstract Matrix computeParameterGradient(@NotNull Matrix outputGradient);
 
     public Matrix getParameter() {
         return parameter;
@@ -54,15 +63,16 @@ public abstract class ParametrizedOperation extends Operation {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof ParametrizedOperation)) return false;
         if (!super.equals(o)) return false;
         ParametrizedOperation that = (ParametrizedOperation) o;
-        return getParameter().equals(that.getParameter()) && getParameterGradient().equals(that.getParameterGradient());
+        return Objects.equals(parameter, that.parameter) &&
+               Objects.equals(parameterGradient, that.parameterGradient);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), getParameter(), getParameterGradient());
+        return Objects.hash(super.hashCode(), parameter, parameterGradient);
     }
 
     @Override

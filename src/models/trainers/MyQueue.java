@@ -2,9 +2,9 @@ package models.trainers;
 
 public class MyQueue {
     private int actualSize;
-    protected int size;
-    protected double[] values;
-    protected int lastPushed;
+    private final int size;
+    private final double[] values;
+    private int lastPushed;
 
     public MyQueue(int size) {
         this.size = size;
@@ -26,7 +26,7 @@ public class MyQueue {
     public void push(double value) {
         if (actualSize < size)
             actualSize++;
-        lastPushed = (lastPushed + 1) % getSize();
+        lastPushed = (lastPushed + 1) % size;
         values[lastPushed] = value;
     }
 
@@ -34,6 +34,6 @@ public class MyQueue {
         double sum = 0.0;
         for (double value: values)
             sum += value;
-        return sum / getActualSize();
+        return sum / actualSize;
     }
 }

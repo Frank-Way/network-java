@@ -1,14 +1,17 @@
 package models.data;
 
+import com.sun.istack.internal.NotNull;
+import models.interfaces.Copyable;
 import models.math.Matrix;
+import utils.Utils;
 
 import java.util.Objects;
 
-public class Data implements Cloneable {
-    protected Matrix inputs;
-    protected Matrix outputs;
+public class Data implements Copyable<Data> {
+    private final Matrix inputs;
+    private final Matrix outputs;
 
-    public Data(Matrix inputs, Matrix outputs) {
+    public Data(@NotNull Matrix inputs, @NotNull Matrix outputs) {
         if (inputs.getRows() != outputs.getRows())
             throw new IllegalArgumentException(String.format(
                     "Количество строк выборки не совпадает для входов (%d; %d) и выходов (%d; %d)",
@@ -30,23 +33,17 @@ public class Data implements Cloneable {
     }
 
     @Override
-    public Data clone() {
-        try {
-            Data clone = (Data) super.clone();
-            clone.inputs = inputs.clone();
-            clone.outputs = outputs.clone();
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError();
-        }
+    public Data copy() {
+        return new Data(Utils.copyNullable(inputs), Utils.copyNullable(outputs));
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Data)) return false;
         Data data = (Data) o;
-        return getInputs().equals(data.getInputs()) && getOutputs().equals(data.getOutputs());
+        return Objects.equals(getInputs(), data.getInputs()) &&
+               Objects.equals(getOutputs(), data.getOutputs());
     }
 
     @Override

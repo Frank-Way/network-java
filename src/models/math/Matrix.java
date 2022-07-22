@@ -1,8 +1,10 @@
 package models.math;
 
+import models.interfaces.Copyable;
+
 import java.util.*;
 
-public class Matrix implements Cloneable {
+public class Matrix implements Copyable<Matrix> {
     private final double[][] values;
     private final int rows;
     private final int cols;
@@ -13,18 +15,11 @@ public class Matrix implements Cloneable {
         this.cols = values[0].length;
     }
 
-    public Matrix() {
-        this.values = new double[0][0];
-        this.rows = 0;
-        this.cols = 0;
-    }
-
     @Override
-    public Matrix clone() {
+    public Matrix copy() {
         double[][] result = new double[getRows()][getCols()];
         for (int row = 0; row < getRows(); row++)
-            for (int col = 0; col < getCols(); col++)
-                result[row][col] = getValues()[row][col] * 1.0;
+            values[row] = Arrays.copyOf(this.values[row], this.getCols());
         return new Matrix(result);
     }
 
@@ -91,14 +86,14 @@ public class Matrix implements Cloneable {
     public Matrix getRow(int row) {
         double[][] result = new double[1][getCols()];
         for (int col = 0; col < getCols(); col++)
-            result[0][col] = getValues()[row][col] * 1.0;
+            result[0][col] = getValues()[row][col];
         return new Matrix(result);
     }
 
     public Matrix getCol(int col) {
         double[][] result = new double[getRows()][1];
         for (int row = 0; row < getRows(); row++)
-            result[row][0] = getValues()[row][col] * 1.0;
+            result[row][0] = getValues()[row][col];
         return new Matrix(result);
     }
 
@@ -115,7 +110,7 @@ public class Matrix implements Cloneable {
     public Matrix mul(Matrix matrix) {
         checkRowsAndCols(matrix,
                 "Матрица размерности (%d; %d) не может быть поэлементно умножена на предоставленную матрицу размера (%d; %d)");
-        double[][] result = clone().getValues();
+        double[][] result = copy().getValues();
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++)
                 result[row][col] *= matrix.getValues()[row][col];
@@ -125,7 +120,7 @@ public class Matrix implements Cloneable {
     public Matrix mulCol(Matrix colMatrix) {
         checkRows(colMatrix,
                 "Матрица размерности (%d; %d) не может быть умножена на предоставленный вектор-столбец размера (%d; %d)");
-        double[][] result = clone().getValues();
+        double[][] result = copy().getValues();
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++)
                 result[row][col] *= colMatrix.getValues()[row][0];
@@ -135,7 +130,7 @@ public class Matrix implements Cloneable {
     public Matrix mulRow(Matrix rowMatrix) {
         checkCols(rowMatrix,
                 "Матрица размерности (%d; %d) не может быть умножена на предоставленный вектор-строка размера (%d; %d)");
-        double[][] result = clone().getValues();
+        double[][] result = copy().getValues();
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++)
                 result[row][col] *= rowMatrix.getValues()[0][col];
@@ -143,7 +138,7 @@ public class Matrix implements Cloneable {
     }
 
     public Matrix mul(Number number) {
-        double[][] result = clone().getValues();
+        double[][] result = copy().getValues();
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++)
                 result[row][col] *= number.doubleValue();
@@ -153,7 +148,7 @@ public class Matrix implements Cloneable {
     public Matrix add(Matrix matrix) {
         checkRowsAndCols(matrix,
                 "Матрица размерности (%d; %d) не может быть сложена с предоставленной матрицей размера (%d; %d)");
-        double[][] result = clone().getValues();
+        double[][] result = copy().getValues();
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++)
                 result[row][col] += matrix.getValues()[row][col];
@@ -163,7 +158,7 @@ public class Matrix implements Cloneable {
     public Matrix addCol(Matrix colMatrix) {
         checkRows(colMatrix,
                 "Матрица размерности (%d; %d) не может быть сложена с предоставленным вектором-столбцом размера (%d; %d)");
-        double[][] result = clone().getValues();
+        double[][] result = copy().getValues();
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++)
                 result[row][col] += colMatrix.getValues()[row][0];
@@ -173,7 +168,7 @@ public class Matrix implements Cloneable {
     public Matrix addRow(Matrix rowMatrix) {
         checkCols(rowMatrix,
                 "Матрица размерности (%d; %d) не может быть сложена с предоставленным вектором-строкой размера (%d; %d)");
-        double[][] result = clone().getValues();
+        double[][] result = copy().getValues();
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++) {
                 result[row][col] += rowMatrix.getValues()[0][col];
@@ -182,7 +177,7 @@ public class Matrix implements Cloneable {
     }
 
     public Matrix add(Number number) {
-        double[][] result = clone().getValues();
+        double[][] result = copy().getValues();
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++)
                 result[row][col] += number.doubleValue();
@@ -192,7 +187,7 @@ public class Matrix implements Cloneable {
     public Matrix sub(Matrix matrix) {
         checkRowsAndCols(matrix,
                 "Из матрицы размерности (%d; %d) не может быть вычтена предоставленная матрица размера (%d; %d)");
-        double[][] result = clone().getValues();
+        double[][] result = copy().getValues();
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++)
                 result[row][col] -= matrix.getValues()[row][col];
@@ -202,7 +197,7 @@ public class Matrix implements Cloneable {
     public Matrix subCol(Matrix colMatrix) {
         checkRows(colMatrix,
                 "Из матрицы размерности (%d; %d) не может быть вычтен предоставленный вектор-столбец размера (%d; %d)");
-        double[][] result = clone().getValues();
+        double[][] result = copy().getValues();
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++)
                 result[row][col] -= colMatrix.getValues()[row][0];
@@ -212,7 +207,7 @@ public class Matrix implements Cloneable {
     public Matrix subRow(Matrix rowMatrix) {
         checkCols(rowMatrix,
                 "Из матрицы размерности (%d; %d) не может быть вычтен предоставленный вектор-строка размера (%d; %d)");
-        double[][] result = clone().getValues();
+        double[][] result = copy().getValues();
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++)
                 result[row][col] -= rowMatrix.getValues()[0][col];
@@ -220,7 +215,7 @@ public class Matrix implements Cloneable {
     }
 
     public Matrix sub(Number number) {
-        double[][] result = clone().getValues();
+        double[][] result = copy().getValues();
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++)
                 result[row][col] -= number.doubleValue();
@@ -230,7 +225,7 @@ public class Matrix implements Cloneable {
     public Matrix div(Matrix matrix) {
         checkRowsAndCols(matrix,
                 "Матрица размерности (%d; %d) не может быть поделена на предоставленную матрицу размера (%d; %d)");
-        double[][] result = clone().getValues();
+        double[][] result = copy().getValues();
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++)
                 result[row][col] /= matrix.getValues()[row][col];
@@ -240,7 +235,7 @@ public class Matrix implements Cloneable {
     public Matrix divCol(Matrix colMatrix) {
         checkRows(colMatrix,
                 "Матрица размерности (%d; %d) не может быть поделена на предоставленный вектор-столбец размера (%d; %d)");
-        double[][] result = clone().getValues();
+        double[][] result = copy().getValues();
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++)
                 result[row][col] /= colMatrix.getValues()[row][0];
@@ -250,7 +245,7 @@ public class Matrix implements Cloneable {
     public Matrix divRow(Matrix rowMatrix) {
         checkCols(rowMatrix,
                 "Матрица размерности (%d; %d) не может быть поделена на предоставленный вектор-строку размера (%d; %d)");
-        double[][] result = clone().getValues();
+        double[][] result = copy().getValues();
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++)
                 result[row][col] /= rowMatrix.getValues()[0][col];
@@ -258,7 +253,7 @@ public class Matrix implements Cloneable {
     }
 
     public Matrix div(Number number) {
-        double[][] result = clone().getValues();
+        double[][] result = copy().getValues();
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++)
                 result[row][col] /= number.doubleValue();
@@ -364,7 +359,7 @@ public class Matrix implements Cloneable {
         double[][] result = new double[getCols()][getRows()];
         for (int row = 0; row < getRows(); row++)
             for (int col = 0; col < getCols(); col++)
-                result[col][row] = getValues()[row][col] * 1.0;
+                result[col][row] = getValues()[row][col];
         return new Matrix(result);
     }
 
@@ -376,7 +371,7 @@ public class Matrix implements Cloneable {
         double[][] result = new double[rows][getCols()];
         for (int row = 0; row < rows; row++)
             for (int col = 0; col < getCols(); col++)
-                result[row][col] = getValues()[start + row][col] * 1.0;
+                result[row][col] = getValues()[start + row][col];
         return new Matrix(result);
     }
 
@@ -404,14 +399,14 @@ public class Matrix implements Cloneable {
                 for (int row = 0; row < getRows(); row++)
                     for (int col = 0; col < getCols(); col++)
                         for (int i = 0; i < factor; i++)
-                            result[row * factor + i][col] = getValues()[row][col] * 1.0;
+                            result[row * factor + i][col] = getValues()[row][col];
                 return new Matrix(result);
             case 1:
                 result = new double[getRows()][getCols() * factor];
                 for (int row = 0; row < getRows(); row++)
                     for (int col = 0; col < getCols(); col++)
                         for (int i = 0; i < factor; i++)
-                            result[row][col * factor + i] = getValues()[row][col] * 1.0;
+                            result[row][col * factor + i] = getValues()[row][col];
                 return new Matrix(result);
             default:
                 throw new IllegalArgumentException(String.format(
@@ -428,8 +423,9 @@ public class Matrix implements Cloneable {
                                 " с матрицей размерности (%d; %d)");
                 result = new double[getRows()][getCols() + matrix.getCols()];
                 for (int row = 0; row < getRows(); row++) {
-                    for (int col1 = 0; col1 < getCols(); col1++)
-                        result[row][col1] = getValues()[row][col1] * 1.0;
+                    for (int col1 = 0; col1 < getCols(); col1++) {
+                        result[row][col1] = getValues()[row][col1];
+                    }
                     for (int col2 = 0; col2 < matrix.getCols(); col2++)
                         result[row][getCols() + col2] = matrix.getValues()[row][col2];
                 }
@@ -441,7 +437,7 @@ public class Matrix implements Cloneable {
                 result = new double[getRows() + matrix.getRows()][getCols()];
                 for (int col = 0; col < getCols(); col++) {
                     for (int row1 = 0; row1 < getRows(); row1++)
-                        result[row1][col] = getValues()[row1][col] * 1.0;
+                        result[row1][col] = getValues()[row1][col];
                     for (int row2 = 0; row2 < matrix.getRows(); row2++)
                         result[getRows() + row2][col] = matrix.getValues()[row2][col];
                 }

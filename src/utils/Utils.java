@@ -1,12 +1,15 @@
 package utils;
 
+import com.sun.istack.internal.NotNull;
+import models.interfaces.Copyable;
+import models.interfaces.Debuggable;
 import models.math.Matrix;
 import models.math.MatrixOperations;
+import options.OverallConstants;
+import options.PrintOptions;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -14,28 +17,26 @@ public abstract class Utils {
     private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
     public static void print(String prompt,
-                             RunConfiguration runConfiguration,
-                             TrainResults results,
+                             @NotNull RunConfiguration runConfiguration,
+                             @NotNull TrainResults results,
                              boolean printRequired,
-                             boolean printParametersRequired,
-                             boolean printTableRequired,
-                             boolean printDynamicRequired) {
+                             @NotNull PrintOptions printOptions) {
         if (!printRequired)
             return;
         logger.info(prompt + " (конфигурация):\n" + runConfiguration.toString(OverallConstants.DEBUG_MODE));
         logger.info(prompt + " (результаты):\n" + results.toString(OverallConstants.DEBUG_MODE));
-        if (printParametersRequired) {
+        if (printOptions.isParametersRequired()) {
             logger.info(prompt + " (параметры):");
-            for (int layer = 0; layer < runConfiguration.getTrainer().getNetwork().getLayers().size(); layer++) {
+            for (int layer = 0; layer < runConfiguration.getTrainer().getNetwork().layersCount(); layer++) {
                 logger.info("Слой " + (layer + 1));
-                logger.info("Веса:\n" + runConfiguration.getTrainer().getNetwork().getLayers().get(layer).getParameter(0).valuesToString(OverallConstants.DOUBLE_FORMAT));
-                logger.info("Смещения:\n" + runConfiguration.getTrainer().getNetwork().getLayers().get(layer).getParameter(1).valuesToString(OverallConstants.DOUBLE_FORMAT));
+                logger.info("Веса:\n" + runConfiguration.getTrainer().getNetwork().getLayer(layer).getParameter(0).valuesToString(OverallConstants.DOUBLE_FORMAT));
+                logger.info("Смещения:\n" + runConfiguration.getTrainer().getNetwork().getLayer(layer).getParameter(1).valuesToString(OverallConstants.DOUBLE_FORMAT));
             }
         }
-        if (printTableRequired)
+        if (printOptions.isTableRequired())
             logger.info(prompt + " (таблица):\n" +
                     runConfiguration.toTable(OverallConstants.TABLE_PART_PERCENTS / 100.0));
-        if (printDynamicRequired) {
+        if (printOptions.isDynamicRequired()) {
             List<String> xHeaders = Collections.singletonList("эпоха");
             List<String> yHeaders = Collections.singletonList("потеря");
             int rows = results.getFitResults().getTestLossesMap().size();
@@ -53,17 +54,17 @@ public abstract class Utils {
         }
     }
 
-    public static String buildStringTable(List<String> xHeaders,
-                                          Matrix xValues,
-                                          List<String> yHeaders,
-                                          Matrix yValues,
+    public static String buildStringTable(@NotNull List<String> xHeaders,
+                                          @NotNull Matrix xValues,
+                                          @NotNull List<String> yHeaders,
+                                          @NotNull Matrix yValues,
                                           double part) {
         char mainSpliterator = '|';
         char separatorBase = '-';
         char separatorSpliterator = '+';
-        StringBuilder headerSB = new StringBuilder("");
-        StringBuilder separatorSB = new StringBuilder("");
-        StringBuilder bodySB = new StringBuilder("");
+        StringBuilder headerSB = new StringBuilder();
+        StringBuilder separatorSB = new StringBuilder();
+        StringBuilder bodySB = new StringBuilder();
         String format = " " + OverallConstants.DOUBLE_FORMAT + " ";
         int cellWidth = 2 + Integer.parseInt(OverallConstants.DOUBLE_FORMAT.substring(
                 OverallConstants.DOUBLE_FORMAT.indexOf("%") + 1,
@@ -88,13 +89,38 @@ public abstract class Utils {
         return String.join("\n", headerSB.toString(), separatorSB.toString(), bodySB.toString());
     }
 
-
-    public static <T extends Debuggable, E extends Debuggable> String mapToDebugString(Map<T, E> map, boolean debugMode) {
+    public static <T extends Debuggable, E extends Debuggable> String mapToDebugString(@NotNull Map<T, E> map, boolean debugMode) {
         if (debugMode)
             return map.toString();
         return map.entrySet().stream()
-                .map(e -> e.getKey().toString(debugMode) + ":" + e.getValue().toString(debugMode))
+                .map(entry -> entry.getKey().toString(debugMode) + ":" + entry.getValue().toString(debugMode))
                 .toString();
+    }
+
+    public static <T extends Thread> void joinThreads(@NotNull Collection<T> threads) {
+        for (T thread: threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                logger.severe(e.getMessage());
+            }
+        }
+    }
+
+    public static <T> T computeIfAbsent(T t, @NotNull Supplier<T> supplier) {
+        if (t != null)
+            return t;
+        return supplier.get();
+    }
+
+    public static Optional<Thread> getThread(long threadId) {
+        return Thread.getAllStackTraces().keySet().stream()
+                .filter(t -> t.getId() == threadId)
+                .findFirst();
+    }
+
+    public static <T extends Copyable<T>> T copyNullable(T t) {
+        return t != null ? t.copy() : null;
     }
 
     private static void joinHeader(StringBuilder sb, List<String> headers, int cellWidth) {

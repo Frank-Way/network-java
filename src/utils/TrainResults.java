@@ -1,22 +1,25 @@
 package utils;
 
+import com.sun.istack.internal.NotNull;
 import models.data.Dataset;
+import models.interfaces.Debuggable;
 import models.math.functions.Functions;
 import models.math.Matrix;
 import models.networks.Network;
 import models.trainers.FitResults;
+import models.trainers.Trainer;
 
 import java.util.Objects;
 
 public class TrainResults implements Debuggable {
-    protected double maxAbsoluteError;
-    protected double maxRelativeError;
-    protected double meanAbsoluteError;
-    protected Network network;
-    protected Dataset dataset;
-    protected FitResults fitResults;
+    private final double maxAbsoluteError;
+    private final double maxRelativeError;
+    private final double meanAbsoluteError;
+    private final Network network;
+    private final Dataset dataset;
+    private final FitResults fitResults;
 
-    public TrainResults(Network network, Dataset dataset, FitResults fitResults) {
+    public TrainResults(@NotNull Network network, @NotNull Dataset dataset, @NotNull FitResults fitResults) {
         this.network = fitResults.getBestNetwork();
         this.dataset = dataset;
         this.fitResults = fitResults;
@@ -26,6 +29,7 @@ public class TrainResults implements Debuggable {
         Matrix predictions = this.network.forward(validInputs);
         Matrix errors = predictions.sub(validOutputs);
         Matrix absoluteErrors = Functions.abs(errors);
+
         maxAbsoluteError = absoluteErrors.max();
         double rangeLength = validOutputs.max() - validOutputs.min();
         maxRelativeError = maxAbsoluteError / rangeLength * 100;
@@ -51,14 +55,18 @@ public class TrainResults implements Debuggable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof TrainResults)) return false;
         TrainResults that = (TrainResults) o;
-        return Double.compare(that.getMaxAbsoluteError(), getMaxAbsoluteError()) == 0 && Double.compare(that.getMaxRelativeError(), getMaxRelativeError()) == 0 && Double.compare(that.getMeanAbsoluteError(), getMeanAbsoluteError()) == 0 && network.equals(that.network) && dataset.equals(that.dataset);
+        return Double.compare(that.getMaxAbsoluteError(), getMaxAbsoluteError()) == 0 &&
+               Double.compare(that.getMaxRelativeError(), getMaxRelativeError()) == 0 &&
+               Double.compare(that.getMeanAbsoluteError(), getMeanAbsoluteError()) == 0 &&
+               Objects.equals(network, that.network) &&
+                Objects.equals(dataset, that.dataset);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getMaxAbsoluteError(), getMaxRelativeError(), getMeanAbsoluteError(), network, dataset);
+        return Objects.hash(maxAbsoluteError, maxRelativeError, meanAbsoluteError, network, dataset);
     }
 
     @Override

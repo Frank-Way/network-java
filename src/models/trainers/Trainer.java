@@ -1,34 +1,39 @@
 package models.trainers;
 
+import com.sun.istack.internal.NotNull;
+import models.interfaces.Copyable;
 import models.math.Matrix;
 import models.math.MatrixOperations;
 import models.networks.Network;
 import models.optimizers.Optimizer;
-import utils.Debuggable;
+import models.interfaces.Debuggable;
+import utils.Utils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.logging.Logger;
 
-public class Trainer implements Cloneable, Debuggable {
+public class Trainer implements Copyable<Trainer>, Debuggable {
     private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-    protected Optimizer optimizer;
-    private int earlyStopTriggered;
-    private final int abortThreshold = 5;
+    private final Optimizer optimizer;
+    private final int ABORT_THRESHOLD = 5;
 
-    public Trainer(Network network, Optimizer optimizer) {
+    public Trainer(@NotNull Network network, @NotNull Optimizer optimizer) {
         this.optimizer = optimizer;
         this.optimizer.setNetwork(network);
-        earlyStopTriggered = 0;
+    }
+
+    /***
+     * copy-constructor
+     */
+    private Trainer(Optimizer optimizer) {
+        this.optimizer = optimizer;
     }
 
     public Network getNetwork() {
         return optimizer.getNetwork();
     }
 
-    public FitResults fit(FitParameters parameters) {
-        Network network = getNetwork();
+    public FitResults fit(@NotNull FitParameters parameters) {
         Matrix x;
         Matrix y;
         List<Matrix> xBatches;
@@ -36,92 +41,109 @@ public class Trainer implements Cloneable, Debuggable {
         double testLoss;
         double trainLoss;
         double bestTestLoss = Double.MAX_VALUE;
+
+        Network network = getNetwork();
         Network bestNetwork = network;
-        int queryStep = parameters.epochs / parameters.queries;
-        List<Integer> queryAt = new ArrayList<>();
-        for (int i = 0; i < parameters.queries; i++)
-            queryAt.add(queryStep * (i + 1));
-        MyQueue lastTrainLosses = new MyQueue((int)Math.ceil(parameters.queries * 1.0 / 10));
-        MyQueue lastTestLosses = new MyQueue((int)Math.ceil(parameters.queries * 1.0 / 10));
+
         FitResults results = new FitResults();
-        optimizer.setEpochs(parameters.epochs);
+        optimizer.setEpochs(parameters.getEpochs());
         optimizer.calculateDecayLR();
-        for (int epoch = 1; epoch <= parameters.epochs; epoch++) {
-            x = parameters.dataset.getTrainData().getInputs().clone();
-            y = parameters.dataset.getTrainData().getOutputs().clone();
+
+        Map<EarlyStopLossType, Integer> earlyStopTriggeredMap = new HashMap<>();
+        for (EarlyStopLossType type: EarlyStopLossType.values())
+            earlyStopTriggeredMap.put(type, 0);
+
+        int queryStep = parameters.getEpochs() / parameters.getQueries();
+        List<Integer> queryAt = new ArrayList<>();
+        for (int i = 0; i < parameters.getQueries(); i++)
+            queryAt.add(queryStep * (i + 1));
+
+        MyQueue lastTrainLosses = new MyQueue((int)Math.ceil(parameters.getQueries() * 1.0 / 10));
+        MyQueue lastTestLosses = new MyQueue((int)Math.ceil(parameters.getQueries() * 1.0 / 10));
+
+        for (int epoch = 1; epoch <= parameters.getEpochs(); epoch++) {
+            x = parameters.getDataset().getTrainData().getInputs().copy();
+            y = parameters.getDataset().getTrainData().getOutputs().copy();
             MatrixOperations.shuffleMatrices(x, y);
-            xBatches = x.getBatches(parameters.batchSize);
-            yBatches = y.getBatches(parameters.batchSize);
+            xBatches = x.getBatches(parameters.getBatchSize());
+            yBatches = y.getBatches(parameters.getBatchSize());
             trainLoss = 0.0;
             for (int batch = 0; batch < xBatches.size(); batch++) {
-                trainLoss += network.trainBatch(xBatches.get(batch), yBatches.get(batch)) / parameters.batchSize;
+                trainLoss += network.trainBatch(xBatches.get(batch), yBatches.get(batch)) / parameters.getBatchSize();
                 optimizer.step();
             }
             optimizer.decay();
             if (!queryAt.contains(epoch))
                 continue;
-            x = parameters.dataset.getTestData().getInputs().clone();
-            y = parameters.dataset.getTestData().getOutputs().clone();
+            x = parameters.getDataset().getTestData().getInputs().copy();
+            y = parameters.getDataset().getTestData().getOutputs().copy();
             MatrixOperations.shuffleMatrices(x, y);
-            xBatches = x.getBatches(parameters.batchSize);
-            yBatches = y.getBatches(parameters.batchSize);
+            xBatches = x.getBatches(parameters.getBatchSize());
+            yBatches = y.getBatches(parameters.getBatchSize());
             testLoss = 0.0;
             for (int batch = 0; batch < xBatches.size(); batch++) {
-                testLoss += network.calculateLoss(xBatches.get(batch), yBatches.get(batch)) / parameters.batchSize;
+                testLoss += network.calculateLoss(xBatches.get(batch), yBatches.get(batch)) / parameters.getBatchSize();
             }
             if (testLoss < bestTestLoss) {
                 bestTestLoss = testLoss;
-                bestNetwork = network.clone();
+                bestNetwork = network.copy();
             }
             results.getTestLossesMap().put(epoch, testLoss);
             lastTrainLosses.push(trainLoss);
             lastTestLosses.push(testLoss);
-            logger.info(String.format("Эпоха: %d, потеря при обучении: " + parameters.doubleFormat + ", потеря при тестах: " +
-                    parameters.doubleFormat, epoch, trainLoss, testLoss));
-            if (!parameters.earlyStopping)
+            logger.info(String.format("Эпоха: %d, потеря при обучении: " + parameters.getDoubleFormat() + ", потеря при тестах: " +
+                    parameters.getDoubleFormat(), epoch, trainLoss, testLoss));
+            if (!parameters.isEarlyStopping())
                 continue;
-            if (abortTrain(trainLoss, lastTrainLosses, "обучении", parameters.doubleFormat) ||
-                    abortTrain(testLoss, lastTestLosses, "тестах", parameters.doubleFormat))
+            if (abortTrain(trainLoss, lastTrainLosses, parameters.getDoubleFormat(), earlyStopTriggeredMap, EarlyStopLossType.TRAIN) ||
+                    abortTrain(testLoss, lastTestLosses, parameters.getDoubleFormat(), earlyStopTriggeredMap, EarlyStopLossType.TEST))
                 break;
         }
         logger.fine(String.format("В качестве результата обучения сохранена сеть, обеспечившая потерю на тестовой выборке: " +
-                parameters.doubleFormat, bestTestLoss));
+                parameters.getDoubleFormat(), bestTestLoss));
         results.setBestNetwork(bestNetwork);
         return results;
     }
 
-    protected boolean abortTrain(double loss, MyQueue lastLosses, String name, String doubleFormat) {
-        if (lastLosses.size > 1 && loss >= lastLosses.mean()) {
+    private boolean abortTrain(double loss,
+                               MyQueue lastLosses,
+                               String doubleFormat,
+                               Map<EarlyStopLossType, Integer> map,
+                               EarlyStopLossType type) {
+        String name = null;
+        switch (type) {
+            case TRAIN:
+                name = "обучении";
+                break;
+            case TEST:
+                name = "тестах";
+                break;
+        }
+        if (lastLosses.getActualSize() > 1 && loss >= lastLosses.mean()) {
             logger.warning(String.format("Потеря при %s " + doubleFormat + " превышает последние %d потерь (" + doubleFormat + ")",
-                    name, loss, lastLosses.size, lastLosses.mean()));
-            if (++earlyStopTriggered >= abortThreshold) {
+                    name, loss, lastLosses.getSize(), lastLosses.mean()));
+            map.put(type, map.get(type) + 1);
+            if (map.get(type) >= ABORT_THRESHOLD) {
                 logger.info(String.format("Ранняя остановка сработала %d раз подряд. Завершение обучения",
-                        earlyStopTriggered));
+                        map.get(type)));
                 return true;
             }
-        }
-        else
-            earlyStopTriggered = 0;
+        } else
+            map.put(type, 0);
         return false;
     }
 
     @Override
-    public Trainer clone() {
-        try {
-            Trainer clone = (Trainer) super.clone();
-            clone.optimizer = optimizer.clone();
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError();
-        }
+    public Trainer copy() {
+        return new Trainer(Utils.copyNullable(optimizer));
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Trainer)) return false;
         Trainer trainer = (Trainer) o;
-        return optimizer.equals(trainer.optimizer);
+        return Objects.equals(optimizer, trainer.optimizer);
     }
 
     @Override
@@ -144,11 +166,16 @@ public class Trainer implements Cloneable, Debuggable {
                 '}';
     }
 
-    protected String getClassName() {
+    private String getClassName() {
         return "Тренер";
     }
 
-    protected String getDebugClassName() {
+    private String getDebugClassName() {
         return "Trainer";
+    }
+
+    enum EarlyStopLossType {
+        TRAIN,
+        TEST
     }
 }

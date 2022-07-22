@@ -1,22 +1,36 @@
 package models.losses;
 
+import com.sun.istack.internal.NotNull;
+import models.interfaces.Copyable;
 import models.math.Matrix;
 import models.math.MatrixOperations;
-import utils.Debuggable;
+import models.interfaces.Debuggable;
 
 import java.util.Objects;
 
-public abstract class Loss implements Cloneable, Debuggable {
+public abstract class Loss implements Copyable<Loss>, Debuggable {
     protected Matrix prediction;
     protected Matrix target;
     protected double output;
     protected Matrix inputGradient;
 
-    public double forward(Matrix prediction, Matrix target) {
+    public Loss() {}
+
+    /***
+     * copy-constructor
+     */
+    protected Loss(Matrix prediction, Matrix target, double output, Matrix inputGradient) {
+        this.prediction = prediction;
+        this.target = target;
+        this.output = output;
+        this.inputGradient = inputGradient;
+    }
+
+    public double forward(@NotNull Matrix prediction, @NotNull Matrix target) {
         MatrixOperations.assertSameShape(prediction, target);
 
-        this.prediction = prediction.clone();
-        this.target = target.clone();
+        this.prediction = prediction.copy();
+        this.target = target.copy();
 
         output = computeOutput(this.prediction, this.target);
 
@@ -30,32 +44,22 @@ public abstract class Loss implements Cloneable, Debuggable {
         return inputGradient;
     }
 
-    protected abstract double computeOutput(Matrix prediction, Matrix target);
+    protected abstract double computeOutput(@NotNull Matrix prediction, @NotNull Matrix target);
 
-    protected abstract Matrix computeInputGradient(Matrix prediction, Matrix target);
+    protected abstract Matrix computeInputGradient(@NotNull Matrix prediction, @NotNull Matrix target);
 
     @Override
-    public Loss clone() {
-        try {
-            Loss clone = (Loss) super.clone();
-            if (prediction != null)
-                clone.prediction = prediction.clone();
-            if (target != null)
-                clone.target = target.clone();
-            if (inputGradient != null)
-                clone.inputGradient = inputGradient.clone();
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError();
-        }
-    }
+    public abstract Loss copy();
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Loss)) return false;
         Loss loss = (Loss) o;
-        return Double.compare(loss.output, output) == 0 && Objects.equals(prediction, loss.prediction) && Objects.equals(target, loss.target) && Objects.equals(inputGradient, loss.inputGradient);
+        return Double.compare(output, loss.output) == 0 &&
+               Objects.equals(prediction, loss.prediction) &&
+               Objects.equals(target, loss.target) &&
+               Objects.equals(inputGradient, loss.inputGradient);
     }
 
     @Override

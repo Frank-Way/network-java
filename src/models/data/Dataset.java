@@ -1,11 +1,14 @@
 package models.data;
 
+import models.interfaces.Copyable;
+import utils.Utils;
+
 import java.util.Objects;
 
-public class Dataset implements Cloneable {
-    protected Data validData;
-    protected Data testData;
-    protected Data trainData;
+public class Dataset implements Copyable<Dataset> {
+    private final Data validData;
+    private final Data testData;
+    private final Data trainData;
 
     public Dataset(Data trainData, Data testData, Data validData) {
         this.validData = validData;
@@ -26,24 +29,18 @@ public class Dataset implements Cloneable {
     }
 
     @Override
-    public Dataset clone() {
-        try {
-            Dataset clone = (Dataset) super.clone();
-            clone.validData = validData.clone();
-            clone.testData = testData.clone();
-            clone.trainData = trainData.clone();
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError();
-        }
+    public Dataset copy() {
+        return new Dataset(Utils.copyNullable(trainData), Utils.copyNullable(testData), Utils.copyNullable(validData));
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Dataset)) return false;
         Dataset dataset = (Dataset) o;
-        return getValidData().equals(dataset.getValidData()) && getTestData().equals(dataset.getTestData()) && getTrainData().equals(dataset.getTrainData());
+        return Objects.equals(getValidData(), dataset.getValidData()) &&
+                Objects.equals(getTestData(), dataset.getTestData()) &&
+                Objects.equals(getTrainData(), dataset.getTrainData());
     }
 
     @Override

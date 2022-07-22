@@ -1,23 +1,25 @@
 package models.layers;
 
+import com.sun.istack.internal.NotNull;
+import models.interfaces.Copyable;
 import models.math.Matrix;
 import models.math.MatrixOperations;
 import models.operations.Operation;
 import models.operations.ParametrizedOperation;
-import utils.Debuggable;
+import models.interfaces.Debuggable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public abstract class Layer implements Cloneable, Debuggable {
+public abstract class Layer implements Copyable<Layer>, Debuggable {
     protected Matrix input;
     protected Matrix output;
-    protected int neurons;
-    protected List<Matrix> parameters;
-    protected List<Matrix> parameterGradients;
-    protected List<Operation> operations;
+    protected final int neurons;
+    protected final List<Matrix> parameters;
+    protected final List<Matrix> parameterGradients;
+    protected final List<Operation> operations;
 
     public Layer(int neurons) {
         if (neurons <= 0)
@@ -29,20 +31,37 @@ public abstract class Layer implements Cloneable, Debuggable {
         parameterGradients = new ArrayList<>();
     }
 
-    public Matrix forward(Matrix input) {
-        this.input = input.clone();
-        Matrix result = input.clone();
+    /***
+     * copy-constructor
+     */
+    protected Layer(Matrix input,
+                    Matrix output,
+                    int neurons,
+                    List<Matrix> parameters,
+                    List<Matrix> parameterGradients,
+                    List<Operation> operations) {
+        this.input = input;
+        this.output = output;
+        this.neurons = neurons;
+        this.parameters = parameters;
+        this.parameterGradients = parameterGradients;
+        this.operations = operations;
+    }
+
+    public Matrix forward(@NotNull Matrix input) {
+        this.input = input.copy();
+        Matrix result = input.copy();
 
         for (Operation operation: operations)
             result = operation.forward(result);
 
-        output = result.clone();
+        output = result.copy();
 
         return output;
     }
 
-    public Matrix backward(Matrix outputGradient) {
-        Matrix result = outputGradient.clone();
+    public Matrix backward(@NotNull Matrix outputGradient) {
+        Matrix result = outputGradient.copy();
         MatrixOperations.assertSameShape(output, result);
         parameterGradients.clear();
         Operation operation;
@@ -52,78 +71,95 @@ public abstract class Layer implements Cloneable, Debuggable {
             if (operation instanceof ParametrizedOperation)
                 addParameterGradient(0, ((ParametrizedOperation) operation).getParameterGradient());
         }
-
         return result;
     }
 
-    public List<Matrix> getParameters() {
+    public Matrix getInput() {
+        return input;
+    }
+
+    public Matrix getOutput() {
+        return output;
+    }
+
+    public int getNeurons() {
+        return neurons;
+    }
+
+    private List<Matrix> getParameters() {
         return parameters;
     }
 
-    public List<Matrix> getParameterGradients() {
+    public Matrix getParameter(int index) {
+        return parameters.get(index);
+    }
+
+    public void addParameter(@NotNull Matrix parameter) {
+        parameters.add(parameter);
+    }
+
+    public void addParameter(int index, @NotNull Matrix parameter) {
+        parameters.add(index, parameter);
+    }
+
+    public int parametersCount() {
+        return parameters.size();
+    }
+
+    private List<Matrix> getParameterGradients() {
         return parameterGradients;
     }
 
-    public void addOperation(Operation operation) {
-        getOperations().add(operation);
+    public Matrix getParameterGradient(int index) {
+        return parameterGradients.get(index);
     }
 
-    public void addParameter(Matrix parameter) {
-        getParameters().add(parameter);
+    public void addParameterGradient(@NotNull Matrix parameterGradient) {
+        parameterGradients.add(parameterGradient);
     }
 
-    public void addParameter(int index, Matrix parameterGradient) {
-        getParameters().add(index, parameterGradient);
+    public void addParameterGradient(int index, @NotNull Matrix parameterGradient) {
+        parameters.add(index, parameterGradient);
     }
 
-    public void addParameterGradient(Matrix parameterGradient) {
-        getParameterGradients().add(parameterGradient);
+    public int parameterGradientsCount() {
+        return parameterGradients.size();
     }
 
-    public void addParameterGradient(int index, Matrix parameterGradient) {
-        getParameterGradients().add(index, parameterGradient);
-    }
-
-    public List<Operation> getOperations() {
+    private List<Operation> getOperations() {
         return operations;
     }
 
-    public Matrix getParameter(int index) {
-        return getParameters().get(index);
-    }
-
-    public Matrix getParameterGradient(int index) {
-        return getParameterGradients().get(index);
-    }
-
     public Operation getOperation(int index) {
-        return getOperations().get(index);
+        return operations.get(index);
+    }
+
+    public void addOperation(@NotNull Operation operation) {
+        operations.add(operation);
+    }
+
+    public void addOperation(int index, @NotNull Operation operation) {
+        operations.add(index, operation);
+    }
+
+    public int operationsCount() {
+        return operations.size();
     }
 
     @Override
-    public Layer clone() {
-        try {
-            Layer clone = (Layer) super.clone();
-            if (input != null)
-                clone.input = input.clone();
-            if (output != null)
-                clone.output = output.clone();
-            clone.neurons = neurons;
-            clone.parameters = parameters.stream().map(Matrix::clone).collect(Collectors.toList());
-            clone.parameterGradients = parameterGradients.stream().map(Matrix::clone).collect(Collectors.toList());
-            clone.operations = operations.stream().map(Operation::clone).collect(Collectors.toList());
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError();
-        }
-    }
+    public abstract Layer copy();
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Layer)) return false;
         Layer layer = (Layer) o;
-        return neurons == layer.neurons && Objects.equals(input, layer.input) && Objects.equals(output, layer.output) && Objects.equals(getParameters(), layer.getParameters()) && Objects.equals(getParameterGradients(), layer.getParameterGradients()) && Objects.equals(getOperations(), layer.getOperations());
+        return neurons == layer.neurons &&
+               Objects.equals(input, layer.input) &&
+               Objects.equals(output, layer.output) &&
+               Objects.equals(parameters, layer.parameters) &&
+               Objects.equals(parameterGradients, layer.parameterGradients) &&
+               Objects.equals(operations, layer.operations);
     }
 
     @Override
@@ -143,6 +179,7 @@ public abstract class Layer implements Cloneable, Debuggable {
                 '}';
     }
 
+    @Override
     public String toString(boolean debugMode) {
         if (debugMode)
             return toString();
