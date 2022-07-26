@@ -1,51 +1,31 @@
 package models.trainers;
 
 import com.sun.istack.internal.NotNull;
-import models.interfaces.Copyable;
 import models.math.Matrix;
 import models.math.MatrixOperations;
 import models.networks.Network;
 import models.optimizers.Optimizer;
-import models.interfaces.Debuggable;
-import utils.Utils;
 
 import java.util.*;
 import java.util.logging.Logger;
 
-public class Trainer implements Copyable<Trainer>, Debuggable {
+public class Trainer {
     private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-    private final Optimizer optimizer;
-    private final int ABORT_THRESHOLD = 5;
+    private static final int ABORT_THRESHOLD = 5;
 
-    public Trainer(@NotNull Network network, @NotNull Optimizer optimizer) {
-        this.optimizer = optimizer;
-        this.optimizer.setNetwork(network);
-    }
-
-    /***
-     * copy-constructor
-     */
-    private Trainer(Optimizer optimizer) {
-        this.optimizer = optimizer;
-    }
-
-    public Network getNetwork() {
-        return optimizer.getNetwork();
-    }
-
-    public FitResults fit(@NotNull FitParameters parameters) {
+    private static FitResults fitSingleTry(FitParameters parameters, Network network) {
         Matrix x;
         Matrix y;
         List<Matrix> xBatches;
         List<Matrix> yBatches;
-        double testLoss;
-        double trainLoss;
+
+
         double bestTestLoss = Double.MAX_VALUE;
-
-        Network network = getNetwork();
         Network bestNetwork = network;
-
         FitResults results = new FitResults();
+
+        Optimizer optimizer = parameters.getOptimizer();
+        optimizer.setNetwork(network);
         optimizer.setEpochs(parameters.getEpochs());
         optimizer.calculateDecayLR();
 
@@ -67,7 +47,7 @@ public class Trainer implements Copyable<Trainer>, Debuggable {
             MatrixOperations.shuffleMatrices(x, y);
             xBatches = x.getBatches(parameters.getBatchSize());
             yBatches = y.getBatches(parameters.getBatchSize());
-            trainLoss = 0.0;
+            double trainLoss = 0.0;
             for (int batch = 0; batch < xBatches.size(); batch++) {
                 trainLoss += network.trainBatch(xBatches.get(batch), yBatches.get(batch)) / parameters.getBatchSize();
                 optimizer.step();
@@ -80,7 +60,7 @@ public class Trainer implements Copyable<Trainer>, Debuggable {
             MatrixOperations.shuffleMatrices(x, y);
             xBatches = x.getBatches(parameters.getBatchSize());
             yBatches = y.getBatches(parameters.getBatchSize());
-            testLoss = 0.0;
+            double testLoss = 0.0;
             for (int batch = 0; batch < xBatches.size(); batch++) {
                 testLoss += network.calculateLoss(xBatches.get(batch), yBatches.get(batch)) / parameters.getBatchSize();
             }
@@ -105,11 +85,34 @@ public class Trainer implements Copyable<Trainer>, Debuggable {
         return results;
     }
 
-    private boolean abortTrain(double loss,
-                               MyQueue lastLosses,
-                               String doubleFormat,
-                               Map<EarlyStopLossType, Integer> map,
-                               EarlyStopLossType type) {
+    private static FitResults fitWithPreTrain(FitParameters parameters) {
+        Network bestNetwork = null;
+        double bestLoss = Double.MAX_VALUE;
+        FitParameters preTrainParameters = parameters.preTrainCopy();
+        for (int preTrain = 0; preTrain < parameters.getPreTrainsCount(); preTrain++) {
+            FitResults results = fitSingleTry(preTrainParameters.copy(), parameters.getNetworkBuilder().build());
+            Network network = results.getBestNetwork();
+            double loss = network.calculateLoss(parameters.getDataset().getValidData().getInputs(),
+                    parameters.getDataset().getValidData().getOutputs());
+            if (loss < bestLoss) {
+                bestLoss = loss;
+                bestNetwork = network;
+            }
+        }
+        return fitSingleTry(parameters, bestNetwork);
+    }
+
+    public static FitResults fit(@NotNull FitParameters parameters) {
+        if (parameters.isPreTrainRequired())
+            return fitWithPreTrain(parameters);
+        return fitSingleTry(parameters, parameters.getNetworkBuilder().build());
+    }
+
+    private static boolean abortTrain(double loss,
+                                      MyQueue lastLosses,
+                                      String doubleFormat,
+                                      Map<EarlyStopLossType, Integer> map,
+                                      EarlyStopLossType type) {
         String name = null;
         switch (type) {
             case TRAIN:
@@ -133,46 +136,46 @@ public class Trainer implements Copyable<Trainer>, Debuggable {
         return false;
     }
 
-    @Override
-    public Trainer copy() {
-        return new Trainer(Utils.copyNullable(optimizer));
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Trainer)) return false;
-        Trainer trainer = (Trainer) o;
-        return Objects.equals(optimizer, trainer.optimizer);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(optimizer);
-    }
-
-    @Override
-    public String toString() {
-        return getDebugClassName() + "{" +
-                "optimizer=" + optimizer +
-                '}';
-    }
-
-    public String toString(boolean debugMode) {
-        if (debugMode)
-            return toString();
-        return getClassName() + "{" +
-                "оптимизатор=" + optimizer.toString(debugMode) +
-                '}';
-    }
-
-    private String getClassName() {
-        return "Тренер";
-    }
-
-    private String getDebugClassName() {
-        return "Trainer";
-    }
+//    @Override
+//    public Trainer copy() {
+//        return new Trainer(Utils.copyNullable(optimizer), Utils.copyNullable(networkBuilder));
+//    }
+//
+//    @Override
+//    public boolean equals(Object o) {
+//        if (this == o) return true;
+//        if (!(o instanceof Trainer)) return false;
+//        Trainer trainer = (Trainer) o;
+//        return Objects.equals(optimizer, trainer.optimizer);
+//    }
+//
+//    @Override
+//    public int hashCode() {
+//        return Objects.hash(optimizer);
+//    }
+//
+//    @Override
+//    public String toString() {
+//        return getDebugClassName() + "{" +
+//                "optimizer=" + optimizer +
+//                '}';
+//    }
+//
+//    public String toString(boolean debugMode) {
+//        if (debugMode)
+//            return toString();
+//        return getClassName() + "{" +
+//                "оптимизатор=" + optimizer.toString(debugMode) +
+//                '}';
+//    }
+//
+//    private String getClassName() {
+//        return "Тренер";
+//    }
+//
+//    private String getDebugClassName() {
+//        return "Trainer";
+//    }
 
     enum EarlyStopLossType {
         TRAIN,

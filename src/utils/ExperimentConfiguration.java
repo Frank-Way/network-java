@@ -1,8 +1,9 @@
 package utils;
 
 import com.sun.istack.internal.NotNull;
+import models.exceptions.SerializationException;
 import models.interfaces.Debuggable;
-import options.OverallConstants;
+import options.Constants;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -70,7 +71,7 @@ public class ExperimentConfiguration implements Debuggable {
 
     public void run() {
         logger.fine(String.format("Запуск эксперимента \"%s\"", description));
-        logger.finer("Эксперимент: " + toString(OverallConstants.DEBUG_MODE));
+        logger.finer("Эксперимент: " + toString(Constants.DEBUG_MODE));
 
         HashSet<ExperimentConfigRunner> threads = new HashSet<>();
         for (RunConfiguration runConfiguration: runConfigurations) {
@@ -92,34 +93,25 @@ public class ExperimentConfiguration implements Debuggable {
                 .orElseThrow(() -> new RuntimeException(
                         String.format("Ошибка при получении результатов эксперимента \"%s\"", description)));
 
-        Utils.print(String.format("Наилучшие результаты обучения для всех конфигураций [эксперимент \"%s\"]", description),
-                bestResultsThread.getRunConfiguration(), bestResultsThread.getBestTrainResults(),
-                OverallConstants.PRINT_REQUIRED && OverallConstants.PRINT_EXPERIMENT_BEST.isRequired(),
-                OverallConstants.PRINT_EXPERIMENT_BEST);
+        if (Constants.PRINT_REQUIRED && Constants.PRINT_EXPERIMENT_BEST.isRequired())
+            logger.info(Utils.runConfigurationAndTrainResultsToString(
+                    String.format("Наилучшие результаты обучения для всех конфигураций [эксперимент \"%s\"]", description),
+                    bestResultsThread.getRunConfiguration(), bestResultsThread.getBestTrainResults(),
+                    Constants.PRINT_EXPERIMENT_BEST, Constants.DEBUG_MODE, Constants.TABLE_PART,
+                    Constants.DOUBLE_FORMAT));
 
+        if (Constants.SAVE_REQUIRED && Constants.SAVE_EXPERIMENT_BEST) {
+            bestResultsThread.getBestTrainResults().getNetwork().clear();
+            try {
+                Utils.save(bestResultsThread.getBestTrainResults().getNetwork(), Constants.SAVE_FOLDER,
+                        String.format(Constants.SAVE_NETWORK_PATTERN,
+                                bestResultsThread.getRunConfiguration().getMyId().getUid() + '_' + System.currentTimeMillis()));
+            } catch (SerializationException e) {
+                logger.severe(e.getMessage());
+            }
+        }
         logger.fine(String.format("Завершение эксперимента \"%s\"", description));
     }
-
-//    public void runNoExperimentThreads() {
-//        logger.fine(String.format("Запуск эксперимента \"%s\"", description));
-//        logger.finer("Эксперимент: " + toString(OverallConstants.DEBUG_MODE));
-//
-//        HashSet<RunConfigRunner> threads = new HashSet<>();
-//
-//        for (RunConfiguration runConfiguration: runConfigurations) {
-//            for (int retry = 0; retry < runConfiguration.getRetries(); retry++) {
-//
-//            }
-//        }
-//
-//        Utils.print(String.format("Наилучшие результаты обучения для всех конфигураций [эксперимент \"%s\"]", description),
-//                bestResultsThread.getRunConfiguration(), bestResultsThread.getBestTrainResults(),
-//                OverallConstants.PRINT_REQUIRED && OverallConstants.PRINT_EXPERIMENT_BEST.isRequired(),
-//                OverallConstants.PRINT_EXPERIMENT_BEST);
-//
-//        logger.fine(String.format("Завершение эксперимента \"%s\"", description));
-//
-//    }
 
     @Override
     public boolean equals(Object o) {

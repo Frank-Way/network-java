@@ -44,6 +44,12 @@ public abstract class ParametrizedOperation extends Operation {
     }
 
     @Override
+    public void clear() {
+        super.clear();
+        parameterGradient = null;
+    }
+
+    @Override
     public abstract ParametrizedOperation copy();
 
     protected abstract Matrix computeParameterGradient(@NotNull Matrix outputGradient);

@@ -1,7 +1,8 @@
 package utils;
 
 import com.sun.istack.internal.NotNull;
-import options.OverallConstants;
+import models.exceptions.SerializationException;
+import options.Constants;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -43,7 +44,7 @@ public class ExperimentConfigRunner extends Thread {
     @Override
     public void run() {
         logger.fine("Запуск потока");
-        logger.finer("Запуск обработки конфигурации: " + runConfiguration.toString(OverallConstants.DEBUG_MODE));
+        logger.finer("Запуск обработки конфигурации: " + runConfiguration.toString(Constants.DEBUG_MODE));
         logger.fine("Всего будет выполнено перезапусков: " + runConfiguration.getRetries());
 
         HashSet<RunConfigRunner> threads = new HashSet<>();
@@ -63,12 +64,23 @@ public class ExperimentConfigRunner extends Thread {
                 .min(Comparator.comparingDouble(TrainResults::getMaxAbsoluteError))
                 .orElseThrow(() -> new RuntimeException("Ошибка во время обработки результатов"));
 
-        Utils.print(String.format("Наилучшие результаты обучения для конфигурации [[%s]]", runConfiguration.getMyId()),
-                runConfiguration, bestTrainResults,
-                OverallConstants.PRINT_REQUIRED && OverallConstants.PRINT_EACH_CONFIGURATION_BEST.isRequired(),
-                OverallConstants.PRINT_EACH_CONFIGURATION_BEST);
+        if (Constants.PRINT_REQUIRED && Constants.PRINT_EACH_CONFIGURATION_BEST.isRequired())
+            logger.info(Utils.runConfigurationAndTrainResultsToString(
+                    String.format("Наилучшие результаты обучения для конфигурации [[%s]]", runConfiguration.getDescription()),
+                    runConfiguration, bestTrainResults, Constants.PRINT_EACH_CONFIGURATION_BEST, Constants.DEBUG_MODE,
+                    Constants.TABLE_PART, Constants.DOUBLE_FORMAT));
 
-        logger.finer("Завершение обработки конфигурации: " + runConfiguration.toString(OverallConstants.DEBUG_MODE));
+        if (Constants.SAVE_REQUIRED && Constants.SAVE_EACH_CONFIGURATION_BEST) {
+            bestTrainResults.getNetwork().clear();
+            try {
+                Utils.save(bestTrainResults.getNetwork(), Constants.SAVE_FOLDER,
+                        String.format(Constants.SAVE_NETWORK_PATTERN,
+                                runConfiguration.getMyId().getUid() + '_' + System.currentTimeMillis()));
+            } catch (SerializationException e) {
+                logger.severe(e.getMessage());
+            }
+        }
+        logger.finer("Завершение обработки конфигурации: " + runConfiguration.toString(Constants.DEBUG_MODE));
         logger.fine("Завершение потока");
     }
 }

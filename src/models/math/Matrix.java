@@ -2,9 +2,10 @@ package models.math;
 
 import models.interfaces.Copyable;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class Matrix implements Copyable<Matrix> {
+public class Matrix implements Copyable<Matrix>, Serializable {
     private final double[][] values;
     private final int rows;
     private final int cols;
@@ -19,7 +20,7 @@ public class Matrix implements Copyable<Matrix> {
     public Matrix copy() {
         double[][] result = new double[getRows()][getCols()];
         for (int row = 0; row < getRows(); row++)
-            values[row] = Arrays.copyOf(this.values[row], this.getCols());
+            result[row] = Arrays.copyOf(this.values[row], this.getCols());
         return new Matrix(result);
     }
 
@@ -447,6 +448,18 @@ public class Matrix implements Copyable<Matrix> {
                         "Недопустимый параметр stack axis=%d (допустимы: %d, %d)", axis, 0, 1));
 
         }
+    }
+
+    public Matrix abs() {
+        return MatrixOperations.Functions.abs(this);
+    }
+
+    public Matrix exp() {
+        return MatrixOperations.Functions.exp(this);
+    }
+
+    public Matrix pow(double scale) {
+        return MatrixOperations.Functions.pow(this, scale);
     }
 
     protected boolean isRowsAndColsEqual(Matrix matrix) {

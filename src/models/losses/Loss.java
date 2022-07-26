@@ -6,9 +6,10 @@ import models.math.Matrix;
 import models.math.MatrixOperations;
 import models.interfaces.Debuggable;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public abstract class Loss implements Copyable<Loss>, Debuggable {
+public abstract class Loss implements Copyable<Loss>, Debuggable, Serializable {
     protected Matrix prediction;
     protected Matrix target;
     protected double output;
@@ -42,6 +43,13 @@ public abstract class Loss implements Copyable<Loss>, Debuggable {
         MatrixOperations.assertSameShape(prediction, inputGradient);
 
         return inputGradient;
+    }
+
+    public void clear() {
+        prediction = null;
+        target = null;
+        inputGradient = null;
+        output = 0.0;
     }
 
     protected abstract double computeOutput(@NotNull Matrix prediction, @NotNull Matrix target);

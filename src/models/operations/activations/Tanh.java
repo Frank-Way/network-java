@@ -1,9 +1,8 @@
 package models.operations.activations;
 
 import com.sun.istack.internal.NotNull;
-import models.math.functions.Functions;
+import models.math.MatrixOperations;
 import models.math.Matrix;
-import models.operations.BiasAdd;
 import models.operations.Operation;
 import utils.Utils;
 
@@ -21,7 +20,7 @@ public class Tanh  extends Operation {
 
     @Override
     protected Matrix computeOutput(@NotNull Matrix input) {
-        return Functions.tanh(input);
+        return MatrixOperations.Functions.tanh(input);
     }
 
     @Override

@@ -1,7 +1,7 @@
 package models.operations.activations;
 
 import com.sun.istack.internal.NotNull;
-import models.math.functions.Functions;
+import models.math.MatrixOperations;
 import models.math.Matrix;
 import models.operations.Operation;
 import utils.Utils;
@@ -20,7 +20,7 @@ public class Sigmoid extends Operation {
 
     @Override
     protected Matrix computeOutput(@NotNull Matrix input) {
-        return input.onesLike().div(Functions.exp(input.mul(-1)).add(1));
+        return input.onesLike().div(MatrixOperations.Functions.exp(input.mul(-1)).add(1));
     }
 
     @Override

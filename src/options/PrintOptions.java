@@ -13,6 +13,13 @@ public class PrintOptions {
         this.dynamicRequired = dynamicRequired;
     }
 
+    public PrintOptions(boolean value) {
+        this.required = value;
+        this.parametersRequired = value;
+        this.tableRequired = value;
+        this.dynamicRequired = value;
+    }
+
     public boolean isRequired() {
         return required;
     }

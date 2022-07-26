@@ -28,6 +28,14 @@ public abstract class Function {
 
     public abstract double calculate(@NotNull double[] arguments);
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" +
+                "expression='" + expression + '\'' +
+                ", variableRanges=" + variableRanges +
+                '}';
+    }
+
     protected static List<VariableRange> getDefaultVariableRanges() {
         throw new NotImplementedException();
     }

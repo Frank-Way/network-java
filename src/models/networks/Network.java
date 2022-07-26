@@ -8,11 +8,12 @@ import models.math.Matrix;
 import models.interfaces.Debuggable;
 import utils.Utils;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class Network implements Copyable<Network>, Debuggable {
+public class Network implements Copyable<Network>, Debuggable, Serializable {
     private final List<Layer> layers;
     private final Loss loss;
 
@@ -46,6 +47,11 @@ public class Network implements Copyable<Network>, Debuggable {
         Matrix lossGradient = loss.backward();
         backward(lossGradient);
         return batchLoss;
+    }
+
+    public void clear() {
+        loss.clear();
+        layers.forEach(Layer::clear);
     }
 
     private List<Layer> getLayers() {

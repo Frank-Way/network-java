@@ -6,9 +6,10 @@ import models.math.Matrix;
 import models.math.MatrixOperations;
 import models.interfaces.Debuggable;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public abstract class Operation implements Copyable<Operation>, Debuggable {
+public abstract class Operation implements Copyable<Operation>, Debuggable, Serializable {
     protected Matrix input;
     protected Matrix output;
     protected Matrix outputGradient;
@@ -31,7 +32,7 @@ public abstract class Operation implements Copyable<Operation>, Debuggable {
         output = computeOutput(this.input);
 
         return output;
-    };
+    }
 
     public Matrix backward(@NotNull Matrix outputGradient) {
         this.outputGradient = outputGradient.copy();
@@ -41,7 +42,14 @@ public abstract class Operation implements Copyable<Operation>, Debuggable {
         MatrixOperations.assertSameShape(input, inputGradient);
 
         return inputGradient;
-    };
+    }
+
+    public void clear() {
+        input = null;
+        output = null;
+        outputGradient = null;
+        inputGradient = null;
+    }
 
     protected abstract Matrix computeOutput(@NotNull Matrix input);
 

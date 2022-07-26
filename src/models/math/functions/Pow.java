@@ -1,6 +1,6 @@
 package models.math.functions;
 
-class Pow implements DoubleOperation {
+public class Pow implements DoubleOperation {
     double scale;
 
     public Pow(double scale) {

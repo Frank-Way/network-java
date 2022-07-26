@@ -9,7 +9,7 @@ import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
 public class MyLogFormatter extends Formatter {
-    private static final String format = "%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS %1$Tp [%2$s] [%4$s] [%5$s]: %6$s%7$s%n";
+    private static final String format = "%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS.%1$tL %1$Tp [%2$s] [%4$s] [%5$s]: %6$s%7$s%n";
     private final Date date = new Date();
 
     @Override

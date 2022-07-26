@@ -109,7 +109,7 @@ public abstract class Optimizer implements Copyable<Optimizer>, Debuggable {
         if (debugMode)
             return toString();
         return getClassName() + "{" +
-                "нейросеть=" + network.toString(debugMode) +
+                "нейросеть=" + (network == null ? "null" : network.toString(debugMode)) +
                 '}';
     }
 

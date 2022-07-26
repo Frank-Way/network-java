@@ -8,12 +8,13 @@ import models.operations.Operation;
 import models.operations.ParametrizedOperation;
 import models.interfaces.Debuggable;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public abstract class Layer implements Copyable<Layer>, Debuggable {
+public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable {
     protected Matrix input;
     protected Matrix output;
     protected final int neurons;
@@ -74,6 +75,13 @@ public abstract class Layer implements Copyable<Layer>, Debuggable {
         return result;
     }
 
+    public void clear() {
+        input = null;
+        output = null;
+        parameterGradients.clear();
+        operations.forEach(Operation::clear);
+    }
+
     public Matrix getInput() {
         return input;
     }
@@ -119,7 +127,7 @@ public abstract class Layer implements Copyable<Layer>, Debuggable {
     }
 
     public void addParameterGradient(int index, @NotNull Matrix parameterGradient) {
-        parameters.add(index, parameterGradient);
+        parameterGradients.add(index, parameterGradient);
     }
 
     public int parameterGradientsCount() {

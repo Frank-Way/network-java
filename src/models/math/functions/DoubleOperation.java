@@ -1,5 +1,5 @@
 package models.math.functions;
 
-interface DoubleOperation {
+public interface DoubleOperation {
     double apply(double value);
 }

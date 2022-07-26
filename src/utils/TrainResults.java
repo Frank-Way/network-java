@@ -3,53 +3,46 @@ package utils;
 import com.sun.istack.internal.NotNull;
 import models.data.Dataset;
 import models.interfaces.Debuggable;
-import models.math.functions.Functions;
+import models.math.MatrixOperations;
 import models.math.Matrix;
 import models.networks.Network;
 import models.trainers.FitResults;
-import models.trainers.Trainer;
 
 import java.util.Objects;
 
 public class TrainResults implements Debuggable {
-    private final double maxAbsoluteError;
-    private final double maxRelativeError;
-    private final double meanAbsoluteError;
+    private final Errors errors;
     private final Network network;
     private final Dataset dataset;
     private final FitResults fitResults;
 
-    public TrainResults(@NotNull Network network, @NotNull Dataset dataset, @NotNull FitResults fitResults) {
+    public TrainResults(@NotNull Dataset dataset, @NotNull FitResults fitResults) {
         this.network = fitResults.getBestNetwork();
         this.dataset = dataset;
         this.fitResults = fitResults;
 
-        Matrix validInputs = dataset.getValidData().getInputs();
-        Matrix validOutputs = dataset.getValidData().getOutputs();
-        Matrix predictions = this.network.forward(validInputs);
-        Matrix errors = predictions.sub(validOutputs);
-        Matrix absoluteErrors = Functions.abs(errors);
-
-        maxAbsoluteError = absoluteErrors.max();
-        double rangeLength = validOutputs.max() - validOutputs.min();
-        maxRelativeError = maxAbsoluteError / rangeLength * 100;
-        meanAbsoluteError = absoluteErrors.sum() / absoluteErrors.size();
+        errors = Errors.buildFromTargetsAndPredictions(dataset.getValidData().getOutputs(),
+                network.forward(dataset.getValidData().getInputs()));
     }
 
     public double getMaxAbsoluteError() {
-        return maxAbsoluteError;
+        return errors.getMaxAbsoluteError();
     }
 
     public double getMaxRelativeError() {
-        return maxRelativeError;
+        return errors.getMaxRelativeError();
     }
 
     public double getMeanAbsoluteError() {
-        return meanAbsoluteError;
+        return errors.getMeanAbsoluteError();
     }
 
     public FitResults getFitResults() {
         return fitResults;
+    }
+
+    public Network getNetwork() {
+        return network;
     }
 
     @Override
@@ -66,15 +59,13 @@ public class TrainResults implements Debuggable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(maxAbsoluteError, maxRelativeError, meanAbsoluteError, network, dataset);
+        return Objects.hash(errors, network, dataset);
     }
 
     @Override
     public String toString() {
         return "TrainResults{" +
-                "maxAbsoluteError=" + maxAbsoluteError +
-                ", maxRelativeError=" + maxRelativeError +
-                ", meanAbsoluteError=" + meanAbsoluteError +
+                "errors=" + errors +
                 ", network=" + network +
                 ", dataset=" + dataset +
                 ", fitResults=" + fitResults +
@@ -85,9 +76,9 @@ public class TrainResults implements Debuggable {
         if (debugMode)
             return toString();
         return "РезультатыОбучения{" +
-                "максимальнаяАбсолютнаяОшибка=" + maxAbsoluteError +
-                ", максимальнаяОтносительнаяОшибка=" + maxRelativeError +
-                ", средняяАбсолютнаяОшибка=" + meanAbsoluteError +
+                "максимальнаяАбсолютнаяОшибка=" + getMaxAbsoluteError() +
+                ", максимальнаяОтносительнаяОшибка=" + getMaxRelativeError() +
+                ", средняяАбсолютнаяОшибка=" + getMeanAbsoluteError() +
                 '}';
     }
 }

@@ -1,8 +1,10 @@
 package utils;
 
 import com.sun.istack.internal.NotNull;
+import models.exceptions.SerializationException;
 import models.trainers.FitResults;
-import options.OverallConstants;
+import models.trainers.Trainer;
+import options.Constants;
 
 import java.util.logging.Logger;
 
@@ -35,14 +37,24 @@ public class RunConfigRunner extends Thread{
     public void run() {
         logger.fine("Запуск потока");
 
-        FitResults fitResults = runConfiguration.getTrainer().fit(runConfiguration.getFitParameters());
-        trainResults = new TrainResults(runConfiguration.getTrainer().getNetwork(), runConfiguration.getFitParameters().getDataset(), fitResults);
+        FitResults fitResults = Trainer.fit(runConfiguration.getFitParameters());
+        trainResults = new TrainResults(runConfiguration.getFitParameters().getDataset(), fitResults);
 
-        Utils.print(String.format("Результаты для конфигурации [[%s]]", runConfiguration.getMyId()),
-                runConfiguration, trainResults,
-                OverallConstants.PRINT_REQUIRED && OverallConstants.PRINT_EACH_CONFIGURATION.isRequired(),
-                OverallConstants.PRINT_EACH_CONFIGURATION);
+        if (Constants.PRINT_REQUIRED && Constants.PRINT_EACH_CONFIGURATION.isRequired())
+            logger.info(Utils.runConfigurationAndTrainResultsToString(String.format("Результаты для конфигурации [[%s]]", runConfiguration.getDescription()),
+                    runConfiguration, trainResults, Constants.PRINT_EACH_CONFIGURATION, Constants.DEBUG_MODE,
+                    Constants.TABLE_PART, Constants.DOUBLE_FORMAT));
 
+        if (Constants.SAVE_REQUIRED && Constants.SAVE_EACH_CONFIGURATION) {
+            trainResults.getNetwork().clear();
+            try {
+                Utils.save(trainResults.getNetwork(), Constants.SAVE_FOLDER,
+                        String.format(Constants.SAVE_NETWORK_PATTERN,
+                                runConfiguration.getMyId().getUid() + '_' + System.currentTimeMillis()));
+            } catch (SerializationException e) {
+                logger.severe(e.getMessage());
+            }
+        }
         logger.fine("Завершение потока");
     }
 }
