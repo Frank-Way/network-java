@@ -8,12 +8,25 @@ import models.trainers.FitParameters;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Конфигурация запуска обучения сети. Атрибуты модели:
+ *  {@link MyId} - идентификатор;
+ *  {@link FitParameters} - параметры обучения для метода fit класса {@link models.trainers.Trainer};
+ *  retries - количество перезапусков попыток обучения для данной конфигурации;
+ *  description - описание конфигурации (например, "Увеличено вдвое количество эпох").
+ */
 public class RunConfiguration implements Copyable<RunConfiguration>, Debuggable {
     private final MyId myId;
     private final FitParameters fitParameters;
     private final int retries;
     private final String description;
 
+    /**
+     * Конструктор
+     * @param retries  количество перезапусков
+     * @param description  описание
+     * @param fitParameters  параметры обучения
+     */
     public RunConfiguration(int retries, String description, @NotNull FitParameters fitParameters) {
         this.fitParameters = fitParameters;
         if (retries <= 0)
@@ -79,7 +92,7 @@ public class RunConfiguration implements Copyable<RunConfiguration>, Debuggable 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof RunConfiguration)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         RunConfiguration that = (RunConfiguration) o;
         return retries == that.retries &&
                Objects.equals(myId, that.myId) &&

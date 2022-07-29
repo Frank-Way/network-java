@@ -36,7 +36,7 @@ public class Dataset implements Copyable<Dataset> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Dataset)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         Dataset dataset = (Dataset) o;
         return Objects.equals(getValidData(), dataset.getValidData()) &&
                 Objects.equals(getTestData(), dataset.getTestData()) &&

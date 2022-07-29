@@ -8,6 +8,9 @@ import models.interfaces.Debuggable;
 import models.math.Matrix;
 import models.math.MatrixOperations;
 import models.networks.Network;
+import models.operations.BiasAdd;
+import models.operations.WeightMultiply;
+import models.trainers.FitResults;
 import options.PrintOptions;
 
 import java.io.*;
@@ -18,47 +21,80 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+/**
+ * Утилитарные методы, используемые в различных частях проекта
+ */
 public abstract class Utils {
     private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
-    public static String runConfigurationAndTrainResultsToString(String prompt,
-                                                                 @NotNull RunConfiguration runConfiguration,
-                                                                 @NotNull TrainResults results,
-                                                                 @NotNull PrintOptions printOptions,
-                                                                 boolean debugMode,
-                                                                 double part,
-                                                                 String doubleFormat) {
+    /**
+     * Получение строки с описанием конфигурации запуска и результатов обучения, представленных, соответственно,
+     *  объектами {@link RunConfiguration} и {@link FitResults}
+     * @param runConfiguration  конфигурация обучения
+     * @param results  результаты обучения
+     * @param printOptions  опции вывода
+     * @param debugMode  режим вывода
+     * @param part  какая часть таблиц выводится
+     * @param doubleFormat  формат вывода вещественных чисел
+     * @return  строка с требуемыми значениями
+     */
+    public static String runConfigurationAndFitResultsToString(@NotNull RunConfiguration runConfiguration,
+                                                               @NotNull FitResults results,
+                                                               @NotNull PrintOptions printOptions,
+                                                               boolean debugMode,
+                                                               double part,
+                                                               String doubleFormat) {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(prompt).append(" (конфигурация):\n").append(runConfiguration.toString(debugMode)).append("\n");
-        sb.append(prompt).append(" (результаты):\n").append(results.toString(debugMode)).append("\n");
+        sb.append("конфигурация:\n").append(runConfiguration.toString(debugMode)).append("\n");
+        sb.append("результаты:\n").append(results.toString(debugMode)).append("\n");
 
         if (printOptions.isParametersRequired())
-            sb.append(prompt).append(" (параметры):\n")
+            sb.append("параметры:\n")
                     .append(networkParametersToString(results.getNetwork(), doubleFormat)).append("\n");
 
         if (printOptions.isTableRequired())
-            sb.append(prompt).append(" (таблица):\n")
+            sb.append("таблица:\n")
                     .append(networkOutputToTable(runConfiguration.getFitParameters().getDataset().getValidData(),
                             results.getNetwork(), part, doubleFormat)).append("\n");
 
         if (printOptions.isDynamicRequired())
-            sb.append(prompt).append(" (динамика):\n")
-                    .append(trainDynamicToTable(results.getFitResults().getTestLossesMap(), doubleFormat)).append("\n");
+            sb.append("динамика:\n")
+                    .append(trainDynamicToTable(results.getTestLossesMap(), doubleFormat)).append("\n");
 
         return sb.toString();
     }
 
+    /**
+     * Формирование строки с параметрами сети по слоям
+     * @param network  сеть
+     * @param doubleFormat  формат вывода вещественных чисел
+     * @return  строка с описанием параметров сети
+     */
     public static String networkParametersToString(Network network, String doubleFormat) {
         StringBuilder sb = new StringBuilder();
         for (int layer = 0; layer < network.layersCount(); layer++) {
             sb.append("Слой ").append(layer + 1).append("\n");
-            sb.append("Веса:\n").append(network.getLayer(layer).getParameter(0).valuesToString(doubleFormat)).append("\n");
-            sb.append("Смещения:\n").append(network.getLayer(layer).getParameter(1).valuesToString(doubleFormat)).append("\n");
+
+            Matrix weight = network.getLayer(layer).getParameter(WeightMultiply.class);
+            sb.append("Веса: [").append(weight.getRows()).append(" x ").append(weight.getCols()).append("]\n");
+            sb.append(weight.valuesToString(doubleFormat)).append("\n");
+
+            Matrix bias = network.getLayer(layer).getParameter(BiasAdd.class);
+            sb.append("Смещения: [").append(bias.getRows()).append(" x ").append(bias.getCols()).append("]\n");
+            sb.append(bias.valuesToString(doubleFormat)).append("\n");
         }
         return sb.toString();
     }
 
+    /**
+     * Формирование таблицы с результатами работы сети
+     * @param data  выборка для проверки
+     * @param network  сеть
+     * @param part  какую часть таблицы необходимо вывести
+     * @param doubleFormat  формат вывода вещественных чисел
+     * @return  строка с таблицей
+     */
     public static String networkOutputToTable(Data data, Network network, double part, String doubleFormat) {
         Matrix x = data.getInputs();
         Matrix t = data.getOutputs();
@@ -67,6 +103,12 @@ public abstract class Utils {
         return networkIOToStringTable(x, t, y, e, part, doubleFormat);
     }
 
+    /**
+     * Формирование таблицы зависимости потери от эпохи
+     * @param map  мапа, где ключ - номер эпохи, а значение - потеря
+     * @param doubleFormat  формат вывода вещественных чисел
+     * @return  строка с таблицей
+     */
     public static String trainDynamicToTable(Map<Integer, Double> map, String doubleFormat) {
         List<String> xHeaders = Collections.singletonList("эпоха");
         List<String> yHeaders = Collections.singletonList("потеря");
@@ -83,6 +125,16 @@ public abstract class Utils {
         return buildStringTableFromHeadersAndBody(xHeaders, xValues, yHeaders, yValues, 1.0, doubleFormat);
     }
 
+    /**
+     * Формирование таблицы с результатами работы сети
+     * @param inputs  входные значения
+     * @param targets  требуемые выходные значения
+     * @param predictions  результаты вычислений сети
+     * @param errors  ошибки вычисления сети
+     * @param part  какую часть таблицы необходимо вывести
+     * @param doubleFormat  формат вывода вещественных чисел
+     * @return  строка с таблицей
+     */
     public static String networkIOToStringTable(@NotNull Matrix inputs,
                                                 @NotNull Matrix targets,
                                                 @NotNull Matrix predictions,
@@ -108,6 +160,16 @@ public abstract class Utils {
         return buildStringTableFromHeadersAndBody(xHeaders, inputs, yHeaders, yValues, part, doubleFormat);
     }
 
+    /**
+     * Формирование таблицы по заголовкам и телу
+     * @param xHeaders  заголовки агрументов
+     * @param xValues  аргументы
+     * @param yHeaders  заголовки значений
+     * @param yValues  значения
+     * @param part  какую часть таблицы необходимо вывести
+     * @param doubleFormat  формат вывода вещественных чисел
+     * @return  строка с таблицей
+     */
     public static String buildStringTableFromHeadersAndBody(@NotNull List<String> xHeaders,
                                                             @NotNull Matrix xValues,
                                                             @NotNull List<String> yHeaders,
@@ -116,16 +178,15 @@ public abstract class Utils {
         char mainSpliterator = '|';
         char separatorBase = '-';
         char separatorSpliterator = '+';
-        StringBuilder headerSB = new StringBuilder();
         StringBuilder separatorSB = new StringBuilder();
         StringBuilder bodySB = new StringBuilder();
         String format = " " + doubleFormat + " ";
         int cellWidth = 2 + Integer.parseInt(doubleFormat.substring(
                 doubleFormat.indexOf("%") + 1,
                 doubleFormat.indexOf(".")));
-        joinHeader(headerSB, xHeaders, cellWidth);
+        StringBuilder headerSB = new StringBuilder(joinHeader(xHeaders, cellWidth));
         headerSB.append(mainSpliterator);
-        joinHeader(headerSB, yHeaders, cellWidth);
+        headerSB.append(joinHeader(yHeaders, cellWidth));
         for (int i = 0; i < headerSB.toString().indexOf(mainSpliterator); i++)
             separatorSB.append(separatorBase);
         separatorSB.append(separatorSpliterator);
@@ -134,15 +195,23 @@ public abstract class Utils {
         int[] indices = MatrixOperations.getLinSpace(0, xValues.getRows() - 1, (int)Math.round(xValues.getRows() * part));
         for (int row: indices) {
             for (int col = 0; col < xValues.getCols(); col++)
-                bodySB.append(String.format(format, xValues.getValues()[row][col]));
+                bodySB.append(String.format(format, xValues.getValue(row, col)));
             bodySB.append(mainSpliterator);
             for (int col = 0; col < yValues.getCols(); col++)
-                bodySB.append(String.format(format, yValues.getValues()[row][col]));
+                bodySB.append(String.format(format, yValues.getValue(row, col)));
             bodySB.append("\n");
         }
         return String.join("\n", headerSB.toString(), separatorSB.toString(), bodySB.toString());
     }
 
+    /**
+     * Преобразование мапы в строку, где ключ и значение реализуют интерфейс Debuggable
+     * @param map  мапа
+     * @param debugMode  режим
+     * @param <T>  ключ, реализующий Debuggable
+     * @param <E>  значение, реализующее Debuggable
+     * @return  строковое представление мапы
+     */
     public static <T extends Debuggable, E extends Debuggable> String mapToDebugString(@NotNull Map<T, E> map, boolean debugMode) {
         if (debugMode)
             return map.toString();
@@ -151,6 +220,37 @@ public abstract class Utils {
                 .toString();
     }
 
+    /**
+     * Запуск всех потоков коллекции с небольшой задержкой
+     * @param threads  потоки
+     * @param <T>  наследник Thread
+     * @param timeout  задержка между запусками потоков в мс
+     */
+    public static <T extends Thread> void startThreads(@NotNull Collection<T> threads, int timeout) {
+        for (T thread: threads) {
+            thread.start();
+            try {
+                Thread.sleep(timeout);
+            } catch (InterruptedException e) {
+                logger.severe("Ошибка во время ожидания при запуске потоков: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Запуск всех потоков коллекции с задержкой по умолчанию
+     * @param threads  потоки
+     * @param <T>  наследник Thread
+     */
+    public static <T extends Thread> void startThreads(@NotNull Collection<T> threads) {
+        startThreads(threads, 500);
+    }
+
+    /**
+     * Ожидание завершения всех потоков коллекции
+     * @param threads  потоки
+     * @param <T>  наследник Thread
+     */
     public static <T extends Thread> void joinThreads(@NotNull Collection<T> threads) {
         for (T thread: threads) {
             try {
@@ -161,22 +261,47 @@ public abstract class Utils {
         }
     }
 
+    /**
+     * Вычисление значения, если оно null
+     * @param t  nullable значение
+     * @param supplier  поставщик значения
+     * @param <T>  тип значения
+     * @return  t или значение от поставщика
+     */
     public static <T> T computeIfAbsent(T t, @NotNull Supplier<T> supplier) {
         if (t != null)
             return t;
         return supplier.get();
     }
 
+    /**
+     * Получение потока по его ID
+     * @param threadId  ID потока
+     * @return  поток
+     */
     public static Optional<Thread> getThread(long threadId) {
         return Thread.getAllStackTraces().keySet().stream()
                 .filter(t -> t.getId() == threadId)
                 .findFirst();
     }
 
+    /**
+     * Копирует nullable-объект, реализующий интерфейс Copyable
+     * @param t  nullable-объект
+     * @param <T>  тип объекта
+     * @return  null или копия объекта
+     */
     public static <T extends Copyable<T>> T copyNullable(T t) {
         return t != null ? t.copy() : null;
     }
 
+    /**
+     * Сериализация объекта в файл
+     * @param object  объект
+     * @param path  путь
+     * @param filename  имя файла
+     * @throws SerializationException
+     */
     public static void save(Object object, String path, String filename) throws SerializationException {
         try {
             Files.createDirectories(Paths.get(path));
@@ -197,6 +322,13 @@ public abstract class Utils {
         logger.fine("Сохранена нейросеть в файл: " + fullPath);
     }
 
+    /**
+     * Десериализация объекта из файла
+     * @param path  путь
+     * @param filename  имя файла
+     * @return  десериализованный объект
+     * @throws SerializationException
+     */
     public static Object load(String path, String filename) throws SerializationException {
         String fullPath = path + File.separator + filename;
         try (FileInputStream fis = new FileInputStream(fullPath);
@@ -208,11 +340,19 @@ public abstract class Utils {
         }
     }
 
-    private static void joinHeader(StringBuilder sb, List<String> headers, int cellWidth) {
+    /**
+     * Формирование заголовка таблицы с заданной шириной ячейки/столбца
+     * @param headers  заголовки
+     * @param cellWidth  ширина ячейки/столбца
+     * @return  объединенные заголовки
+     */
+    private static String joinHeader(List<String> headers, int cellWidth) {
+        StringBuilder sb = new StringBuilder();
         for (String header: headers) {
             for (int i = 0; i < cellWidth - header.length() - 1; i++)
                 sb.append(" ");
             sb.append(header).append(" ");
         }
+        return sb.toString();
     }
 }

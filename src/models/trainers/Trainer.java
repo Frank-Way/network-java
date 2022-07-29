@@ -4,26 +4,42 @@ import com.sun.istack.internal.NotNull;
 import models.math.Matrix;
 import models.math.MatrixOperations;
 import models.networks.Network;
+import models.networks.NetworkBuilder;
+import models.networks.NetworkBuilderParameters;
 import models.optimizers.Optimizer;
+import utils.Errors;
 
 import java.util.*;
 import java.util.logging.Logger;
 
+/**
+ * Тренер, запускающий обучение сети. Атрибуты модели:
+ *  {@link Logger} - логгер;
+ *  ABORT_THRESHOLD - порог, сколько раз подряд потеря должна не уменьшиться по мере обучения (используется, если
+ *                    earlyStopping в {@link FitParameters} true).
+ */
 public class Trainer {
     private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-    private static final int ABORT_THRESHOLD = 5;
+    private static final int ABORT_THRESHOLD = 3;
 
+    /**
+     * Запуск обучения заданной сети
+     * @param parameters  параметры обучения
+     * @param network  сеть
+     * @return  результаты корректировки
+     */
     private static FitResults fitSingleTry(FitParameters parameters, Network network) {
         Matrix x;
         Matrix y;
         List<Matrix> xBatches;
         List<Matrix> yBatches;
 
+        double bestTestLoss = Double.MAX_VALUE;  // наилучшая потеря на тестовой выборке
+        Network bestNetwork = network;  // сеть, обеспечившая наилучшую потерю
 
-        double bestTestLoss = Double.MAX_VALUE;
-        Network bestNetwork = network;
-        FitResults results = new FitResults();
+        Map<Integer, Double> testLossesMap = new HashMap<>();  // мапа зависимости потери от эпохи
 
+        // настройка оптимизатора в соответствии с полученными параметрами обучения
         Optimizer optimizer = parameters.getOptimizer();
         optimizer.setNetwork(network);
         optimizer.setEpochs(parameters.getEpochs());
@@ -40,6 +56,9 @@ public class Trainer {
 
         MyQueue lastTrainLosses = new MyQueue((int)Math.ceil(parameters.getQueries() * 1.0 / 10));
         MyQueue lastTestLosses = new MyQueue((int)Math.ceil(parameters.getQueries() * 1.0 / 10));
+
+        lastTrainLosses.setMax();
+        lastTestLosses.setMax();
 
         for (int epoch = 1; epoch <= parameters.getEpochs(); epoch++) {
             x = parameters.getDataset().getTrainData().getInputs().copy();
@@ -68,7 +87,7 @@ public class Trainer {
                 bestTestLoss = testLoss;
                 bestNetwork = network.copy();
             }
-            results.getTestLossesMap().put(epoch, testLoss);
+            testLossesMap.put(epoch, testLoss);
             lastTrainLosses.push(trainLoss);
             lastTestLosses.push(testLoss);
             logger.info(String.format("Эпоха: %d, потеря при обучении: " + parameters.getDoubleFormat() + ", потеря при тестах: " +
@@ -81,8 +100,12 @@ public class Trainer {
         }
         logger.fine(String.format("В качестве результата обучения сохранена сеть, обеспечившая потерю на тестовой выборке: " +
                 parameters.getDoubleFormat(), bestTestLoss));
-        results.setBestNetwork(bestNetwork);
-        return results;
+
+        return new FitResults(testLossesMap,
+                bestNetwork,
+                Errors.buildFromTargetsAndPredictions(parameters.getDataset().getValidData().getOutputs(),
+                        bestNetwork.forward(parameters.getDataset().getValidData().getInputs())),
+                parameters.getDataset());
     }
 
     private static FitResults fitWithPreTrain(FitParameters parameters) {
@@ -90,8 +113,9 @@ public class Trainer {
         double bestLoss = Double.MAX_VALUE;
         FitParameters preTrainParameters = parameters.preTrainCopy();
         for (int preTrain = 0; preTrain < parameters.getPreTrainsCount(); preTrain++) {
-            FitResults results = fitSingleTry(preTrainParameters.copy(), parameters.getNetworkBuilder().build());
-            Network network = results.getBestNetwork();
+            FitResults results = fitSingleTry(preTrainParameters.copy(),
+                    NetworkBuilder.build(parameters.getNetworkBuilderParameters()));
+            Network network = results.getNetwork();
             double loss = network.calculateLoss(parameters.getDataset().getValidData().getInputs(),
                     parameters.getDataset().getValidData().getOutputs());
             if (loss < bestLoss) {
@@ -105,7 +129,7 @@ public class Trainer {
     public static FitResults fit(@NotNull FitParameters parameters) {
         if (parameters.isPreTrainRequired())
             return fitWithPreTrain(parameters);
-        return fitSingleTry(parameters, parameters.getNetworkBuilder().build());
+        return fitSingleTry(parameters, NetworkBuilder.build(parameters.getNetworkBuilderParameters()));
     }
 
     private static boolean abortTrain(double loss,
@@ -135,47 +159,6 @@ public class Trainer {
             map.put(type, 0);
         return false;
     }
-
-//    @Override
-//    public Trainer copy() {
-//        return new Trainer(Utils.copyNullable(optimizer), Utils.copyNullable(networkBuilder));
-//    }
-//
-//    @Override
-//    public boolean equals(Object o) {
-//        if (this == o) return true;
-//        if (!(o instanceof Trainer)) return false;
-//        Trainer trainer = (Trainer) o;
-//        return Objects.equals(optimizer, trainer.optimizer);
-//    }
-//
-//    @Override
-//    public int hashCode() {
-//        return Objects.hash(optimizer);
-//    }
-//
-//    @Override
-//    public String toString() {
-//        return getDebugClassName() + "{" +
-//                "optimizer=" + optimizer +
-//                '}';
-//    }
-//
-//    public String toString(boolean debugMode) {
-//        if (debugMode)
-//            return toString();
-//        return getClassName() + "{" +
-//                "оптимизатор=" + optimizer.toString(debugMode) +
-//                '}';
-//    }
-//
-//    private String getClassName() {
-//        return "Тренер";
-//    }
-//
-//    private String getDebugClassName() {
-//        return "Trainer";
-//    }
 
     enum EarlyStopLossType {
         TRAIN,

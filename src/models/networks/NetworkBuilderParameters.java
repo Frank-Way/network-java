@@ -10,11 +10,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Параметры для построения сети. Атрибуты модели:
+ *  sizes - размеры слоёв сети, от входного до выходного. Первый элемент - количество входов сети, последний -
+ *          количество выходов, остальные - размеры скрытых слоёв;
+ *  список<{@link Operation}> - набор активаций для каждого слоя, не считая входного. То есть количество операций
+ *                              равняется размерности sizes минус один;
+ *  {@link Loss} - потеря для оценки сети
+ */
 public class NetworkBuilderParameters implements Copyable<NetworkBuilderParameters> {
     private final List<Integer> sizes;
     private final List<Operation> activations;
     private final Loss loss;
 
+    /**
+     * Конструктор. При несовпадении размеров будет выброшено IllegalArgumentException
+     * @param sizes размеры слоёв
+     * @param activations функции активации
+     * @param loss потеря
+     */
     public NetworkBuilderParameters(@NotNull List<Integer> sizes, @NotNull List<Operation> activations, @NotNull Loss loss) {
         if (sizes.size() != (1 + activations.size()) || activations.size() < 2)
             throw new IllegalArgumentException(

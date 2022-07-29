@@ -11,6 +11,15 @@ import models.interfaces.Debuggable;
 
 import java.util.Objects;
 
+/**
+ * Оптимизатор, обучающий сеть по определённому правилу. Атрибуты модели:
+ *  {@link Network} - сеть для обучения;
+ *  learningRate - скорость обучения;
+ *  decayLR - величина снижения скорости обучения;
+ *  startLR - начальная скорость обучения;
+ *  stopLR - конечная скорость обучения;
+ *  epochs - длительность обучения;
+ */
 public abstract class Optimizer implements Copyable<Optimizer>, Debuggable {
     protected Network network;
     protected double learningRate;
@@ -19,6 +28,11 @@ public abstract class Optimizer implements Copyable<Optimizer>, Debuggable {
     protected final double stopLR;
     protected int epochs;
 
+    /**
+     * Конструктор
+     * @param startLR  начальная скорость обучения
+     * @param stopLR  конечная скорость обучения
+     */
     public Optimizer(double startLR, double stopLR) {
         learningRate = startLR;
         this.startLR = startLR;
@@ -49,27 +63,40 @@ public abstract class Optimizer implements Copyable<Optimizer>, Debuggable {
         this.epochs = epochs;
     }
 
+    /**
+     * Шаг корректировки параметров, выполняемый после обратного прохода, когда все градиенты вычислены
+     */
     public void step() {
-        for (int l = 0; l < network.layersCount(); l++) {
+        for (int l = 0; l < network.layersCount(); l++) {  // перебираем слои
             Layer layer = network.getLayer(l);
-            for (int i = 0; i < layer.operationsCount(); i++) {
-                Operation operation = layer.getOperation(i);
-                if (operation instanceof ParametrizedOperation) {
-                    ParametrizedOperation parametrizedOperation = (ParametrizedOperation)operation;
-                    parametrizedOperation.setParameter(update(parametrizedOperation.getParameter(), parametrizedOperation.getParameterGradient()));
-                }
-            }
+            // перебираем операции с параметром
+            for (ParametrizedOperation parametrizedOperation: layer.getParametrizedOperations())
+                // обновляем параметр
+                parametrizedOperation.setParameter(update(parametrizedOperation.getParameter(),
+                        parametrizedOperation.getParameterGradient()));
         }
     }
 
+    /**
+     * Вычисление величины снижения скорости обучения
+     */
     public void calculateDecayLR() {
         decayLR = (startLR - stopLR) / (epochs - 1);
     }
 
+    /**
+     * Снижение скорости обучения
+     */
     public void decay() {
         learningRate -= decayLR;
     }
 
+    /**
+     * Обновление параметров сети (правило задаётся в наследнике)
+     * @param parameters  параметр
+     * @param parameterGradients  градиент параметра
+     * @return  обновлённый параметр
+     */
     protected abstract Matrix update(@NotNull Matrix parameters, @NotNull Matrix parameterGradients);
 
     @Override
@@ -85,7 +112,7 @@ public abstract class Optimizer implements Copyable<Optimizer>, Debuggable {
                Double.compare(optimizer.startLR, startLR) == 0 &&
                Double.compare(optimizer.stopLR, stopLR) == 0 &&
                epochs == optimizer.epochs &&
-               network.equals(optimizer.network);
+               Objects.equals(network, optimizer.network);
     }
 
     @Override
@@ -105,6 +132,7 @@ public abstract class Optimizer implements Copyable<Optimizer>, Debuggable {
                 '}';
     }
 
+    @Override
     public String toString(boolean debugMode) {
         if (debugMode)
             return toString();

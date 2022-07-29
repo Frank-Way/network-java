@@ -13,22 +13,42 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * Нейросеть, представленная как набор слоёв и потеря. Атрибуты модели:
+ *  список<{@link Layer}> - набор слоёв;
+ *  {@link Loss} - потеря для оценки работы сети
+ */
 public class Network implements Copyable<Network>, Debuggable, Serializable {
     private final List<Layer> layers;
     private final Loss loss;
 
+    /**
+     * Конструктор
+     * @param layers набор слоёв
+     * @param loss потеря
+     */
     public Network(@NotNull List<Layer> layers, @NotNull Loss loss) {
         this.layers = layers;
         this.loss = loss;
     }
 
-    public Matrix forward(@NotNull Matrix xBatch) {
-        Matrix result = xBatch.copy();
+    /**
+     * Прямой проход сети по всем слоям
+     * @param inputs вход
+     * @return выход
+     */
+    public Matrix forward(@NotNull Matrix inputs) {
+        Matrix result = inputs.copy();
         for (Layer layer: layers)
             result = layer.forward(result);
         return result;
     }
 
+    /**
+     * Обратный проход сети по всем слоям (в обратном направлении)
+     * @param lossGradient градиент на выходе сети (градиент потери)
+     * @return градиент на входе сети
+     */
     public Matrix backward(@NotNull Matrix lossGradient) {
         Matrix result = lossGradient.copy();
         for (int i = 0; i < layers.size(); i++)
@@ -36,19 +56,34 @@ public class Network implements Copyable<Network>, Debuggable, Serializable {
         return result;
     }
 
-    public double calculateLoss(@NotNull Matrix xBatch, @NotNull Matrix yBatch) {
-        Matrix prediction = forward(xBatch);
-        return loss.forward(prediction, yBatch);
+    /**
+     * Оценка (вычисление потери)
+     * @param inputs входы
+     * @param targets требуемые выходы
+     * @return потеря
+     */
+    public double calculateLoss(@NotNull Matrix inputs, @NotNull Matrix targets) {
+        Matrix prediction = forward(inputs);
+        return loss.forward(prediction, targets);
     }
 
-    public double trainBatch(@NotNull Matrix xBatch, @NotNull Matrix yBatch) {
-        Matrix predictions = forward(xBatch);
-        double batchLoss = loss.forward(predictions, yBatch);
+    /**
+     *
+     * @param inputs входы
+     * @param targets требуемые выходы
+     * @return потеря
+     */
+    public double trainBatch(@NotNull Matrix inputs, @NotNull Matrix targets) {
+        Matrix predictions = forward(inputs);
+        double batchLoss = loss.forward(predictions, targets);
         Matrix lossGradient = loss.backward();
         backward(lossGradient);
         return batchLoss;
     }
 
+    /**
+     * Очистка промежуточных результатов
+     */
     public void clear() {
         loss.clear();
         layers.forEach(Layer::clear);
@@ -85,7 +120,7 @@ public class Network implements Copyable<Network>, Debuggable, Serializable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Network)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         Network network = (Network) o;
         return Objects.equals(layers, network.layers) &&
                Objects.equals(loss, network.loss);
@@ -104,6 +139,7 @@ public class Network implements Copyable<Network>, Debuggable, Serializable {
                 '}';
     }
 
+    @Override
     public String toString(boolean debugMode) {
         if (debugMode)
             return toString();

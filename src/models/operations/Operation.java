@@ -9,12 +9,22 @@ import models.interfaces.Debuggable;
 import java.io.Serializable;
 import java.util.Objects;
 
+/**
+ * Операция выполняемая в слое сети. Параметры модели:
+ *  input - входное значение;
+ *  output - выходное значение;
+ *  outputGradient - градиент на выходе (входное значение при обратном проходе);
+ *  inputGradient - градиент на выходе (выходное значение при обратном проходе).
+ */
 public abstract class Operation implements Copyable<Operation>, Debuggable, Serializable {
     protected Matrix input;
     protected Matrix output;
     protected Matrix outputGradient;
     protected Matrix inputGradient;
 
+    /**
+     * Пустой конструктор
+     */
     public Operation() {}
 
     /***
@@ -27,23 +37,35 @@ public abstract class Operation implements Copyable<Operation>, Debuggable, Seri
         this.inputGradient = inputGradient;
     }
 
+    /**
+     * Прямой проход (вычисление выхода)
+     * @param input вход
+     * @return выход
+     */
     public Matrix forward(@NotNull Matrix input) {
-        this.input = input.copy();
-        output = computeOutput(this.input);
-
+        this.input = input.copy();  // сохраняется копия
+        output = computeOutput(this.input);  // вычисление выполнятся с копией
         return output;
     }
 
+    /**
+     * Обратный проход (вычисление градиента)
+     * @param outputGradient градиент на выходе
+     * @return градиент на входе
+     */
     public Matrix backward(@NotNull Matrix outputGradient) {
-        this.outputGradient = outputGradient.copy();
-        MatrixOperations.assertSameShape(output, this.outputGradient);
+        this.outputGradient = outputGradient.copy();  // сохраняется копия
+        MatrixOperations.assertSameShape(output, this.outputGradient);  // проверка совпадения размерностей
 
-        inputGradient = computeInputGradient(this.outputGradient);
-        MatrixOperations.assertSameShape(input, inputGradient);
+        inputGradient = computeInputGradient(this.outputGradient); // вычисление
+        MatrixOperations.assertSameShape(input, inputGradient);  // проверка совпадения размерностей
 
         return inputGradient;
     }
 
+    /**
+     * Очистка промежуточных результатов
+     */
     public void clear() {
         input = null;
         output = null;
@@ -51,8 +73,18 @@ public abstract class Operation implements Copyable<Operation>, Debuggable, Seri
         inputGradient = null;
     }
 
+    /**
+     * Вычисление выхода (определяется наследником)
+     * @param input вход
+     * @return выход
+     */
     protected abstract Matrix computeOutput(@NotNull Matrix input);
 
+    /**
+     * Вычисление градиента (определяется наследником)
+     * @param outputGradient градиент на выходе
+     * @return градиент на входе
+     */
     protected abstract Matrix computeInputGradient(@NotNull Matrix outputGradient);
 
     @Override
@@ -61,7 +93,7 @@ public abstract class Operation implements Copyable<Operation>, Debuggable, Seri
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Operation)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         Operation operation = (Operation) o;
         return Objects.equals(input, operation.input) &&
                Objects.equals(output, operation.output) &&
@@ -84,6 +116,7 @@ public abstract class Operation implements Copyable<Operation>, Debuggable, Seri
                 '}';
     }
 
+    @Override
     public String toString(boolean debugMode) {
         if (debugMode)
             return toString();

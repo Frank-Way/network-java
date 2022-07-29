@@ -5,6 +5,9 @@ import models.math.Matrix;
 import models.networks.Network;
 import utils.Utils;
 
+/**
+ * Стохастический градиентный спуск. Наследник {@link Optimizer}.
+ */
 public class SGD extends Optimizer {
     public SGD(double startLR, double stopLR) {
         super(startLR, stopLR);
@@ -24,6 +27,7 @@ public class SGD extends Optimizer {
 
     @Override
     public Matrix update(@NotNull Matrix parameters, @NotNull Matrix parameterGradients) {
+        // из параметра вычитается градиент, домноженный на скорость обучения
         return parameters.sub(parameterGradients.mul(learningRate));
     }
 

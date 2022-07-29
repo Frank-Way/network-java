@@ -57,7 +57,7 @@ public class ApproximationDataLoader extends DataLoader {
     private static Matrix getOutputs(@NotNull Function function, @NotNull Matrix inputs) {
         double[][] result = new double[inputs.getRows()][1];
         for (int row = 0; row < inputs.getRows(); row++)
-            result[row][0] = function.calculate(inputs.getValues()[row]);
+            result[row][0] = function.calculate(inputs.getValue(row));
         return new Matrix(result);
     }
 }

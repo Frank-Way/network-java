@@ -3,6 +3,7 @@ package utils;
 import com.sun.istack.internal.NotNull;
 import models.exceptions.SerializationException;
 import models.interfaces.Debuggable;
+import models.trainers.FitResults;
 import options.Constants;
 
 import java.util.*;
@@ -10,17 +11,33 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.UUID;
 
+/**
+ * Класс с описанием эксперимента для исследования зависимости влияния отдельных параметров. Представляет собой
+ *  обёртку вокруг набора {@link RunConfiguration}. Подразумевается, что в одном эксперименте задаются связанные
+ *  {@link RunConfiguration} с разными параметрами, влияние которых исследуется в рамках эксперимента.
+ * Параметры модели:
+ *  {@link Logger} - логгер;
+ *  {@link MyId} - идентификатор;
+ *  description - описание (например, "Влияние размера выборки");
+ *  список<{@link RunConfiguration}> - набор конфигураций, запускаемых в рамках эксперимента;
+ *  мапа<{@link RunConfiguration}, список<{@link FitResults}>> - отражение результатов обучения для каждой конфигурации;
+ *  мапа<{@link RunConfiguration}, <{@link FitResults}> - отражение наилучших результатов обучения для каждой конфигурации;
+ */
 public class ExperimentConfiguration implements Debuggable {
     private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-
     private final MyId myId;
 
     private final String description;
 
     private final List<RunConfiguration> runConfigurations;
-    private final Map<RunConfiguration, List<TrainResults>> resultsMap;
-    private final Map<RunConfiguration, TrainResults> bestResultsMap;
+    private final Map<RunConfiguration, List<FitResults>> resultsMap;
+    private final Map<RunConfiguration, FitResults> bestResultsMap;
 
+    /**
+     * Конструктор
+     * @param description  описание эксперимента (например, "Влияние размера выборки")
+     * @param runConfigurations  набор {@link RunConfiguration} для запуска эксперимента
+     */
     public ExperimentConfiguration(String description, @NotNull List<RunConfiguration> runConfigurations) {
         this.runConfigurations = runConfigurations;
         this.description = description;
@@ -61,49 +78,54 @@ public class ExperimentConfiguration implements Debuggable {
         return description;
     }
 
-    public Map<RunConfiguration, List<TrainResults>> getResultsMap() {
+    public Map<RunConfiguration, List<FitResults>> getResultsMap() {
         return resultsMap;
     }
 
-    public Map<RunConfiguration, TrainResults> getBestResultsMap() {
+    public Map<RunConfiguration, FitResults> getBestResultsMap() {
         return bestResultsMap;
     }
 
+    /**
+     * Запуск эксперимента
+     */
     public void run() {
         logger.fine(String.format("Запуск эксперимента \"%s\"", description));
         logger.finer("Эксперимент: " + toString(Constants.DEBUG_MODE));
 
-        HashSet<ExperimentConfigRunner> threads = new HashSet<>();
-        for (RunConfiguration runConfiguration: runConfigurations) {
-            ExperimentConfigRunner thread = new ExperimentConfigRunner(runConfiguration, myId);
-            thread.setName(String.format(ExperimentConfigRunner.NAME_PATTERN, thread.getMyId().toThreadId()));
-            threads.add(thread);
-            thread.start();
-        }
+        // формирование набора потоков, в которых будут запущены отдельные эксперименты
+        List<ExperimentConfigRunner> threads = runConfigurations.stream()
+                .map(runConfiguration -> new ExperimentConfigRunner(runConfiguration, myId))
+                .collect(Collectors.toList());
 
-        Utils.joinThreads(threads);
+        Utils.startThreads(threads);  // запуск потоков
 
+        Utils.joinThreads(threads);  // ожидание завершения потоков
+
+        // получение результатов для каждой конфигурации
         for (ExperimentConfigRunner thread: threads) {
-            resultsMap.get(thread.getRunConfiguration()).addAll(thread.getTrainResults());
-            bestResultsMap.put(thread.getRunConfiguration(), thread.getBestTrainResults());
+            resultsMap.get(thread.getRunConfiguration()).addAll(thread.getFitResults());
+            bestResultsMap.put(thread.getRunConfiguration(), thread.getBestFitResults());
         }
 
+        // получение наилучших результатов по всем конфигурациям эксперимента
         ExperimentConfigRunner bestResultsThread = threads.stream()
-                .min(Comparator.comparingDouble(r -> r.getBestTrainResults().getMaxAbsoluteError()))
+                .min(Comparator.comparingDouble(r -> r.getBestFitResults().getMaxAbsoluteError()))
                 .orElseThrow(() -> new RuntimeException(
                         String.format("Ошибка при получении результатов эксперимента \"%s\"", description)));
 
+        // вывод
         if (Constants.PRINT_REQUIRED && Constants.PRINT_EXPERIMENT_BEST.isRequired())
-            logger.info(Utils.runConfigurationAndTrainResultsToString(
-                    String.format("Наилучшие результаты обучения для всех конфигураций [эксперимент \"%s\"]", description),
-                    bestResultsThread.getRunConfiguration(), bestResultsThread.getBestTrainResults(),
-                    Constants.PRINT_EXPERIMENT_BEST, Constants.DEBUG_MODE, Constants.TABLE_PART,
-                    Constants.DOUBLE_FORMAT));
+            logger.info(String.format("Наилучшие результаты обучения для всех конфигураций [эксперимент \"%s\"]\n", description) +
+                    Utils.runConfigurationAndFitResultsToString(bestResultsThread.getRunConfiguration(),
+                            bestResultsThread.getBestFitResults(), Constants.PRINT_EXPERIMENT_BEST,
+                            Constants.DEBUG_MODE, Constants.TABLE_PART, Constants.DOUBLE_FORMAT));
 
+        // сохранение сети
         if (Constants.SAVE_REQUIRED && Constants.SAVE_EXPERIMENT_BEST) {
-            bestResultsThread.getBestTrainResults().getNetwork().clear();
+            bestResultsThread.getBestFitResults().getNetwork().clear();
             try {
-                Utils.save(bestResultsThread.getBestTrainResults().getNetwork(), Constants.SAVE_FOLDER,
+                Utils.save(bestResultsThread.getBestFitResults().getNetwork(), Constants.SAVE_FOLDER,
                         String.format(Constants.SAVE_NETWORK_PATTERN,
                                 bestResultsThread.getRunConfiguration().getMyId().getUid() + '_' + System.currentTimeMillis()));
             } catch (SerializationException e) {
@@ -116,7 +138,7 @@ public class ExperimentConfiguration implements Debuggable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ExperimentConfiguration)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         ExperimentConfiguration that = (ExperimentConfiguration) o;
         return Objects.equals(myId, that.myId) &&
                Objects.equals(description, that.description) &&
@@ -141,6 +163,7 @@ public class ExperimentConfiguration implements Debuggable {
                 '}';
     }
 
+    @Override
     public String toString(boolean debugMode) {
         if (debugMode)
             return toString();

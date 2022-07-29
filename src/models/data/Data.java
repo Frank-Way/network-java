@@ -40,7 +40,7 @@ public class Data implements Copyable<Data> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Data)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         Data data = (Data) o;
         return Objects.equals(getInputs(), data.getInputs()) &&
                Objects.equals(getOutputs(), data.getOutputs());

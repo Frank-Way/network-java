@@ -18,8 +18,6 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
     protected Matrix input;
     protected Matrix output;
     protected final int neurons;
-    protected final List<Matrix> parameters;
-    protected final List<Matrix> parameterGradients;
     protected final List<Operation> operations;
 
     public Layer(int neurons) {
@@ -28,8 +26,6 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
                     "Число нейронов слоя должно быть положительным (получено neurons=%d)", neurons));
         this.neurons = neurons;
         operations = new ArrayList<>();
-        parameters = new ArrayList<>();
-        parameterGradients = new ArrayList<>();
     }
 
     /***
@@ -38,14 +34,10 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
     protected Layer(Matrix input,
                     Matrix output,
                     int neurons,
-                    List<Matrix> parameters,
-                    List<Matrix> parameterGradients,
                     List<Operation> operations) {
         this.input = input;
         this.output = output;
         this.neurons = neurons;
-        this.parameters = parameters;
-        this.parameterGradients = parameterGradients;
         this.operations = operations;
     }
 
@@ -64,13 +56,10 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
     public Matrix backward(@NotNull Matrix outputGradient) {
         Matrix result = outputGradient.copy();
         MatrixOperations.assertSameShape(output, result);
-        parameterGradients.clear();
         Operation operation;
         for (int i = 0; i < operations.size(); i++) {
             operation = operations.get(operations.size() - 1 - i);
             result = operation.backward(result);
-            if (operation instanceof ParametrizedOperation)
-                addParameterGradient(0, ((ParametrizedOperation) operation).getParameterGradient());
         }
         return result;
     }
@@ -78,7 +67,6 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
     public void clear() {
         input = null;
         output = null;
-        parameterGradients.clear();
         operations.forEach(Operation::clear);
     }
 
@@ -94,44 +82,13 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
         return neurons;
     }
 
-    private List<Matrix> getParameters() {
-        return parameters;
-    }
-
-    public Matrix getParameter(int index) {
-        return parameters.get(index);
-    }
-
-    public void addParameter(@NotNull Matrix parameter) {
-        parameters.add(parameter);
-    }
-
-    public void addParameter(int index, @NotNull Matrix parameter) {
-        parameters.add(index, parameter);
-    }
-
-    public int parametersCount() {
-        return parameters.size();
-    }
-
-    private List<Matrix> getParameterGradients() {
-        return parameterGradients;
-    }
-
-    public Matrix getParameterGradient(int index) {
-        return parameterGradients.get(index);
-    }
-
-    public void addParameterGradient(@NotNull Matrix parameterGradient) {
-        parameterGradients.add(parameterGradient);
-    }
-
-    public void addParameterGradient(int index, @NotNull Matrix parameterGradient) {
-        parameterGradients.add(index, parameterGradient);
-    }
-
-    public int parameterGradientsCount() {
-        return parameterGradients.size();
+    public <T extends ParametrizedOperation> Matrix getParameter(Class<T> operationClass) {
+        return operations.stream()
+                .filter(operation -> operation.getClass().equals(operationClass))
+                .map(operation -> (ParametrizedOperation) operation)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Слой не имеет операции типа: " + operationClass.toString()))
+                .getParameter();
     }
 
     private List<Operation> getOperations() {
@@ -140,6 +97,13 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
 
     public Operation getOperation(int index) {
         return operations.get(index);
+    }
+
+    public List<ParametrizedOperation> getParametrizedOperations() {
+        return operations.stream()
+                .filter(operation -> operation instanceof ParametrizedOperation)
+                .map(operation -> (ParametrizedOperation) operation)
+                .collect(Collectors.toList());
     }
 
     public void addOperation(@NotNull Operation operation) {
@@ -160,19 +124,17 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Layer)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         Layer layer = (Layer) o;
         return neurons == layer.neurons &&
                Objects.equals(input, layer.input) &&
                Objects.equals(output, layer.output) &&
-               Objects.equals(parameters, layer.parameters) &&
-               Objects.equals(parameterGradients, layer.parameterGradients) &&
                Objects.equals(operations, layer.operations);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(input, output, neurons, getParameters(), getParameterGradients(), getOperations());
+        return Objects.hash(input, output, neurons, operations);
     }
 
     @Override
@@ -181,8 +143,6 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
                 "input=" + input +
                 ", output=" + output +
                 ", neurons=" + neurons +
-                ", parameters=" + parameters +
-                ", parameterGradients=" + parameterGradients +
                 ", operations=" + operations +
                 '}';
     }

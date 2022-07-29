@@ -1,14 +1,16 @@
 package utils;
 
-import sun.util.logging.LoggingSupport;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Date;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
+/**
+ * Форматтер, аналогичный {@link java.util.logging.SimpleFormatter}, но дополненный именем потока
+ */
 public class MyLogFormatter extends Formatter {
+    // немного изменённый формат для вывода миллисекунд, имени потока и без перевода на новую строку
     private static final String format = "%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS.%1$tL %1$Tp [%2$s] [%4$s] [%5$s]: %6$s%7$s%n";
     private final Date date = new Date();
 
@@ -24,6 +26,7 @@ public class MyLogFormatter extends Formatter {
         } else {
             source = record.getLoggerName();
         }
+        // получение имени потока по его ID
         int threadId = record.getThreadID();
         String threadName = Utils.getThread(threadId)
                 .map(Thread::getName)

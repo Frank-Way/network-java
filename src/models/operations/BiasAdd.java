@@ -4,15 +4,19 @@ import com.sun.istack.internal.NotNull;
 import models.math.Matrix;
 import utils.Utils;
 
+/**
+ * Добавление смещения
+ */
 public class BiasAdd extends ParametrizedOperation {
+
     public BiasAdd(@NotNull Matrix bias) {
         super(bias);
-        if (bias.getCols() != 1)
+        if (!bias.isCol())
             throw new IllegalArgumentException(String.format(
                     "Размерность матрицы (%d; %d) недопустима для смещения", bias.getRows(), bias.getCols()));
     }
 
-    /***
+    /**
      * copy-constructor
      */
     private BiasAdd(Matrix input, Matrix output, Matrix outputGradient, Matrix inputGradient, Matrix parameter, Matrix parameterGradient) {
@@ -21,30 +25,23 @@ public class BiasAdd extends ParametrizedOperation {
 
     @Override
     public BiasAdd copy() {
-        Matrix inputCopy = Utils.copyNullable(input);
-        Matrix outputCopy = Utils.copyNullable(output);
-        Matrix outputGradientCopy = Utils.copyNullable(outputGradient);
-        Matrix inputGradientCopy = Utils.copyNullable(inputGradient);
-        Matrix parameterCopy = Utils.copyNullable(parameter);
-        Matrix parameterGradientCopy = Utils.copyNullable(parameterGradient);
-
-        return new BiasAdd(inputCopy, outputCopy, outputGradientCopy, inputGradientCopy,
-                parameterCopy, parameterGradientCopy);
+        return new BiasAdd(Utils.copyNullable(input), Utils.copyNullable(output), Utils.copyNullable(outputGradient),
+                Utils.copyNullable(inputGradient), Utils.copyNullable(parameter), Utils.copyNullable(parameterGradient));
     }
 
     @Override
     protected Matrix computeOutput(@NotNull Matrix input) {
-        return input.addRow(parameter.transpose());
+        return input.addRow(parameter.transpose());  // добавление смещений как строки
     }
 
     @Override
     protected Matrix computeInputGradient(@NotNull Matrix outputGradient) {
-        return input.onesLike().mulCol(outputGradient);
+        return input.onesLike().mulCol(outputGradient);  // суммирование градиента определенным образом
     }
 
     @Override
     protected Matrix computeParameterGradient(@NotNull Matrix outputGradient) {
-        return outputGradient.sum(1).transpose();
+        return outputGradient.sum(1).transpose();  // суммирование градиента по строкам
     }
 
     @Override

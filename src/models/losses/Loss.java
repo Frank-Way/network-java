@@ -62,7 +62,7 @@ public abstract class Loss implements Copyable<Loss>, Debuggable, Serializable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Loss)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         Loss loss = (Loss) o;
         return Double.compare(output, loss.output) == 0 &&
                Objects.equals(prediction, loss.prediction) &&
@@ -85,6 +85,7 @@ public abstract class Loss implements Copyable<Loss>, Debuggable, Serializable {
                 '}';
     }
 
+    @Override
     public String toString(boolean debugMode) {
         if (debugMode)
             return toString();

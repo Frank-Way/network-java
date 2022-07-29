@@ -4,33 +4,27 @@ import com.sun.istack.internal.NotNull;
 import models.interfaces.Copyable;
 import models.layers.DenseLayer;
 import models.layers.Layer;
-import utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class NetworkBuilder implements Copyable<NetworkBuilder> {
-    private final NetworkBuilderParameters builderParameters;
+/**
+ * Генератор/билдер сетей
+ */
+public abstract class NetworkBuilder implements Copyable<NetworkBuilder> {
+    private NetworkBuilder() {}
 
-    public NetworkBuilder(@NotNull NetworkBuilderParameters builderParameters) {
-        this.builderParameters = builderParameters;
-    }
-
-    public Network build() {
-        return NetworkBuilder.build(builderParameters);
-    }
-
+    /**
+     * Генерация сети с заданными параметрами, см. {@link NetworkBuilderParameters}
+     * @param builderParameters параметры сети
+     * @return сеть
+     */
     public static Network build(@NotNull NetworkBuilderParameters builderParameters) {
         List<Layer> layers = new ArrayList<>();
-        for (int layer = 0; layer < builderParameters.getSizes().size() - 1; layer++)
-            layers.add(new DenseLayer(builderParameters.getSize(layer),
-                    builderParameters.getSize(layer + 1),
-                    builderParameters.getActivation(layer).copy()));
-        return new Network(layers, builderParameters.getLoss().copy());
-    }
-
-    @Override
-    public NetworkBuilder copy() {
-        return new NetworkBuilder(Utils.copyNullable(builderParameters));
+        for (int layer = 0; layer < builderParameters.getSizes().size() - 1; layer++)  // сеть строится послойно
+            layers.add(new DenseLayer(builderParameters.getSize(layer),  // по заданным размерностям текущего
+                    builderParameters.getSize(layer + 1),  // и следующего слоёв
+                    builderParameters.getActivation(layer).copy()));  // с копией функции активации
+        return new Network(layers, builderParameters.getLoss().copy());  // в сеть попадает копия потери
     }
 }

@@ -40,13 +40,11 @@ public class ExperimentConfigurations {
                                             false,
                                             DefaultParameters.PRE_TRAINS_COUNT,
                                             DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
-                                            new NetworkBuilder(
-                                                    new NetworkBuilderParameters(
-                                                            Arrays.asList(1, 8, 1),
-                                                            Arrays.asList(new Tanh(), new Linear()),
-                                                            new MeanSquaredError()
-                                                    )  // end NetworkBuilderParameters
-                                            ),  // end NetworkBuilder
+                                            new NetworkBuilderParameters(
+                                                    Arrays.asList(1, 8, 1),
+                                                    Arrays.asList(new Tanh(), new Linear()),
+                                                    new MeanSquaredError()
+                                            ),  // end NetworkBuilderParameters
                                             new SGD(DefaultParameters.START_LR, DefaultParameters.STOP_LR)
                                     )  // end FitParameters
                             )/*,  // end RunConfiguration
@@ -68,13 +66,11 @@ public class ExperimentConfigurations {
                                             true,
                                             DefaultParameters.PRE_TRAINS_COUNT,
                                             DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
-                                            new NetworkBuilder(
-                                                    new NetworkBuilderParameters(
-                                                            Arrays.asList(1, 8, 1),
-                                                            Arrays.asList(new Tanh(), new Linear()),
-                                                            new MeanSquaredError()
-                                                    )  // end NetworkBuilderParameters
-                                            ),  // end NetworkBuilder
+                                            new NetworkBuilderParameters(
+                                                    Arrays.asList(1, 8, 1),
+                                                    Arrays.asList(new Tanh(), new Linear()),
+                                                    new MeanSquaredError()
+                                            ),  // end NetworkBuilderParameters
                                             new SGD(DefaultParameters.START_LR, DefaultParameters.STOP_LR)
                                     )  // end FitParameters
                             )  // end RunConfiguration

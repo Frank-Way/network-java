@@ -18,12 +18,10 @@ public class DenseLayer extends Layer{
 
         Matrix weight = MatrixOperations.getRandomMatrixNormal(inputs, neurons, 0, scale);
         addOperation(new WeightMultiply(weight));
-        addParameter(weight);
 
         Matrix bias = MatrixOperations.getRandomMatrixNormal(neurons, 1, 0, scale);
         addOperation(new BiasAdd(bias));
-        addParameter(bias);
-        
+
         addOperation(activation);
     }
 
@@ -33,21 +31,17 @@ public class DenseLayer extends Layer{
     private DenseLayer(Matrix input,
                       Matrix output,
                       int neurons,
-                      List<Matrix> parameters,
-                      List<Matrix> parameterGradients,
                       List<Operation> operations) {
-        super(input, output, neurons, parameters, parameterGradients, operations);
+        super(input, output, neurons, operations);
     }
 
     @Override
     public DenseLayer copy() {
         Matrix inputCopy = Utils.copyNullable(input);
         Matrix outputCopy = Utils.copyNullable(output);
-        List<Matrix> parametersCopy = parameters.stream().map(Utils::copyNullable).collect(Collectors.toList());
-        List<Matrix> parameterGradientsCopy = parameterGradients.stream().map(Utils::copyNullable).collect(Collectors.toList());
         List<Operation> operationsCopy = operations.stream().map(Utils::copyNullable).collect(Collectors.toList());
 
-        return new DenseLayer(inputCopy, outputCopy, neurons, parametersCopy, parameterGradientsCopy, operationsCopy);
+        return new DenseLayer(inputCopy, outputCopy, neurons, operationsCopy);
     }
 
     @Override

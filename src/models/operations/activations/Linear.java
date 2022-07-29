@@ -5,6 +5,11 @@ import models.math.Matrix;
 import models.operations.Operation;
 import utils.Utils;
 
+/**
+ * Линейная функция активации (без активации).
+ * f(x) = x
+ * f'(x) = 1
+ */
 public class Linear extends Operation {
     public Linear() {
         super();
@@ -19,22 +24,18 @@ public class Linear extends Operation {
 
     @Override
     protected Matrix computeOutput(@NotNull Matrix input) {
-        return input;
+        return input;  // вход передаётся на выход без изменений
     }
 
     @Override
     protected Matrix computeInputGradient(@NotNull Matrix outputGradient) {
-        return outputGradient;
+        return outputGradient;  // градиент с выхода передаётся на вход без изменений
     }
 
     @Override
     public Linear copy() {
-        Matrix inputCopy = Utils.copyNullable(input);
-        Matrix outputCopy = Utils.copyNullable(output);
-        Matrix outputGradientCopy = Utils.copyNullable(outputGradient);
-        Matrix inputGradientCopy = Utils.copyNullable(inputGradient);
-
-        return new Linear(inputCopy, outputCopy, outputGradientCopy, inputGradientCopy);
+        return new Linear(Utils.copyNullable(input), Utils.copyNullable(output),
+                Utils.copyNullable(outputGradient), Utils.copyNullable(inputGradient));
     }
 
     @Override

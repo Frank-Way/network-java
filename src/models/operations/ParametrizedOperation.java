@@ -6,10 +6,19 @@ import models.math.MatrixOperations;
 
 import java.util.Objects;
 
+/**
+ * Операция с параметром, наследник {@link Operation}. Параметры модели:
+ *  parameter - параметр;
+ *  parameterGradient - градиент по параметру.
+ */
 public abstract class ParametrizedOperation extends Operation {
     protected Matrix parameter;
     protected Matrix parameterGradient;
 
+    /**
+     * Конструктор
+     * @param parameter параметр
+     */
     protected ParametrizedOperation(@NotNull Matrix parameter) {
         super();
         this.parameter = parameter;
@@ -19,11 +28,11 @@ public abstract class ParametrizedOperation extends Operation {
      * copy-constructor
      */
     protected ParametrizedOperation(Matrix input,
-                                 Matrix output,
-                                 Matrix outputGradient,
-                                 Matrix inputGradient,
-                                 Matrix parameter,
-                                 Matrix parameterGradient) {
+                                    Matrix output,
+                                    Matrix outputGradient,
+                                    Matrix inputGradient,
+                                    Matrix parameter,
+                                    Matrix parameterGradient) {
         super(input, output, outputGradient, inputGradient);
         this.parameter = parameter;
         this.parameterGradient = parameterGradient;
@@ -31,27 +40,31 @@ public abstract class ParametrizedOperation extends Operation {
 
     @Override
     public Matrix backward(@NotNull Matrix outputGradient) {
-        this.outputGradient = outputGradient.copy();
-        MatrixOperations.assertSameShape(output, this.outputGradient);
+        this.outputGradient = outputGradient.copy();  // сохраняется копия
+        MatrixOperations.assertSameShape(output, this.outputGradient);  // проверка совпадения размерностей
 
-        inputGradient = computeInputGradient(this.outputGradient);
-        MatrixOperations.assertSameShape(input, inputGradient);
+        inputGradient = computeInputGradient(this.outputGradient);  // вычисление градиента на входе
+        MatrixOperations.assertSameShape(input, inputGradient);  // проверка совпадения размерностей
 
-        parameterGradient = computeParameterGradient(this.outputGradient);
-        MatrixOperations.assertSameShape(parameter, parameterGradient);
+        parameterGradient = computeParameterGradient(this.outputGradient);  // вычисление градиента по параметру
+        MatrixOperations.assertSameShape(parameter, parameterGradient);  // проверка совпадения размерностей
 
         return inputGradient;
     }
 
-    @Override
+    /**
+     * Очистка промежуточных результатов
+     */
     public void clear() {
         super.clear();
         parameterGradient = null;
     }
 
-    @Override
-    public abstract ParametrizedOperation copy();
-
+    /**
+     * Вычисление градиента по параметру (реализуется наследниками)
+     * @param outputGradient градиент на выходе
+     * @return градиент по параметру
+     */
     protected abstract Matrix computeParameterGradient(@NotNull Matrix outputGradient);
 
     public Matrix getParameter() {
@@ -67,9 +80,12 @@ public abstract class ParametrizedOperation extends Operation {
     }
 
     @Override
+    public abstract ParametrizedOperation copy();
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ParametrizedOperation)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         ParametrizedOperation that = (ParametrizedOperation) o;
         return Objects.equals(parameter, that.parameter) &&
