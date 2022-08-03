@@ -41,13 +41,13 @@ public abstract class ParametrizedOperation extends Operation {
     @Override
     public Matrix backward(@NotNull Matrix outputGradient) {
         this.outputGradient = outputGradient.copy();  // сохраняется копия
-        MatrixOperations.assertSameShape(output, this.outputGradient);  // проверка совпадения размерностей
+        output.assertSameShape(this.outputGradient);  // проверка совпадения размерностей
 
         inputGradient = computeInputGradient(this.outputGradient);  // вычисление градиента на входе
-        MatrixOperations.assertSameShape(input, inputGradient);  // проверка совпадения размерностей
+        input.assertSameShape(inputGradient);  // проверка совпадения размерностей
 
         parameterGradient = computeParameterGradient(this.outputGradient);  // вычисление градиента по параметру
-        MatrixOperations.assertSameShape(parameter, parameterGradient);  // проверка совпадения размерностей
+        parameter.assertSameShape(parameterGradient);  // проверка совпадения размерностей
 
         return inputGradient;
     }

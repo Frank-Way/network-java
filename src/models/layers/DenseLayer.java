@@ -11,9 +11,25 @@ import utils.Utils;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Полносвязный слой
+ */
 public class DenseLayer extends Layer{
+    /**
+     * Конструктор. При создании инициализируются параметры (веса и смещения)
+     * @param inputs  количество входов слоя (нужно для определения формы матрицы весов)
+     * @param neurons размер слоя
+     * @param activation функция активации (контроль за тем, действительно ли операция является функцией активации,
+     *                   остаётся за пользователем)
+     */
     public DenseLayer(int inputs, int neurons, @NotNull Operation activation) {
         super(neurons);
+        /* для инициализации весов используется метод Ксавьера (Xavier или Glorot)
+
+        метод заключается в том, что параметры инициализируются в соответствии с нормальным распределением, у
+        которого математическое ожидание = 0, а СКО = 2 / (<количество входов> + <размер слоя>)
+
+        применение метода позволяет не увеличивать МО входных значений при прохождении по сети */
         double scale = 2.0 / (inputs + neurons);
 
         Matrix weight = MatrixOperations.getRandomMatrixNormal(inputs, neurons, 0, scale);

@@ -3,8 +3,15 @@ package models.losses;
 import models.math.Matrix;
 import utils.Utils;
 
+/**
+ * Среднеквадратическая ошибка.
+ * f(Y, T) = 1 / N * сумма[(Y - T) ^ 2], где Y - выходы сети, T - требуемые выходы сети, N - количество строк в выборке;
+ * f(Y, T) - скаляр.
+ * d/dY f(Y, T) = 2 * (Y - T) / N; d/dY f(Y, T) - матрица.
+ */
 public class MeanSquaredError extends Loss{
     public MeanSquaredError() {super();}
+
     /***
      * copy-constructor
      */
@@ -17,21 +24,35 @@ public class MeanSquaredError extends Loss{
 
     @Override
     protected double computeOutput(Matrix prediction, Matrix target) {
+        /*
+        [1]: prediction = Y
+        [2]: target = T
+        [3]: prediction.getRows() = N
+        [4]: [1].sub([2]) = Y - T
+        [5]: [4].mul([4]) = (Y - T) ^ 2
+        [6]: [5].sum() = сумма[(Y - T) ^ 2]
+        [7]: [6] / [3] = 1 / N * сумма[(Y - T) ^ 2]
+         */
         return prediction.sub(target).mul(prediction.sub(target)).sum() / prediction.getRows();
     }
 
     @Override
     protected Matrix computeInputGradient(Matrix prediction, Matrix target) {
+        /*
+        [1]: prediction = Y
+        [2]: target = T
+        [3]: prediction.getRows() = N
+        [4]: [1].sub([2]) = Y - T
+        [5]: [4].mul(2) = 2 * (Y - T)
+        [6]: [5].div([3]) = 2 * (Y - T) / N
+         */
         return prediction.sub(target).mul(2).div(prediction.getRows());
     }
 
     @Override
     public MeanSquaredError copy() {
-        Matrix predictionCopy = Utils.copyNullable(prediction);
-        Matrix targetCopy = Utils.copyNullable(target);
-        Matrix inputGradientCopy = Utils.copyNullable(inputGradient);
-
-        return new MeanSquaredError(predictionCopy, targetCopy, output, inputGradientCopy);
+        return new MeanSquaredError(Utils.copyNullable(prediction), Utils.copyNullable(target),
+                output, Utils.copyNullable(inputGradient));
     }
 
     @Override

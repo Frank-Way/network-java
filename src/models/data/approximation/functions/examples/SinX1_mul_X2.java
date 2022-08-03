@@ -7,6 +7,9 @@ import models.data.approximation.functions.VariableRange;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * f(x, y) = y * sin(x)
+ */
 public class SinX1_mul_X2 extends Function {
     public SinX1_mul_X2(@NotNull List<VariableRange> variableRanges) {
         super("sin(x1) * x2", variableRanges);

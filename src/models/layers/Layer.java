@@ -3,23 +3,35 @@ package models.layers;
 import com.sun.istack.internal.NotNull;
 import models.interfaces.Copyable;
 import models.math.Matrix;
-import models.math.MatrixOperations;
 import models.operations.Operation;
 import models.operations.ParametrizedOperation;
 import models.interfaces.Debuggable;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * Слой сети. Представляет собой набор {@link Operation}, которые выполняется при прямом и обратном проходе.
+ * Атрибуты модели:
+ *  input - входные значения;
+ *  output - выходные значения;
+ *  neurons - размер слоя;
+ *  список<{@link Operation}> - набор операций
+ */
 public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable {
     protected Matrix input;
     protected Matrix output;
     protected final int neurons;
     protected final List<Operation> operations;
 
+    /**
+     * Конструктор. Проверяется положительность размера слоя, при нарушении выбрасывается исключение.
+     * @param neurons размер слоя
+     */
     public Layer(int neurons) {
         if (neurons <= 0)
             throw new IllegalArgumentException(String.format(
@@ -28,7 +40,7 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
         operations = new ArrayList<>();
     }
 
-    /***
+    /**
      * copy-constructor
      */
     protected Layer(Matrix input,
@@ -41,7 +53,13 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
         this.operations = operations;
     }
 
+    /**
+     * Прямой проход (вычисление результата)
+     * @param input входные значения
+     * @return выходные значения
+     */
     public Matrix forward(@NotNull Matrix input) {
+        // вычисления производятся с копиями
         this.input = input.copy();
         Matrix result = input.copy();
 
@@ -53,17 +71,23 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
         return output;
     }
 
+    /**
+     * Обратный проход (вычисление градиентов)
+     * @param outputGradient градиент на выходе слоя
+     * @return градиент на входе слоя
+     */
     public Matrix backward(@NotNull Matrix outputGradient) {
         Matrix result = outputGradient.copy();
-        MatrixOperations.assertSameShape(output, result);
-        Operation operation;
-        for (int i = 0; i < operations.size(); i++) {
-            operation = operations.get(operations.size() - 1 - i);
-            result = operation.backward(result);
-        }
+        output.assertSameShape(outputGradient);
+        for (int i = 0; i < operations.size(); i++)
+            // операции берутся в обратном порядке
+            result = operations.get(operations.size() - 1 - i).backward(result);
         return result;
     }
 
+    /**
+     * Очистка промежуточных результатов
+     */
     public void clear() {
         input = null;
         output = null;
@@ -82,13 +106,21 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
         return neurons;
     }
 
+    /**
+     * Получение параметра по классу операции (класс - наследник {@link ParametrizedOperation}). Предполагается, что
+     * в слое нет двух операций с одинаковым классом.
+     * @param operationClass класс операции
+     * @param <T> класс операции
+     * @return параметр
+     */
     public <T extends ParametrizedOperation> Matrix getParameter(Class<T> operationClass) {
         return operations.stream()
-                .filter(operation -> operation.getClass().equals(operationClass))
-                .map(operation -> (ParametrizedOperation) operation)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Слой не имеет операции типа: " + operationClass.toString()))
-                .getParameter();
+                .filter(operation -> operation.getClass().equals(operationClass))  // проверка равенства классов
+                .map(operation -> (ParametrizedOperation) operation)  // преобразование к нужному классу
+                .findFirst()  // выбор первой операции
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Слой не имеет операции типа: " + operationClass.toString()))  // исключение, если нет операций
+                .getParameter();  // выбор параметра операции
     }
 
     private List<Operation> getOperations() {
@@ -99,11 +131,15 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
         return operations.get(index);
     }
 
+    /**
+     * Получение операций с параметром
+     * @return список операций с параметром
+     */
     public List<ParametrizedOperation> getParametrizedOperations() {
         return operations.stream()
-                .filter(operation -> operation instanceof ParametrizedOperation)
-                .map(operation -> (ParametrizedOperation) operation)
-                .collect(Collectors.toList());
+                .filter(operation -> operation instanceof ParametrizedOperation)  // фильтрация по классу
+                .map(operation -> (ParametrizedOperation) operation)  // преобразование к нужному типу
+                .collect(Collectors.toList());  // получение списка операций
     }
 
     public void addOperation(@NotNull Operation operation) {

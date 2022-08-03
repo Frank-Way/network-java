@@ -1,6 +1,9 @@
 package models.math;
 
+/**
+ * Перечисление типов случайных распределений
+ */
 enum RandomType {
-    UNIFORM(),
-    NORMAL()
+    UNIFORM(),  // равномерное
+    NORMAL()  // нормальное
 }

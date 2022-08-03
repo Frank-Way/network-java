@@ -6,6 +6,7 @@ import models.data.approximation.functions.examples.Sin2X;
 import models.data.approximation.functions.examples.SinX;
 import models.exceptions.SerializationException;
 import models.math.Matrix;
+import models.math.MatrixOperations;
 import models.networks.Network;
 import options.Constants;
 import options.DefaultParameters;
@@ -14,6 +15,7 @@ import utils.Utils;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -23,7 +25,7 @@ public class Test {
     public static void main(String[] args) {
         String networksDirectory = "networks";  // путь к директории с сетями
         Path pathToNetworks = Paths.get(networksDirectory);
-        String networkFilename = "network_aa2333d5-912b-400f-b853-99d1c65be6b1_1658846250971.dat";  // имя файла с сетью
+        String networkFilename = "network_3bb4b7a9-93f0-4df0-a335-30bc8d25f47f_1659520632364.dat";  // имя файла с сетью
         Network network = null;
         try {
             network = (Network) Utils.load(pathToNetworks.toAbsolutePath().toString(), networkFilename);  // десериализация

@@ -27,6 +27,64 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         this.cols = values[0].length;
     }
 
+    static enum Operator {
+        MUL,
+        ADD,
+        SUB,
+        DIV
+    }
+
+    private double applyOperator(Operator operator, double value1, double value2) {
+        switch (operator) {
+            case ADD:
+                return value1 + value2;
+            case SUB:
+                return value1 - value2;
+            case MUL:
+                return value1 * value2;
+            case DIV:
+                return value1 / value2;
+            default:
+                throw new IllegalArgumentException("Недопустимое значение operator=" + operator);
+        }
+    }
+
+    private Matrix doOperation(Operator operator, Matrix matrix) {
+        assertEqualRowsAndCols(matrix,
+                "Матрицы размерности (%d; %d) и (%d; %d) имеют разное количество столбцов и/или строк");
+        double[][] result = copy().values;
+        for (int row = 0; row < rows; row++)
+            for (int col = 0; col < cols; col++)
+                result[row][col] = applyOperator(operator, result[row][col], matrix.values[row][col]);
+        return new Matrix(result);
+    }
+
+    private Matrix doOperation(Operator operator, Number number) {
+        double[][] result = copy().values;
+        for (int row = 0; row < rows; row++)
+            for (int col = 0; col < cols; col++)
+                result[row][col] = applyOperator(operator, result[row][col], number.doubleValue());
+        return new Matrix(result);
+    }
+
+    private Matrix doColOperation(Operator operator, Matrix colMatrix) {
+        assertEqualRows(colMatrix, "Матрицы размерности (%d; %d) и (%d; %d) имеют разное количество строк");
+        double[][] result = copy().values;
+        for (int row = 0; row < rows; row++)
+            for (int col = 0; col < cols; col++)
+                result[row][col] = applyOperator(operator, result[row][col], colMatrix.values[row][0]);
+        return new Matrix(result);
+    }
+
+    private Matrix doRowOperation(Operator operator, Matrix rowMatrix) {
+        assertEqualCols(rowMatrix, "Матрицы размерности (%d; %d) и (%d; %d) имеют разное количество столбцов");
+        double[][] result = copy().values;
+        for (int row = 0; row < rows; row++)
+            for (int col = 0; col < cols; col++)
+                result[row][col] *= rowMatrix.values[0][col];
+        return new Matrix(result);
+    }
+
     /**
      * Является ли матрица вектором-строкой
      * @return результат проверки (количество строк = 1)
@@ -104,7 +162,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return valuesToString("%10.5f");
     }
 
-    protected double[][] getValues() {
+    private double[][] getValues() {
         return this.values;
     }
 
@@ -167,8 +225,13 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Матричное умножение
+     * @param matrix вторая матрица (её количество строк должно совпадать с количеством столбцов исходной матрицы)
+     * @return результат умножения (матрица размера rows1 x cols2)
+     */
     public Matrix mulMatrix(Matrix matrix) {
-        checkColsRows(matrix,
+        assertEqualColsRows(matrix,
                 "Матрица размерности (%d; %d) не может быть умножена на предоставленную матрицу размера (%d; %d)");
         double[][] result = new double[rows][matrix.cols];
         for (int row = 0; row < rows; row++)
@@ -177,8 +240,13 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Поэлементное умножение соразмерных матриц
+     * @param matrix вторая матрица
+     * @return результат умножения
+     */
     public Matrix mul(Matrix matrix) {
-        checkRowsAndCols(matrix,
+        assertEqualRowsAndCols(matrix,
                 "Матрица размерности (%d; %d) не может быть поэлементно умножена на предоставленную матрицу размера (%d; %d)");
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
@@ -187,8 +255,14 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Умножение на вектор-столбец (каждый элемент строки исходной матрицы умножается на один и тот же элемент
+     * вектора-столбца, соответствующий строке)
+     * @param colMatrix вектор-столбец (его количество строк должно совпадать с количеством строк исходной матрицы)
+     * @return результат умножения
+     */
     public Matrix mulCol(Matrix colMatrix) {
-        checkRows(colMatrix,
+        assertEqualRows(colMatrix,
                 "Матрица размерности (%d; %d) не может быть умножена на предоставленный вектор-столбец размера (%d; %d)");
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
@@ -197,8 +271,14 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Умножение на вектор-строку (каждый элемент столбца исходной матрицы умножается на один и тот же элемент
+     * вектора-строки, соответствующий столбцу)
+     * @param rowMatrix вектор-строка (его количество столбцов должно совпадать с количеством столбцов исходной матрицы)
+     * @return результат умножения
+     */
     public Matrix mulRow(Matrix rowMatrix) {
-        checkCols(rowMatrix,
+        assertEqualCols(rowMatrix,
                 "Матрица размерности (%d; %d) не может быть умножена на предоставленный вектор-строка размера (%d; %d)");
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
@@ -207,6 +287,11 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Умножение на скаляр
+     * @param number скаляр
+     * @return результат умножения
+     */
     public Matrix mul(Number number) {
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
@@ -215,8 +300,13 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Поэлементное сложение соразмерных матриц
+     * @param matrix вторая матрица
+     * @return результат сложения
+     */
     public Matrix add(Matrix matrix) {
-        checkRowsAndCols(matrix,
+        assertEqualRowsAndCols(matrix,
                 "Матрица размерности (%d; %d) не может быть сложена с предоставленной матрицей размера (%d; %d)");
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
@@ -225,8 +315,13 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Сложение с вектором-столбцом (см. метод mulCol)
+     * @param colMatrix вектор-столбец
+     * @return результат сложения
+     */
     public Matrix addCol(Matrix colMatrix) {
-        checkRows(colMatrix,
+        assertEqualRows(colMatrix,
                 "Матрица размерности (%d; %d) не может быть сложена с предоставленным вектором-столбцом размера (%d; %d)");
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
@@ -235,8 +330,13 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Сложение с вектором-строкой (см. метод mulRow)
+     * @param rowMatrix вектор-строка
+     * @return результат сложения
+     */
     public Matrix addRow(Matrix rowMatrix) {
-        checkCols(rowMatrix,
+        assertEqualCols(rowMatrix,
                 "Матрица размерности (%d; %d) не может быть сложена с предоставленным вектором-строкой размера (%d; %d)");
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
@@ -246,6 +346,11 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Сложение со скаляром
+     * @param number скаляр
+     * @return результат сложения
+     */
     public Matrix add(Number number) {
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
@@ -254,8 +359,13 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Поэлементное вычитание соразмерных матриц
+     * @param matrix вторая матрица
+     * @return результат вычитания
+     */
     public Matrix sub(Matrix matrix) {
-        checkRowsAndCols(matrix,
+        assertEqualRowsAndCols(matrix,
                 "Из матрицы размерности (%d; %d) не может быть вычтена предоставленная матрица размера (%d; %d)");
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
@@ -264,8 +374,13 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Вычитание вектора-столбца (см. метод mulCol)
+     * @param colMatrix вектор-столбец
+     * @return результат вычитания
+     */
     public Matrix subCol(Matrix colMatrix) {
-        checkRows(colMatrix,
+        assertEqualRows(colMatrix,
                 "Из матрицы размерности (%d; %d) не может быть вычтен предоставленный вектор-столбец размера (%d; %d)");
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
@@ -274,8 +389,13 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Вычитание вектора-строки (см. метод mulCol)
+     * @param rowMatrix вектор-строка
+     * @return результат вычитания
+     */
     public Matrix subRow(Matrix rowMatrix) {
-        checkCols(rowMatrix,
+        assertEqualCols(rowMatrix,
                 "Из матрицы размерности (%d; %d) не может быть вычтен предоставленный вектор-строка размера (%d; %d)");
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
@@ -284,6 +404,11 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Вычитание скаляра
+     * @param number скаляр
+     * @return результат вычитания
+     */
     public Matrix sub(Number number) {
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
@@ -292,8 +417,13 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Поэлементное деление соразмерных матриц
+     * @param matrix вторая матрица
+     * @return результат деления
+     */
     public Matrix div(Matrix matrix) {
-        checkRowsAndCols(matrix,
+        assertEqualRowsAndCols(matrix,
                 "Матрица размерности (%d; %d) не может быть поделена на предоставленную матрицу размера (%d; %d)");
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
@@ -302,8 +432,13 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Деление на вектор-столбец (см. метод mulCol)
+     * @param colMatrix вектор-столбец
+     * @return результат деления
+     */
     public Matrix divCol(Matrix colMatrix) {
-        checkRows(colMatrix,
+        assertEqualRows(colMatrix,
                 "Матрица размерности (%d; %d) не может быть поделена на предоставленный вектор-столбец размера (%d; %d)");
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
@@ -312,8 +447,13 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Деление на вектор-строку (см. метод mulRow)
+     * @param rowMatrix вектор-строка
+     * @return результат деления
+     */
     public Matrix divRow(Matrix rowMatrix) {
-        checkCols(rowMatrix,
+        assertEqualCols(rowMatrix,
                 "Матрица размерности (%d; %d) не может быть поделена на предоставленный вектор-строку размера (%d; %d)");
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
@@ -322,6 +462,11 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Деление на скаляр
+     * @param number скаляр
+     * @return результат деления
+     */
     public Matrix div(Number number) {
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
@@ -330,6 +475,10 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Суммирование всех элементов матрицы
+     * @return сумма
+     */
     public double sum() {
         double result = 0.0;
         for (int row = 0; row < rows; row++)
@@ -338,6 +487,13 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return result;
     }
 
+    /**
+     * Суммирование матрицы по осям. Если ось = 0, то в результате будет получен вектор-столбец, каждый элемент которого
+     * является суммой соответствующей строки исходной матрицы. Если ось = 1, то в результате будет получен-вектор
+     * строка, каждый элемент которого является суммой соответствующего столбца исходной матрицы.
+     * @param axis ось (0 или 1)
+     * @return вектор сумм
+     */
     public Matrix sum(int axis) {
         double[][] result;
         double s;
@@ -365,6 +521,10 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         }
     }
 
+    /**
+     * Поиск минимального значения среди всех элементов матрицы
+     * @return минимальное значение
+     */
     public double min() {
         double result = Double.MAX_VALUE;
         for (int row = 0; row < rows; row++)
@@ -373,6 +533,11 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return result;
     }
 
+    /**
+     * Поиск минимального значения по осям (см. метод sum(int axis))
+     * @param axis ось
+     * @return вектор минимальных значений
+     */
     public Matrix min(int axis) {
         double[][] result;
         switch (axis) {
@@ -395,6 +560,10 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         }
     }
 
+    /**
+     * Поиск максимального значения среди всех элементов матрицы
+     * @return максимальное значение
+     */
     public double max() {
         double result = Double.MIN_VALUE;
         for (int row = 0; row < rows; row++)
@@ -403,6 +572,11 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return result;
     }
 
+    /**
+     * Поиск максимального значения по осям (см. метод sum(int axis))
+     * @param axis ось
+     * @return вектор максимальных значений
+     */
     public Matrix max(int axis) {
         double[][] result;
         switch (axis) {
@@ -425,6 +599,10 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         }
     }
 
+    /**
+     * Транспонирование матрицы
+     * @return транспонированная матрица
+     */
     public Matrix transpose() {
         double[][] result = new double[cols][rows];
         for (int row = 0; row < rows; row++)
@@ -433,34 +611,88 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return new Matrix(result);
     }
 
-    public Matrix getSlice(int start, int stop, int step) {
-        if (start > stop || start > rows || stop > rows)
+    /**
+     * Получение среза по строкам
+     * @param start начало
+     * @param stop конец (не включается)
+     * @param step шаг
+     * @return срез
+     */
+    public Matrix getRowSlice(int start, int stop, int step) {
+        if (start > stop || start > rows || stop > rows || step < 1)
             throw new IllegalArgumentException(String.format(
                     "Недопустимые аргументы для среза (start=%d, stop=%d, step=%d)", start, stop, step));
         int rows = (int)Math.ceil((stop - start) * 1.0 / step);
         double[][] result = new double[rows][cols];
         for (int row = 0; row < rows; row++)
             for (int col = 0; col < cols; col++)
-                result[row][col] = values[start + row][col];
+                result[row][col] = values[start + row * step][col];
         return new Matrix(result);
     }
 
+    /**
+     * Получение среза по столбцам
+     * @param start начало
+     * @param stop конец (не включается)
+     * @param step шаг
+     * @return срез
+     */
+    public Matrix getColSlice(int start, int stop, int step) {
+        if (start > stop || start > cols || stop > cols || step < 1)
+            throw new IllegalArgumentException(String.format(
+                    "Недопустимые аргументы для среза (start=%d, stop=%d, step=%d)", start, stop, step));
+        int cols = (int)Math.ceil((stop - start) * 1.0 / step);
+        double[][] result = new double[rows][cols];
+        for (int row = 0; row < rows; row++)
+            for (int col = 0; col < cols; col++)
+                result[row][col] = values[row][start + col * step];
+        return new Matrix(result);
+    }
+
+    /**
+     * Получение матрицы такой же размерности, заполненной единицами
+     * @return матрица единиц
+     */
     public Matrix onesLike() {
         return new Matrix(new double[rows][cols]).add(1);
     }
 
+    /**
+     * Получение матрицы такой же размерности, заполненной нулями
+     * @return матрица нулей
+     */
     public Matrix zerosLike() {
         return new Matrix(new double[rows][cols]);
     }
 
+    /**
+     * Получение списка с пакетами заданного размера, получаемых путем разбиения исходной матрицы
+     * @param batchSize размер пакетов
+     * @return список пакетов
+     */
     public List<Matrix> getBatches(int batchSize) {
         List<Matrix> result = new ArrayList<>();
-        for (int i = 0; i < rows; i = i + batchSize) {
-            result.add(getSlice(i, Math.min(i + batchSize, rows), 1));
-        }
+        for (int i = 0; i < rows; i = i + batchSize)
+            result.add(getRowSlice(i, Math.min(i + batchSize, rows), 1));
         return result;
     }
 
+    /**
+     * Расширение матрицы путем заполнения пропусков одинаковыми значениями.
+     * Пусть имеется матрица [[1, 2],
+     *                        [3, 4]].
+     * Тогда при factor = 3 и axis = 0 результат будет [[1, 2],
+     *                                                  [1, 2],
+     *                                                  [1, 2],
+     *                                                  [3, 4],
+     *                                                  [3, 4],
+     *                                                  [3, 4]].
+     * А при factor = 3 и axis = 1 - [[1, 1, 1, 2, 2, 2],
+     *                                [3, 3, 3, 4, 4, 4]].
+     * @param factor множитель
+     * @param axis ось (0 или 1)
+     * @return расширенная матрица
+     */
     public Matrix extend(int factor, int axis) {
         double[][] result;
         switch (axis) {
@@ -484,24 +716,31 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         }
     }
 
+    /**
+     * Конкатенация матриц. Если ось = 0, то конкатенация горизонтальная (матрицы "складываются слева-направо").
+     * Если ось = 1, то конкатенация вертикальная (матрицы "складываются сверху-вниз")
+     * @param matrix вторая матрица (должны совпадать размерности - при горизонтальной столбцы, при вертикальной строки)
+     * @param axis ось (0 или 1)
+     * @return конкатенированная матрица
+     */
     public Matrix stack(Matrix matrix, int axis) {
         double[][] result;
         switch (axis) {
             case 0:
-                checkRows(matrix,
+                assertEqualRows(matrix,
                         "Матрица размерностью (%d; %d) не может быть горизонтально конкатенирована" +
                                 " с матрицей размерности (%d; %d)");
                 result = new double[rows][cols + matrix.cols];
                 for (int row = 0; row < rows; row++) {
-                    for (int col1 = 0; col1 < cols; col1++) {
+                    for (int col1 = 0; col1 < cols; col1++)
                         result[row][col1] = values[row][col1];
-                    }
+
                     for (int col2 = 0; col2 < matrix.cols; col2++)
                         result[row][cols + col2] = matrix.values[row][col2];
                 }
                 return new Matrix(result);
             case 1:
-                checkCols(matrix,
+                assertEqualCols(matrix,
                         "Матрица размерностью (%d; %d) не может быть вертикально конкатенирована" +
                                 " с матрицей размерности (%d; %d)");
                 result = new double[rows + matrix.rows][cols];
@@ -515,65 +754,211 @@ public class Matrix implements Copyable<Matrix>, Serializable {
             default:
                 throw new IllegalArgumentException(String.format(
                         "Недопустимый параметр stack axis=%d (допустимы: %d, %d)", axis, 0, 1));
-
         }
     }
 
+    /**
+     * Перемешивание матрицы случайным образом по строкам
+     * @return перемешанная матрица
+     */
+    public Matrix shuffle() {
+        return shuffle(0);
+    }
+
+    /**
+     * Перемешивание матрицы случайным образом по заданной оси. Если ось = 0, то переставляются строки. Если ось = 1,
+     * то переставляются столбцы
+     * @param axis ось
+     * @return перемешанная матрица
+     */
+    public Matrix shuffle(int axis) {
+        switch (axis) {
+            case 0:
+                return shuffle(MatrixOperations.getRandomRangePermutation(rows), axis);
+            case 1:
+                return shuffle(MatrixOperations.getRandomRangePermutation(cols), axis);
+            default:
+                throw new IllegalArgumentException(String.format(
+                        "Недопустимый параметр shuffle axis=%d (допустимы: %d, %d)", axis, 0, 1));
+        }
+    }
+
+    /**
+     * Перемешивание матрицы в соответствии с заданными индексами (контроль за корректностью указания индексов остаётся
+     * за пользователем) по заданной оси
+     * @param indices индексы
+     * @param axis ось
+     * @return перемешанная матрица
+     */
+    public Matrix shuffle(int[] indices, int axis) {
+        double[][] result = new double[rows][cols];
+        switch (axis) {
+            case 0:
+                if (indices.length != rows)
+                    throw new IllegalArgumentException(String.format(
+                            "Количество индексов должно совпадать с количеством строк (получено: %d, %d)",
+                            indices.length, rows));
+                for (int row = 0; row < rows; row++)
+                    result[row] = getValue(indices[row]);
+                break;
+            case 1:
+                if (indices.length != cols)
+                    throw new IllegalArgumentException(String.format(
+                            "Количество индексов должно совпадать с количеством столбцов (получено: %d, %d)",
+                            indices.length, cols));
+                for (int row = 0; row < rows; row++)
+                    for (int col = 0; col < cols; col++)
+                        result[row][col] = getValue(row, indices[col]);
+                break;
+            default:
+                throw new IllegalArgumentException(String.format(
+                        "Недопустимый параметр shuffle axis=%d (допустимы: %d, %d)", axis, 0, 1));
+        }
+        return new Matrix(result);
+    }
+
+    /**
+     * Получение абсолютных значений
+     * @return матрица абсолютных значений
+     */
     public Matrix abs() {
         return MatrixOperations.Functions.abs(this);
     }
 
+    /**
+     * Возведение в степень
+     * @param scale степень
+     * @return матрица, каждый элемент которой возведен в указанную степень
+     */
     public Matrix pow(double scale) {
         return MatrixOperations.Functions.pow(this, scale);
     }
 
+    /**
+     * Проверка совпадения размерностей, при несовпадении выбрасывается исключение
+     * @param matrix вторая матрица
+     */
+    public void assertSameShape(Matrix matrix) {
+        if (!isRowsAndColsEqual(matrix))
+            throw new IllegalArgumentException(String.format("Формы матриц (%d; %d) и (%d; %d) не совпадает",
+                    rows, cols, matrix.rows, matrix.cols));
+    }
+
+    /**
+     * Проверка, является ли матрица вектором-столбцом, при несовпадении выбрасывается исключение
+     */
+    public void assertColMatrix() {
+        if (!isCol())
+            throw new IllegalArgumentException(String.format("Матрица размерности (%d; %d) не является столбцом",
+                    rows, cols));
+    }
+
+    /**
+     * Проверка, является ли матрица вектором-строкой, при несовпадении выбрасывается исключение
+     */
+    public void assertRowMatrix() {
+        if (!isRow())
+            throw new IllegalArgumentException(String.format("Матрица размерности (%d; %d) не является строкой",
+                    rows, cols));
+    }
+
+    /**
+     * Проверка равенства количества строк и столбцов
+     * @param matrix вторая матрица
+     * @return true, если матрицы соразмерны; иначе false
+     */
     protected boolean isRowsAndColsEqual(Matrix matrix) {
         return isRowsEqual(matrix) && isColsEqual(matrix);
     }
 
+    /**
+     * Проверка равенства количества строк
+     * @param matrix вторая матрица
+     * @return true, если количество строк совпадает
+     */
     protected boolean isRowsEqual(Matrix matrix) {
         return this.rows == matrix.rows;
     }
 
+    /**
+     * Проверка равенства количества столбцов
+     * @param matrix вторая матрица
+     * @return true, если количество столбцов совпадает
+     */
     protected boolean isColsEqual(Matrix matrix) {
         return this.cols == matrix.cols;
     }
 
+    /**
+     * Проверка равенства количества строк исходной матрицы и количества столбцов второй матрицы
+     * @param matrix вторая матрица
+     * @return true, если количества совпадает
+     */
     protected boolean isRowsColsEqual(Matrix matrix) {
         return this.rows == matrix.cols;
     }
 
+    /**
+     * Проверка равенства количества столбцов исходной матрицы и количества строк второй матрицы
+     * @param matrix вторая матрица
+     * @return true, если количества совпадает
+     */
     protected boolean isColsRowsEqual(Matrix matrix) {
         return this.cols == matrix.rows;
     }
 
-    private void checkRows(Matrix matrix, String message) {
+    /**
+     * Проверка, основанная на isRowsEqual, при несовпадении выбрасывается исключение
+     * @param matrix вторая матрица
+     * @param message сообщение для исключения
+     */
+    private void assertEqualRows(Matrix matrix, String message) {
         if (!isRowsEqual(matrix))
             throw new IllegalArgumentException(String.format(message,
                     this.rows, this.cols, matrix.rows, matrix.cols));
     }
 
-    private void checkCols(Matrix matrix, String message) {
+    /**
+     * Проверка, основанная на isColsEqual, при несовпадении выбрасывается исключение
+     * @param matrix вторая матрица
+     * @param message сообщение для исключения
+     */
+    private void assertEqualCols(Matrix matrix, String message) {
         if (!isColsEqual(matrix))
             throw new IllegalArgumentException(String.format(message,
                     this.rows, this.cols, matrix.rows, matrix.cols));
     }
 
-    private void checkRowsCols(Matrix matrix, String message) {
+    /**
+     * Проверка, основанная на isRowsColsEqual, при несовпадении выбрасывается исключение
+     * @param matrix вторая матрица
+     * @param message сообщение для исключения
+     */
+    private void assertEqualRowsCols(Matrix matrix, String message) {
         if (!isRowsColsEqual(matrix))
             throw new IllegalArgumentException(String.format(message,
                     this.rows, this.cols, matrix.rows, matrix.cols));
     }
 
-    private void checkColsRows(Matrix matrix, String message) {
+    /**
+     * Проверка, основанная на isColsRowsEqual, при несовпадении выбрасывается исключение
+     * @param matrix вторая матрица
+     * @param message сообщение для исключения
+     */
+    private void assertEqualColsRows(Matrix matrix, String message) {
         if (!isColsRowsEqual(matrix))
             throw new IllegalArgumentException(String.format(message,
                     this.rows, this.cols, matrix.rows, matrix.cols));
     }
 
-    private void checkRowsAndCols(Matrix matrix, String message) {
-        checkRows(matrix, message);
-        checkCols(matrix, message);
+    /**
+     * Проверка, объединяющая assertEqualRows и assertEqualCols
+     * @param matrix вторая матрица
+     * @param message сообщение для исключения
+     */
+    private void assertEqualRowsAndCols(Matrix matrix, String message) {
+        assertEqualRows(matrix, message);
+        assertEqualCols(matrix, message);
     }
 
 }

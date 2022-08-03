@@ -7,6 +7,9 @@ import models.data.approximation.functions.VariableRange;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * f(x) = sin(2 * x)
+ */
 public class Sin2X extends Function {
     public Sin2X(@NotNull List<VariableRange> variableRanges) {
         super("sin(2 * x1)", variableRanges);

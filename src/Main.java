@@ -28,7 +28,7 @@ public class Main {
         }
 
 
-        List<ExperimentConfiguration> experimentConfigurations = ExperimentConfigurations.experimentConfigurations;
+        List<ExperimentConfiguration> experimentConfigurations = ExperimentConfigurations.getExperimentConfigurations();
         
         logger.fine("Успешно считаны конфигурации экспериментов");
         logger.finer(experimentConfigurations.stream()

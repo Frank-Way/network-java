@@ -1,6 +1,7 @@
 package models.trainers;
 
 import com.sun.istack.internal.NotNull;
+import models.data.Data;
 import models.math.Matrix;
 import models.math.MatrixOperations;
 import models.networks.Network;
@@ -29,11 +30,6 @@ public class Trainer {
      * @return  результаты корректировки
      */
     private static FitResults fitSingleTry(FitParameters parameters, Network network) {
-        Matrix x;
-        Matrix y;
-        List<Matrix> xBatches;
-        List<Matrix> yBatches;
-
         double bestTestLoss = Double.MAX_VALUE;  // наилучшая потеря на тестовой выборке
         Network bestNetwork = network;  // сеть, обеспечившая наилучшую потерю
 
@@ -61,38 +57,36 @@ public class Trainer {
         lastTestLosses.setMax();
 
         for (int epoch = 1; epoch <= parameters.getEpochs(); epoch++) {
-            x = parameters.getDataset().getTrainData().getInputs().copy();
-            y = parameters.getDataset().getTrainData().getOutputs().copy();
-            MatrixOperations.shuffleMatrices(x, y);
-            xBatches = x.getBatches(parameters.getBatchSize());
-            yBatches = y.getBatches(parameters.getBatchSize());
-            double trainLoss = 0.0;
-            for (int batch = 0; batch < xBatches.size(); batch++) {
-                trainLoss += network.trainBatch(xBatches.get(batch), yBatches.get(batch)) / parameters.getBatchSize();
-                optimizer.step();
+            double trainLoss = 0.0;  // потеря на обучающей выборке
+            for (Data batch: parameters.getDataset().getTrainData().getBatchesGenerator(parameters.getBatchSize(),
+                    true)) {
+                // обучение
+                trainLoss += network.trainBatch(batch.getInputs(), batch.getOutputs()) / parameters.getBatchSize();
+                optimizer.step();  // корректировка параметров
             }
-            optimizer.decay();
-            if (!queryAt.contains(epoch))
+
+            optimizer.decay();  // снижение скорости обучения
+            if (!queryAt.contains(epoch))  // нужна ли оценка
                 continue;
-            x = parameters.getDataset().getTestData().getInputs().copy();
-            y = parameters.getDataset().getTestData().getOutputs().copy();
-            MatrixOperations.shuffleMatrices(x, y);
-            xBatches = x.getBatches(parameters.getBatchSize());
-            yBatches = y.getBatches(parameters.getBatchSize());
-            double testLoss = 0.0;
-            for (int batch = 0; batch < xBatches.size(); batch++) {
-                testLoss += network.calculateLoss(xBatches.get(batch), yBatches.get(batch)) / parameters.getBatchSize();
-            }
-            if (testLoss < bestTestLoss) {
+
+            double testLoss = 0.0;  // потеря на тестовой выборке
+            for (Data batch: parameters.getDataset().getTestData().getBatchesGenerator(parameters.getBatchSize(),
+                    true))
+                testLoss += network.calculateLoss(batch.getInputs(), batch.getOutputs()) / parameters.getBatchSize();
+
+            if (testLoss < bestTestLoss) {  // сохранение наилучших результатов
                 bestTestLoss = testLoss;
                 bestNetwork = network.copy();
             }
+
             testLossesMap.put(epoch, testLoss);
             lastTrainLosses.push(trainLoss);
             lastTestLosses.push(testLoss);
+
             logger.info(String.format("Эпоха: %d, потеря при обучении: " + parameters.getDoubleFormat() + ", потеря при тестах: " +
                     parameters.getDoubleFormat(), epoch, trainLoss, testLoss));
-            if (!parameters.isEarlyStopping())
+
+            if (!parameters.isEarlyStopping())  // нужна ли ранняя остановка
                 continue;
             if (abortTrain(trainLoss, lastTrainLosses, parameters.getDoubleFormat(), earlyStopTriggeredMap, EarlyStopLossType.TRAIN) ||
                     abortTrain(testLoss, lastTestLosses, parameters.getDoubleFormat(), earlyStopTriggeredMap, EarlyStopLossType.TEST))

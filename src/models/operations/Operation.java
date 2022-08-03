@@ -55,10 +55,10 @@ public abstract class Operation implements Copyable<Operation>, Debuggable, Seri
      */
     public Matrix backward(@NotNull Matrix outputGradient) {
         this.outputGradient = outputGradient.copy();  // сохраняется копия
-        MatrixOperations.assertSameShape(output, this.outputGradient);  // проверка совпадения размерностей
+        output.assertSameShape(this.outputGradient);  // проверка совпадения размерностей
 
         inputGradient = computeInputGradient(this.outputGradient); // вычисление
-        MatrixOperations.assertSameShape(input, inputGradient);  // проверка совпадения размерностей
+        input.assertSameShape(inputGradient);  // проверка совпадения размерностей
 
         return inputGradient;
     }

@@ -3,12 +3,18 @@ package models.losses;
 import com.sun.istack.internal.NotNull;
 import models.interfaces.Copyable;
 import models.math.Matrix;
-import models.math.MatrixOperations;
 import models.interfaces.Debuggable;
 
 import java.io.Serializable;
 import java.util.Objects;
 
+/**
+ * Потеря. Позволяет оценить точность работы сети. Атрибуты модели:
+ *  prediction - результат вычислений сети;
+ *  target - требуемые выходы сети (из обучающей выборки);
+ *  output - потеря (оценка);
+ *  inputGradient - градиент на входе потери
+ */
 public abstract class Loss implements Copyable<Loss>, Debuggable, Serializable {
     protected Matrix prediction;
     protected Matrix target;
@@ -27,9 +33,15 @@ public abstract class Loss implements Copyable<Loss>, Debuggable, Serializable {
         this.inputGradient = inputGradient;
     }
 
+    /**
+     * Прямой проход (вычисление потери)
+     * @param prediction результаты сети
+     * @param target требуемые выходы
+     * @return потеря
+     */
     public double forward(@NotNull Matrix prediction, @NotNull Matrix target) {
-        MatrixOperations.assertSameShape(prediction, target);
-
+        prediction.assertSameShape(target);
+        // вычисления производятся с копиями
         this.prediction = prediction.copy();
         this.target = target.copy();
 
@@ -38,13 +50,20 @@ public abstract class Loss implements Copyable<Loss>, Debuggable, Serializable {
         return output;
     }
 
+    /**
+     * Обратный проход (вычисление градиентов)
+     * @return градиент на входе
+     */
     public Matrix backward() {
         inputGradient = computeInputGradient(prediction, target);
-        MatrixOperations.assertSameShape(prediction, inputGradient);
+        prediction.assertSameShape(inputGradient);
 
         return inputGradient;
     }
 
+    /**
+     * Очистка промежуточных результатов
+     */
     public void clear() {
         prediction = null;
         target = null;
@@ -52,8 +71,14 @@ public abstract class Loss implements Copyable<Loss>, Debuggable, Serializable {
         output = 0.0;
     }
 
+    /**
+     * Логика вычислений определяется наследниками
+     */
     protected abstract double computeOutput(@NotNull Matrix prediction, @NotNull Matrix target);
 
+    /**
+     * Логика вычислений определяется наследниками
+     */
     protected abstract Matrix computeInputGradient(@NotNull Matrix prediction, @NotNull Matrix target);
 
     @Override

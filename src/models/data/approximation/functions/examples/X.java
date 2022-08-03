@@ -7,6 +7,9 @@ import models.data.approximation.functions.VariableRange;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * f(x) = x
+ */
 public class X extends Function {
     public X(@NotNull List<VariableRange> variableRanges) {
         super("x1", variableRanges);

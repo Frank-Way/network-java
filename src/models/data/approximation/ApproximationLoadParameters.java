@@ -4,6 +4,9 @@ import com.sun.istack.internal.NotNull;
 import models.data.LoadParameters;
 import models.data.approximation.functions.Function;
 
+/**
+ * Параметры метода load класса {@link ApproximationDataLoader}
+ */
 public class ApproximationLoadParameters extends LoadParameters {
     private final Function function;
     private final int size;
