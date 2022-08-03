@@ -3,7 +3,6 @@ package models.operations;
 import com.sun.istack.internal.NotNull;
 import models.interfaces.Copyable;
 import models.math.Matrix;
-import models.math.MatrixOperations;
 import models.interfaces.Debuggable;
 
 import java.io.Serializable;
@@ -17,6 +16,7 @@ import java.util.Objects;
  *  inputGradient - градиент на выходе (выходное значение при обратном проходе).
  */
 public abstract class Operation implements Copyable<Operation>, Debuggable, Serializable {
+    private static final long serialVersionUID = 2002727109271183922L;
     protected Matrix input;
     protected Matrix output;
     protected Matrix outputGradient;

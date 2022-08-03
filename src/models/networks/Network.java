@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
  *  {@link Loss} - потеря для оценки работы сети
  */
 public class Network implements Copyable<Network>, Debuggable, Serializable {
+    private static final long serialVersionUID = 5657416029976548410L;
     private final List<Layer> layers;
     private final Loss loss;
 

@@ -16,6 +16,7 @@ import java.util.Objects;
  *  inputGradient - градиент на входе потери
  */
 public abstract class Loss implements Copyable<Loss>, Debuggable, Serializable {
+    private static final long serialVersionUID = -4963149158685226973L;
     protected Matrix prediction;
     protected Matrix target;
     protected double output;

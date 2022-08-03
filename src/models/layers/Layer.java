@@ -9,7 +9,6 @@ import models.interfaces.Debuggable;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -23,6 +22,7 @@ import java.util.stream.Collectors;
  *  список<{@link Operation}> - набор операций
  */
 public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable {
+    private static final long serialVersionUID = 548499734630114863L;
     protected Matrix input;
     protected Matrix output;
     protected final int neurons;

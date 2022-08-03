@@ -13,6 +13,7 @@ import java.util.*;
  *  cols - количество столбцов.
  */
 public class Matrix implements Copyable<Matrix>, Serializable {
+    private static final long serialVersionUID = -5198808201700701411L;
     private final double[][] values;
     private final int rows;
     private final int cols;
