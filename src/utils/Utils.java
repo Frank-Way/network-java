@@ -220,7 +220,8 @@ public abstract class Utils {
             return "{}";
         return '{' +
                 map.entrySet().stream()
-                .map(entry -> entry.getKey().toString(debugMode) + ":" + entry.getValue().toString(debugMode))
+                .map(entry -> entry != null ? ((entry.getKey() != null ? entry.getKey().toString(debugMode) : "null") +
+                        ":" + (entry.getValue() != null ?entry.getValue().toString(debugMode) : "null")) : "")
                 .collect(Collectors.joining(", ")) +
                 '}';
     }
