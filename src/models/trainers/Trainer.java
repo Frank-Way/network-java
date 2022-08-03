@@ -24,6 +24,17 @@ public class Trainer {
     private static final int ABORT_THRESHOLD = 2;
 
     /**
+     * Запуск обучения по заданным параметрам
+     * @param parameters параметры обучения
+     * @return результаты обучения
+     */
+    public static FitResults fit(@NotNull FitParameters parameters) {
+        if (parameters.isPreTrainRequired())
+            return fitWithPreTrain(parameters);
+        return fitSingleTry(parameters, NetworkBuilder.build(parameters.getNetworkBuilderParameters()));
+    }
+
+    /**
      * Запуск обучения заданной сети
      * @param parameters  параметры обучения
      * @param network  сеть
@@ -46,10 +57,7 @@ public class Trainer {
         for (EarlyStopLossType type: EarlyStopLossType.values())
             earlyStopTriggeredMap.put(type, 0);
 
-        int queryStep = parameters.getEpochs() / parameters.getQueries();
-        List<Integer> queryAt = new ArrayList<>();
-        for (int i = 0; i < parameters.getQueries(); i++)
-            queryAt.add(queryStep * (i + 1));
+        List<Integer> queryAt = calcQueryAt(parameters.getEpochs(), parameters.getQueries(), parameters.getQueriesRangeType());
 
         MyQueue lastTrainLosses = new MyQueue((int)Math.ceil(parameters.getQueries() * 1.0 / 10));
         MyQueue lastTestLosses = new MyQueue((int)Math.ceil(parameters.getQueries() * 1.0 / 10));
@@ -62,7 +70,7 @@ public class Trainer {
             for (Data batch: parameters.getDataset().getTrainData().getBatchesGenerator(parameters.getBatchSize(),
                     true)) {
                 // обучение
-                trainLoss += network.trainBatch(batch.getInputs(), batch.getOutputs()) / parameters.getBatchSize();
+                trainLoss += network.trainBatch(batch.getInputs(), batch.getOutputs());
                 optimizer.step();  // корректировка параметров
             }
 
@@ -73,7 +81,7 @@ public class Trainer {
             double testLoss = 0.0;  // потеря на тестовой выборке
             for (Data batch: parameters.getDataset().getTestData().getBatchesGenerator(parameters.getBatchSize(),
                     true))
-                testLoss += network.calculateLoss(batch.getInputs(), batch.getOutputs()) / parameters.getBatchSize();
+                testLoss += network.calculateLoss(batch.getInputs(), batch.getOutputs());
 
             if (testLoss < bestTestLoss) {  // сохранение наилучших результатов
                 bestTestLoss = testLoss;
@@ -122,12 +130,6 @@ public class Trainer {
         return fitSingleTry(parameters, bestNetwork);
     }
 
-    public static FitResults fit(@NotNull FitParameters parameters) {
-        if (parameters.isPreTrainRequired())
-            return fitWithPreTrain(parameters);
-        return fitSingleTry(parameters, NetworkBuilder.build(parameters.getNetworkBuilderParameters()));
-    }
-
     private static boolean abortTrain(double loss,
                                       MyQueue lastLosses,
                                       String doubleFormat,
@@ -154,6 +156,33 @@ public class Trainer {
         } else
             map.put(type, 0);
         return false;
+    }
+
+    private static List<Integer> calcQueryAt(int epochs, int queries, QueriesRangeType type) {
+        if (queries == 1)
+            return Collections.singletonList(epochs);
+        if (queries == 2)
+            return Arrays.asList(1, epochs);
+        List<Integer> queryAt = new ArrayList<>();
+        queryAt.add(1);
+        switch (type) {
+            case LINEAR:
+                int queryStep = epochs / queries;
+                for (int i = 1; i < queries - 1; i++)
+                    queryAt.add(queryStep * i);
+                break;
+            case NON_LINEAR:
+                int firstQuery = (int) Math.ceil(epochs * 1.0 / 100);
+                double factor = Math.pow(epochs * 1.0 / firstQuery, 1.0 / (queries - 2));
+                int query = firstQuery;
+                do {
+                    queryAt.add(query);
+                    query = (int) Math.ceil(query * factor);
+                } while (queryAt.size() < queries - 1 && query < epochs);
+                break;
+        }
+        queryAt.add(epochs);
+        return queryAt;
     }
 
     enum EarlyStopLossType {

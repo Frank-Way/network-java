@@ -37,6 +37,7 @@ public class FitParameters implements Copyable<FitParameters>, Debuggable {
     private final double preTrainReduceFactor;
     private final NetworkBuilderParameters networkBuilderParameters;
     private final Optimizer optimizer;
+    private final QueriesRangeType queriesRangeType;
 
     /**
      * Конструктор
@@ -51,11 +52,20 @@ public class FitParameters implements Copyable<FitParameters>, Debuggable {
      * @param preTrainReduceFactor  во сколько раз снижается количество эпох при предобучении
      * @param networkBuilderParameters  билдер сетей
      * @param optimizer  оптимизатор
+     * @param queriesRangeType  тип расчёта эпох для оценки сети
      */
-    public FitParameters(@NotNull Dataset dataset, int epochs, int batchSize, int queries,
-                         boolean earlyStopping, String doubleFormat, boolean preTrainRequired,
-                         int preTrainsCount, double preTrainReduceFactor, NetworkBuilderParameters networkBuilderParameters,
-                         Optimizer optimizer) {
+    public FitParameters(@NotNull Dataset dataset,
+                         int epochs,
+                         int batchSize,
+                         int queries,
+                         boolean earlyStopping,
+                         String doubleFormat,
+                         boolean preTrainRequired,
+                         int preTrainsCount,
+                         double preTrainReduceFactor,
+                         NetworkBuilderParameters networkBuilderParameters,
+                         Optimizer optimizer,
+                         QueriesRangeType queriesRangeType) {
         this.dataset = dataset;
         this.epochs = epochs;
         this.batchSize = batchSize;
@@ -67,6 +77,32 @@ public class FitParameters implements Copyable<FitParameters>, Debuggable {
         this.preTrainReduceFactor = preTrainReduceFactor;
         this.networkBuilderParameters = networkBuilderParameters;
         this.optimizer = optimizer;
+        this.queriesRangeType = queriesRangeType;
+    }
+
+    public FitParameters(@NotNull Dataset dataset,
+                         int epochs,
+                         int batchSize,
+                         int queries,
+                         boolean earlyStopping,
+                         String doubleFormat,
+                         boolean preTrainRequired,
+                         int preTrainsCount,
+                         double preTrainReduceFactor,
+                         NetworkBuilderParameters networkBuilderParameters,
+                         Optimizer optimizer) {
+        this(dataset,
+                epochs,
+                batchSize,
+                queries,
+                earlyStopping,
+                doubleFormat,
+                preTrainRequired,
+                preTrainsCount,
+                preTrainReduceFactor,
+                networkBuilderParameters,
+                optimizer,
+                QueriesRangeType.LINEAR);
     }
 
     public Dataset getDataset() {
@@ -113,6 +149,10 @@ public class FitParameters implements Copyable<FitParameters>, Debuggable {
         return optimizer;
     }
 
+    public QueriesRangeType getQueriesRangeType() {
+        return queriesRangeType;
+    }
+
     /**
      * Получение копии {@link FitParameters} с уменьшенным количеством эпох для выполнения предобучения
      * @return  нужные параметры
@@ -128,7 +168,7 @@ public class FitParameters implements Copyable<FitParameters>, Debuggable {
     public FitParameters copy() {
         return new FitParameters(Utils.copyNullable(dataset), epochs, batchSize, queries, earlyStopping,
                 doubleFormat, preTrainRequired, preTrainsCount, preTrainReduceFactor, Utils.copyNullable(networkBuilderParameters),
-                Utils.copyNullable(optimizer));
+                Utils.copyNullable(optimizer), queriesRangeType);
     }
 
     @Override

@@ -9,6 +9,7 @@ import models.operations.activations.Linear;
 import models.operations.activations.Tanh;
 import models.optimizers.SGD;
 import models.trainers.FitParameters;
+import models.trainers.QueriesRangeType;
 import options.Constants;
 import options.DefaultParameters;
 import utils.ExperimentConfiguration;
@@ -226,7 +227,8 @@ public abstract class ExperimentConfigurations {
                                                 new SGD(
                                                         0.1,
                                                         0.001
-                                                )
+                                                ),
+                                                QueriesRangeType.NON_LINEAR
                                         )
                                 ),
 
@@ -260,7 +262,8 @@ public abstract class ExperimentConfigurations {
                                                 new SGD(
                                                         0.1,
                                                         0.001
-                                                )
+                                                ),
+                                                QueriesRangeType.LINEAR
                                         )
                                 )
                         )
@@ -298,7 +301,8 @@ public abstract class ExperimentConfigurations {
                                                 new SGD(
                                                         0.1,
                                                         0.0001
-                                                )
+                                                ),
+                                                QueriesRangeType.NON_LINEAR
                                         )
                                 ),
 
@@ -332,7 +336,8 @@ public abstract class ExperimentConfigurations {
                                                 new SGD(
                                                         0.1,
                                                         0.0001
-                                                )
+                                                ),
+                                                QueriesRangeType.NON_LINEAR
                                         )
                                 )
                         )

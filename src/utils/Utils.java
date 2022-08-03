@@ -218,9 +218,11 @@ public abstract class Utils {
             return map.toString();
         if (map.size() < 1)
             return "{}";
-        return map.entrySet().stream()
+        return '{' +
+                map.entrySet().stream()
                 .map(entry -> entry.getKey().toString(debugMode) + ":" + entry.getValue().toString(debugMode))
-                .toString();
+                .collect(Collectors.joining(", ")) +
+                '}';
     }
 
     /**
