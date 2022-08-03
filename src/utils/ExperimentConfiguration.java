@@ -87,9 +87,39 @@ public class ExperimentConfiguration implements Debuggable {
     }
 
     /**
+     * Получение среднего времени обучения для заданной конфигурации
+     * @param runConfiguration конфигурация запуска
+     * @return среднее время обучения
+     */
+    public long getMeanFitTime(RunConfiguration runConfiguration) {
+        long sum = resultsMap.get(runConfiguration).stream()  // перебор результатов обучения для конфигурации
+                .mapToLong(FitResults::getTimeSpent)  // выбор времени обучения
+                .sum();  // суммирование
+        int size = resultsMap.get(runConfiguration).size();  // количество попыток обучения
+        return  sum / size;
+    }
+
+    /**
+     * Получение среднего времени обучения для всех конфигураций эксперимента
+     * @return среднее время обучения
+     */
+    public long getMeanFitTime() {
+        long sum = resultsMap.values().stream() // перебор всех результатов обучения
+                .mapToLong(fitResults -> fitResults.stream()  // перебор результатов обучения для одной конфигурации
+                        .mapToLong(FitResults::getTimeSpent)  // выбор времени обучения
+                        .sum())  // сумма для одной конфигурации
+                .sum();  // сумма для всех конфигураций
+        long size = resultsMap.values().stream()  // перебор всех результатов обучения
+                .mapToInt(List::size)  // выбор количества результатов
+                .sum();  // суммирование всех размеров
+        return  sum / size;
+    }
+
+    /**
      * Запуск эксперимента
      */
     public void run() {
+        long startTime = System.currentTimeMillis();
         logger.fine(String.format("Запуск эксперимента \"%s\"", description));
         logger.finer("Эксперимент: " + toString(Constants.DEBUG_MODE));
 
@@ -108,11 +138,17 @@ public class ExperimentConfiguration implements Debuggable {
             bestResultsMap.put(thread.getRunConfiguration(), thread.getBestFitResults());
         }
 
+        logger.fine(String.format("Обучение для всех конфигураций эксперимента \"%s\" заняло в среднем - %s",
+                description, Utils.millisToHMS(getMeanFitTime())));
+
         // получение наилучших результатов по всем конфигурациям эксперимента
         ExperimentConfigRunner bestResultsThread = threads.stream()
                 .min(Comparator.comparingDouble(r -> r.getBestFitResults().getMaxAbsoluteError()))
                 .orElseThrow(() -> new RuntimeException(
                         String.format("Ошибка при получении результатов эксперимента \"%s\"", description)));
+
+        logger.fine(String.format("Обучение наилучшей конфигурации эксперимента \"%s\" заняло в среднем - %s",
+                description, Utils.millisToHMS(getMeanFitTime(bestResultsThread.getRunConfiguration()))));
 
         // вывод
         if (Constants.PRINT_REQUIRED && Constants.PRINT_EXPERIMENT_BEST.isRequired())
@@ -132,7 +168,8 @@ public class ExperimentConfiguration implements Debuggable {
                 logger.severe(e.getMessage());
             }
         }
-        logger.fine(String.format("Завершение эксперимента \"%s\"", description));
+        logger.fine(String.format("Завершение эксперимента \"%s\". Выполнение заняло - %s", description,
+                Utils.millisToHMS(System.currentTimeMillis() - startTime)));
     }
 
     @Override

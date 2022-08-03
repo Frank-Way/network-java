@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  *  {@link RunConfiguration} - конфигурация, обучение по которой будет запущена в данном потоке;
  *  {@link FitResults} - результат обучения, который будет сформирован после запуска потока.
  */
-public class RunConfigRunner extends Thread{
+public class RunConfigRunner extends Thread {
     private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
     private static final String NAME_PATTERN = "single-thread-%s";
     private final MyId myId;

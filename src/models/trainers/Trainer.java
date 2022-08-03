@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  */
 public class Trainer {
     private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-    private static final int ABORT_THRESHOLD = 3;
+    private static final int ABORT_THRESHOLD = 2;
 
     /**
      * Запуск обучения заданной сети
@@ -30,6 +30,7 @@ public class Trainer {
      * @return  результаты корректировки
      */
     private static FitResults fitSingleTry(FitParameters parameters, Network network) {
+        long startTime = System.currentTimeMillis();
         double bestTestLoss = Double.MAX_VALUE;  // наилучшая потеря на тестовой выборке
         Network bestNetwork = network;  // сеть, обеспечившая наилучшую потерю
 
@@ -99,7 +100,8 @@ public class Trainer {
                 bestNetwork,
                 Errors.buildFromTargetsAndPredictions(parameters.getDataset().getValidData().getOutputs(),
                         bestNetwork.forward(parameters.getDataset().getValidData().getInputs())),
-                parameters.getDataset());
+                parameters.getDataset(),
+                System.currentTimeMillis() - startTime);
     }
 
     private static FitResults fitWithPreTrain(FitParameters parameters) {

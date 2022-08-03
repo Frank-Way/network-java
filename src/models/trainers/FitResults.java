@@ -1,6 +1,5 @@
 package models.trainers;
 
-import com.sun.istack.internal.NotNull;
 import models.data.Dataset;
 import models.interfaces.Copyable;
 import models.networks.Network;
@@ -22,6 +21,7 @@ public class FitResults implements Copyable<FitResults>, Debuggable {
     private final Network network;
     private final Errors errors;
     private final Dataset dataset;
+    private final long timeSpent;
 
     /**
      * Конструктор
@@ -29,12 +29,15 @@ public class FitResults implements Copyable<FitResults>, Debuggable {
      * @param bestNetwork  сеть, обеспечившая наименьшую потерю при обучении
      * @param errors  ошибки работы сети при прогоне части обучающей выборки для валидации
      * @param dataset  обучающая выборка
+     * @param timeSpent  длительность обучения по времени
      */
-    public FitResults(Map<Integer, Double> testLossesMap, Network bestNetwork, Errors errors, Dataset dataset) {
+    public FitResults(Map<Integer, Double> testLossesMap, Network bestNetwork, Errors errors,
+                      Dataset dataset, long timeSpent) {
         this.testLossesMap = testLossesMap;
         this.network = bestNetwork;
         this.errors = errors;
         this.dataset = dataset;
+        this.timeSpent = timeSpent;
     }
 
     public Map<Integer, Double> getTestLossesMap() {
@@ -51,6 +54,10 @@ public class FitResults implements Copyable<FitResults>, Debuggable {
 
     public Dataset getDataset() {
         return dataset;
+    }
+
+    public long getTimeSpent() {
+        return timeSpent;
     }
 
     public double getMaxAbsoluteError() {
@@ -77,7 +84,8 @@ public class FitResults implements Copyable<FitResults>, Debuggable {
         return Objects.equals(testLossesMap, that.testLossesMap) &&
                Objects.equals(network, that.network) &&
                Objects.equals(errors, that.errors) &&
-               Objects.equals(dataset, that.dataset);
+               Objects.equals(dataset, that.dataset) &&
+               timeSpent == that.timeSpent;
     }
 
     @Override
@@ -89,9 +97,10 @@ public class FitResults implements Copyable<FitResults>, Debuggable {
     public String toString() {
         return "FitResults{" +
                 "testLossesMap=" + testLossesMap +
-                "bestNetwork=" + network +
-                "errors=" + errors +
-                "dataset=" + dataset +
+                ", bestNetwork=" + network +
+                ", errors=" + errors +
+                ", dataset=" + dataset +
+                ", timeSpent=" + timeSpent +
                 '}';
     }
 
@@ -99,16 +108,17 @@ public class FitResults implements Copyable<FitResults>, Debuggable {
     public String toString(boolean debugMode) {
         if (debugMode)
             return toString();
-        return "ТекущиеРезультатыОбучения{" +
+        return "РезультатыОбучения{" +
                 "потериПоЭпохам=" + testLossesMap +
-                "лучшаяСеть=" + network.toString(debugMode) +
-                "ошибки=" + errors.toString(debugMode) +
+                ", лучшаяСеть=" + network.toString(debugMode) +
+                ", ошибки=" + errors.toString(debugMode) +
+                ", длилосьМс=" + Utils.millisToHMS(timeSpent) +
                 '}';
     }
 
     @Override
     public FitResults copy() {
         return new FitResults(new HashMap<>(testLossesMap), Utils.copyNullable(network),
-                Utils.copyNullable(errors), Utils.copyNullable(dataset));
+                Utils.copyNullable(errors), Utils.copyNullable(dataset), timeSpent);
     }
 }

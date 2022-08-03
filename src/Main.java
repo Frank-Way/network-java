@@ -16,6 +16,7 @@ public class Main {
     private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
     public static void main(String[] args) {
+        long startTime = System.currentTimeMillis();
         try {
             LogManager logManager = LogManager.getLogManager();
             Class<Main> aClass = Main.class;
@@ -27,9 +28,9 @@ public class Main {
             return;
         }
 
+        List<ExperimentConfiguration> experimentConfigurations = ExperimentConfigurations.getTwoDefaultExperimentConfigurations();
+//        List<ExperimentConfiguration> experimentConfigurations = ExperimentConfigurations.getExperimentConfigurations();
 
-        List<ExperimentConfiguration> experimentConfigurations = ExperimentConfigurations.getExperimentConfigurations();
-        
         logger.fine("Успешно считаны конфигурации экспериментов");
         logger.finer(experimentConfigurations.stream()
                 .map(ec -> ec.toString(Constants.DEBUG_MODE))
@@ -75,7 +76,8 @@ public class Main {
                 logger.severe(e.getMessage());
             }
         }
-        logger.fine("Завершение запуска экспериментов");
+        logger.fine("Завершение запуска экспериментов. Программа работала - " +
+                Utils.millisToHMS(System.currentTimeMillis() - startTime));
     }
 
 }

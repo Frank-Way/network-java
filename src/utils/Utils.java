@@ -17,6 +17,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -215,6 +216,8 @@ public abstract class Utils {
     public static <T extends Debuggable, E extends Debuggable> String mapToDebugString(@NotNull Map<T, E> map, boolean debugMode) {
         if (debugMode)
             return map.toString();
+        if (map.size() < 1)
+            return "{}";
         return map.entrySet().stream()
                 .map(entry -> entry.getKey().toString(debugMode) + ":" + entry.getValue().toString(debugMode))
                 .toString();
@@ -338,6 +341,17 @@ public abstract class Utils {
             logger.severe("Ошибка при загрузке: " + e.getMessage());
             throw new SerializationException(e.getMessage(), e);
         }
+    }
+
+    public static String millisToHMS(long millis) {
+        final int MILLIS_PER_SECOND = 1000;
+        final int SECONDS_PER_MINUTE = 60;
+        final int MINUTES_PER_HOUR = 60;
+        int milliseconds = (int) millis % MILLIS_PER_SECOND;
+        int seconds = (int) (millis / MILLIS_PER_SECOND) % SECONDS_PER_MINUTE ;
+        int minutes = (int) ((millis / (MILLIS_PER_SECOND * SECONDS_PER_MINUTE)) % MINUTES_PER_HOUR);
+        int hours   = (int) (millis / (MILLIS_PER_SECOND * SECONDS_PER_MINUTE * MINUTES_PER_HOUR));
+        return String.format("%d:%d:%d.%d", hours, minutes, seconds, milliseconds);
     }
 
     /**

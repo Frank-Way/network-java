@@ -65,8 +65,7 @@ public class ExperimentConfigRunner extends Thread {
      */
     @Override
     public void run() {
-        logger.fine("Запуск потока");
-        logger.finer("Запуск обработки конфигурации: " + runConfiguration.toString(Constants.DEBUG_MODE));
+        logger.finer("Запуск обработки конфигурации: " + runConfiguration.getDescription());
         logger.fine("Всего будет выполнено перезапусков: " + runConfiguration.getRetries());
 
         // формирование потоков для запуска обучения заданной конфигурации
@@ -106,7 +105,6 @@ public class ExperimentConfigRunner extends Thread {
                 logger.severe(e.getMessage());
             }
         }
-        logger.finer("Завершение обработки конфигурации: " + runConfiguration.toString(Constants.DEBUG_MODE));
-        logger.fine("Завершение потока");
+        logger.finer("Завершение обработки конфигурации: " + runConfiguration.getDescription());
     }
 }
