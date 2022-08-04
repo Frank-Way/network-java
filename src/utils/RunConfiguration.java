@@ -5,7 +5,6 @@ import models.interfaces.Copyable;
 import models.interfaces.Debuggable;
 import models.trainers.FitParameters;
 
-import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -33,7 +32,7 @@ public class RunConfiguration implements Copyable<RunConfiguration>, Debuggable 
             throw new IllegalArgumentException(String.format("Недопустимое количество перезапусков (retries=%d)", retries));
         this.retries = retries;
         this.description = description;
-        myId = new MyId(UUID.randomUUID().toString(), null, hashCode() + "");
+        myId = new MyId(UUID.randomUUID().toString(), null);
     }
 
     /**
@@ -87,20 +86,5 @@ public class RunConfiguration implements Copyable<RunConfiguration>, Debuggable 
                 ", перезапусков=" + retries +
                 ", описание=" + description +
                 '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        RunConfiguration that = (RunConfiguration) o;
-        return retries == that.retries &&
-               Objects.equals(myId, that.myId) &&
-               Objects.equals(fitParameters, that.fitParameters);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(fitParameters, retries, description);
     }
 }

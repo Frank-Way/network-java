@@ -3,7 +3,9 @@ package models.math;
 import models.interfaces.Copyable;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Двумерная матрица вещественных чисел. Внутри используется double[][]. Реализует различные полезные методы для работы
@@ -108,21 +110,6 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         for (int row = 0; row < rows; row++)
             result[row] = Arrays.copyOf(values[row], cols);
         return new Matrix(result);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Matrix matrix = (Matrix) o;
-        return rows == matrix.rows && cols == matrix.cols && Arrays.deepEquals(values, matrix.values);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = Objects.hash(rows, cols);
-        result = 31 * result + Arrays.deepHashCode(values);
-        return result;
     }
 
     @Override

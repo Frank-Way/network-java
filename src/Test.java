@@ -3,10 +3,8 @@ import models.data.approximation.ApproximationDataLoader;
 import models.data.approximation.ApproximationLoadParameters;
 import models.data.approximation.functions.Function;
 import models.data.approximation.functions.examples.Sin2X;
-import models.data.approximation.functions.examples.SinX;
 import models.exceptions.SerializationException;
 import models.math.Matrix;
-import models.math.MatrixOperations;
 import models.networks.Network;
 import options.Constants;
 import options.DefaultParameters;
@@ -15,8 +13,6 @@ import utils.Utils;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * Класс для тестирования сериализованной сети

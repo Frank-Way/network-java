@@ -2,9 +2,6 @@ package models.operations;
 
 import com.sun.istack.internal.NotNull;
 import models.math.Matrix;
-import models.math.MatrixOperations;
-
-import java.util.Objects;
 
 /**
  * Операция с параметром, наследник {@link Operation}. Параметры модели:
@@ -81,21 +78,6 @@ public abstract class ParametrizedOperation extends Operation {
 
     @Override
     public abstract ParametrizedOperation copy();
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-        ParametrizedOperation that = (ParametrizedOperation) o;
-        return Objects.equals(parameter, that.parameter) &&
-               Objects.equals(parameterGradient, that.parameterGradient);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), parameter, parameterGradient);
-    }
 
     @Override
     public String toString() {

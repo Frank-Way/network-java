@@ -1,8 +1,8 @@
 package models.operations.activations;
 
 import com.sun.istack.internal.NotNull;
-import models.math.MatrixOperations;
 import models.math.Matrix;
+import models.math.MatrixOperations;
 import models.operations.Operation;
 import utils.Utils;
 

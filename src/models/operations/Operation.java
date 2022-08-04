@@ -2,11 +2,10 @@ package models.operations;
 
 import com.sun.istack.internal.NotNull;
 import models.interfaces.Copyable;
-import models.math.Matrix;
 import models.interfaces.Debuggable;
+import models.math.Matrix;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 /**
  * Операция выполняемая в слое сети. Параметры модели:
@@ -89,22 +88,6 @@ public abstract class Operation implements Copyable<Operation>, Debuggable, Seri
 
     @Override
     public abstract Operation copy();
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Operation operation = (Operation) o;
-        return Objects.equals(input, operation.input) &&
-               Objects.equals(output, operation.output) &&
-               Objects.equals(outputGradient, operation.outputGradient) &&
-               Objects.equals(inputGradient, operation.inputGradient);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(input, output, outputGradient, inputGradient);
-    }
 
     @Override
     public String toString() {

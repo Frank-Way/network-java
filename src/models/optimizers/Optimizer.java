@@ -2,14 +2,11 @@ package models.optimizers;
 
 import com.sun.istack.internal.NotNull;
 import models.interfaces.Copyable;
+import models.interfaces.Debuggable;
 import models.layers.Layer;
 import models.math.Matrix;
 import models.networks.Network;
-import models.operations.Operation;
 import models.operations.ParametrizedOperation;
-import models.interfaces.Debuggable;
-
-import java.util.Objects;
 
 /**
  * Оптимизатор, обучающий сеть по определённому правилу. Атрибуты модели:
@@ -21,46 +18,14 @@ import java.util.Objects;
  *  epochs - длительность обучения;
  */
 public abstract class Optimizer implements Copyable<Optimizer>, Debuggable {
-    protected Network network;
+    protected final Network network;
     protected double learningRate;
-    protected double decayLR;
-    protected final double startLR;
-    protected final double stopLR;
-    protected int epochs;
+    protected final double decayLR;
 
-    /**
-     * Конструктор
-     * @param startLR  начальная скорость обучения
-     * @param stopLR  конечная скорость обучения
-     */
-    public Optimizer(double startLR, double stopLR) {
-        learningRate = startLR;
-        this.startLR = startLR;
-        this.stopLR = stopLR;
-    }
-
-    /***
-     * copy-constructor
-     */
-    protected Optimizer(Network network, double learningRate, double decayLR, double startLR, double stopLR, int epochs) {
+    public Optimizer(Network network, double learningRate, double decayLR) {
         this.network = network;
         this.learningRate = learningRate;
         this.decayLR = decayLR;
-        this.startLR = startLR;
-        this.stopLR = stopLR;
-        this.epochs = epochs;
-    }
-
-    public Network getNetwork() {
-        return network;
-    }
-
-    public void setNetwork(@NotNull Network network) {
-        this.network = network;
-    }
-
-    public void setEpochs(int epochs) {
-        this.epochs = epochs;
     }
 
     /**
@@ -75,13 +40,6 @@ public abstract class Optimizer implements Copyable<Optimizer>, Debuggable {
                 parametrizedOperation.setParameter(update(parametrizedOperation.getParameter(),
                         parametrizedOperation.getParameterGradient()));
         }
-    }
-
-    /**
-     * Вычисление величины снижения скорости обучения
-     */
-    public void calculateDecayLR() {
-        decayLR = (startLR - stopLR) / (epochs - 1);
     }
 
     /**
@@ -101,34 +59,12 @@ public abstract class Optimizer implements Copyable<Optimizer>, Debuggable {
 
     @Override
     public abstract Optimizer copy();
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Optimizer optimizer = (Optimizer) o;
-        return Double.compare(optimizer.learningRate, learningRate) == 0 &&
-               Double.compare(optimizer.decayLR, decayLR) == 0 &&
-               Double.compare(optimizer.startLR, startLR) == 0 &&
-               Double.compare(optimizer.stopLR, stopLR) == 0 &&
-               epochs == optimizer.epochs &&
-               Objects.equals(network, optimizer.network);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(network, learningRate, decayLR, startLR, stopLR, epochs);
-    }
-
     @Override
     public String toString() {
         return getDebugClassName() + "{" +
                 "network=" + network +
                 ", learningRate=" + learningRate +
                 ", decayLR=" + decayLR +
-                ", startLR=" + startLR +
-                ", stopLR=" + stopLR +
-                ", epochs=" + epochs +
                 '}';
     }
 
@@ -144,4 +80,70 @@ public abstract class Optimizer implements Copyable<Optimizer>, Debuggable {
     protected abstract String getClassName();
 
     protected abstract String getDebugClassName();
+
+    /**
+     * Билдер для оптимизаторов
+     */
+    public abstract static class Builder implements Copyable<Builder> {
+        protected Network network;
+        protected double learningRate;
+        protected double decayLR;
+        protected double startLR;
+        protected double stopLR;
+        protected int epochs;
+
+        public Builder() {};
+
+        protected Builder(Network network, double learningRate, double decayLR, double startLR, double stopLR, int epochs) {
+            this.network = network;
+            this.learningRate = learningRate;
+            this.decayLR = decayLR;
+            this.startLR = startLR;
+            this.stopLR = stopLR;
+            this.epochs = epochs;
+        }
+
+        public Builder network(Network network) {
+            this.network = network;
+            return this;
+        }
+
+        public Builder startLR(double startLR) {
+            this.learningRate = startLR;
+            this.startLR = startLR;
+            return this;
+        }
+
+        public Builder stopLR(double stopLR) {
+            this.stopLR = stopLR;
+            return this;
+        }
+
+        public Builder epochs(int epochs) {
+            this.epochs = epochs;
+            return this;
+        }
+
+        public Optimizer build() {
+            validate();
+            calculateDecayLR();
+            return createObject();
+        }
+
+        protected abstract Optimizer createObject();
+
+        @Override
+        public abstract Builder copy();
+
+        private void validate() {
+            if (network == null)
+                throw new IllegalStateException("Не задана сеть для построения оптимизатора");
+            if (startLR <= stopLR)
+                throw new IllegalStateException("Неверно заданы начальная и конечная скорости обучения");
+        }
+
+        private void calculateDecayLR() {
+            decayLR = (startLR - stopLR) / (epochs - 1);
+        }
+    }
 }

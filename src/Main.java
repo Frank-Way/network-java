@@ -1,12 +1,15 @@
 import models.exceptions.SerializationException;
 import models.trainers.FitResults;
 import options.Constants;
-import utils.*;
+import utils.ExperimentConfiguration;
+import utils.RunConfiguration;
+import utils.Utils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
-import java.util.logging.*;
+import java.util.List;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**

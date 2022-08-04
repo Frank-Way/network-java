@@ -3,8 +3,6 @@ package models.data;
 import models.interfaces.Copyable;
 import utils.Utils;
 
-import java.util.Objects;
-
 /**
  * Обучающая выборка, состоящая из трёх частей типа {@link Data}:
  *  trainData - данные для обучения (предполагается использование при обучении);
@@ -43,21 +41,6 @@ public class Dataset implements Copyable<Dataset> {
     @Override
     public Dataset copy() {
         return new Dataset(Utils.copyNullable(trainData), Utils.copyNullable(testData), Utils.copyNullable(validData));
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Dataset dataset = (Dataset) o;
-        return Objects.equals(getValidData(), dataset.getValidData()) &&
-               Objects.equals(getTestData(), dataset.getTestData()) &&
-               Objects.equals(getTrainData(), dataset.getTrainData());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getValidData(), getTestData(), getTrainData());
     }
 
     @Override

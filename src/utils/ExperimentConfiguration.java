@@ -9,7 +9,6 @@ import options.Constants;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.UUID;
 
 /**
  * Класс с описанием эксперимента для исследования зависимости влияния отдельных параметров. Представляет собой
@@ -47,7 +46,7 @@ public class ExperimentConfiguration implements Debuggable {
             resultsMap.put(runConfiguration, new ArrayList<>());
             bestResultsMap.put(runConfiguration, null);
         }
-        myId = new MyId(UUID.randomUUID().toString(), null, hashCode() + "");
+        myId = new MyId(UUID.randomUUID().toString(), null);
     }
 
     public MyId getMyId() {
@@ -170,23 +169,6 @@ public class ExperimentConfiguration implements Debuggable {
         }
         logger.fine(String.format("Завершение эксперимента \"%s\". Выполнение заняло - %s", description,
                 Utils.millisToHMS(System.currentTimeMillis() - startTime)));
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ExperimentConfiguration that = (ExperimentConfiguration) o;
-        return Objects.equals(myId, that.myId) &&
-               Objects.equals(description, that.description) &&
-               Objects.equals(runConfigurations, that.runConfigurations) &&
-               Objects.equals(resultsMap, that.resultsMap) &&
-               Objects.equals(bestResultsMap, that.bestResultsMap);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(description, runConfigurations, resultsMap, bestResultsMap);
     }
 
     @Override

@@ -2,11 +2,7 @@ package models.trainers;
 
 import com.sun.istack.internal.NotNull;
 import models.data.Data;
-import models.math.Matrix;
-import models.math.MatrixOperations;
 import models.networks.Network;
-import models.networks.NetworkBuilder;
-import models.networks.NetworkBuilderParameters;
 import models.optimizers.Optimizer;
 import utils.Errors;
 
@@ -31,7 +27,7 @@ public class Trainer {
     public static FitResults fit(@NotNull FitParameters parameters) {
         if (parameters.isPreTrainRequired())
             return fitWithPreTrain(parameters);
-        return fitSingleTry(parameters, NetworkBuilder.build(parameters.getNetworkBuilderParameters()));
+        return fitSingleTry(parameters, parameters.getNetworkBuilder().build());
     }
 
     /**
@@ -48,10 +44,10 @@ public class Trainer {
         Map<Integer, Double> testLossesMap = new HashMap<>();  // мапа зависимости потери от эпохи
 
         // настройка оптимизатора в соответствии с полученными параметрами обучения
-        Optimizer optimizer = parameters.getOptimizer();
-        optimizer.setNetwork(network);
-        optimizer.setEpochs(parameters.getEpochs());
-        optimizer.calculateDecayLR();
+        Optimizer optimizer = parameters.getOptimizerBuilder()
+                .network(network)
+                .epochs(parameters.getEpochs())
+                .build();
 
         Map<EarlyStopLossType, Integer> earlyStopTriggeredMap = new HashMap<>();
         for (EarlyStopLossType type: EarlyStopLossType.values())
@@ -118,7 +114,7 @@ public class Trainer {
         FitParameters preTrainParameters = parameters.preTrainCopy();
         for (int preTrain = 0; preTrain < parameters.getPreTrainsCount(); preTrain++) {
             FitResults results = fitSingleTry(preTrainParameters.copy(),
-                    NetworkBuilder.build(parameters.getNetworkBuilderParameters()));
+                    parameters.getNetworkBuilder().build());
             Network network = results.getNetwork();
             double loss = network.calculateLoss(parameters.getDataset().getValidData().getInputs(),
                     parameters.getDataset().getValidData().getOutputs());

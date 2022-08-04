@@ -3,8 +3,8 @@ package models.math;
 import com.sun.istack.internal.NotNull;
 import models.math.functions.*;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Random;
 import java.util.stream.IntStream;
 
 /**

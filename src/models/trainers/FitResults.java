@@ -2,12 +2,13 @@ package models.trainers;
 
 import models.data.Dataset;
 import models.interfaces.Copyable;
-import models.networks.Network;
 import models.interfaces.Debuggable;
+import models.networks.Network;
 import utils.Errors;
 import utils.Utils;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Результаты обучения. Атрибуты модели
@@ -74,23 +75,6 @@ public class FitResults implements Copyable<FitResults>, Debuggable {
 
     public double getLossMSE() {
         return errors.getLossMSE();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        FitResults that = (FitResults) o;
-        return Objects.equals(testLossesMap, that.testLossesMap) &&
-               Objects.equals(network, that.network) &&
-               Objects.equals(errors, that.errors) &&
-               Objects.equals(dataset, that.dataset) &&
-               timeSpent == that.timeSpent;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(testLossesMap, network, errors, dataset);
     }
 
     @Override

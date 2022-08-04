@@ -1,10 +1,10 @@
 import models.data.approximation.ApproximationDataLoader;
 import models.data.approximation.ApproximationLoadParameters;
-import models.data.approximation.functions.examples.SinX;
 import models.data.approximation.functions.examples.Sin2X;
+import models.data.approximation.functions.examples.SinX;
 import models.data.approximation.functions.examples.SinX1_mul_X2;
 import models.losses.MeanSquaredError;
-import models.networks.NetworkBuilderParameters;
+import models.networks.Network;
 import models.operations.activations.Linear;
 import models.operations.activations.Tanh;
 import models.optimizers.SGD;
@@ -42,12 +42,17 @@ public abstract class ExperimentConfigurations {
                                                 DefaultParameters.PRE_TRAIN_REQUIRED,
                                                 DefaultParameters.PRE_TRAINS_COUNT,
                                                 DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
-                                                new NetworkBuilderParameters(
-                                                        Arrays.asList(1, 8, 1),
-                                                        Arrays.asList(new Tanh(), new Linear()),
-                                                        new MeanSquaredError()
-                                                ),  // end NetworkBuilderParameters
-                                                new SGD(DefaultParameters.START_LR, DefaultParameters.STOP_LR)
+                                                new Network.AnotherBuilder()
+                                                        .sizes(Arrays.asList(1, 8, 1))
+                                                        .activations(Arrays.asList(
+                                                                new Tanh(),
+                                                                new Linear()))
+                                                        .loss(new MeanSquaredError())
+                                                        .getBuilder(),
+                                                new SGD.Builder()
+                                                        .startLR(DefaultParameters.START_LR)
+                                                        .stopLR(DefaultParameters.STOP_LR),
+                                                QueriesRangeType.LINEAR
                                         )  // end FitParameters
                                 ),  // end RunConfiguration
 
@@ -68,12 +73,17 @@ public abstract class ExperimentConfigurations {
                                             DefaultParameters.PRE_TRAIN_REQUIRED,
                                             DefaultParameters.PRE_TRAINS_COUNT,
                                             DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
-                                            new NetworkBuilderParameters(
-                                                    Arrays.asList(1, 8, 1),
-                                                    Arrays.asList(new Tanh(), new Linear()),
-                                                    new MeanSquaredError()
-                                            ),  // end NetworkBuilderParameters
-                                            new SGD(DefaultParameters.START_LR, DefaultParameters.STOP_LR)
+                                            new Network.AnotherBuilder()
+                                                    .sizes(Arrays.asList(1, 8, 1))
+                                                    .activations(Arrays.asList(
+                                                            new Tanh(),
+                                                            new Linear()))
+                                                    .loss(new MeanSquaredError())
+                                                    .getBuilder(),
+                                            new SGD.Builder()
+                                                    .startLR(DefaultParameters.START_LR)
+                                                    .stopLR(DefaultParameters.STOP_LR),
+                                            QueriesRangeType.LINEAR
                                     )  // end FitParameters
                             ),  // end RunConfiguration
 
@@ -94,12 +104,17 @@ public abstract class ExperimentConfigurations {
                                             DefaultParameters.PRE_TRAIN_REQUIRED,
                                             DefaultParameters.PRE_TRAINS_COUNT,
                                             DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
-                                            new NetworkBuilderParameters(
-                                                    Arrays.asList(1, 8, 1),
-                                                    Arrays.asList(new Tanh(), new Linear()),
-                                                    new MeanSquaredError()
-                                            ),  // end NetworkBuilderParameters
-                                            new SGD(DefaultParameters.START_LR, DefaultParameters.STOP_LR)
+                                            new Network.AnotherBuilder()
+                                                    .sizes(Arrays.asList(1, 8, 1))
+                                                    .activations(Arrays.asList(
+                                                            new Tanh(),
+                                                            new Linear()))
+                                                    .loss(new MeanSquaredError())
+                                                    .getBuilder(),
+                                            new SGD.Builder()
+                                                    .startLR(DefaultParameters.START_LR)
+                                                    .stopLR(DefaultParameters.STOP_LR),
+                                            QueriesRangeType.LINEAR
                                     )  // end FitParameters
                             )  // end RunConfiguration
                         )  // end List<RunConfiguration>
@@ -127,12 +142,17 @@ public abstract class ExperimentConfigurations {
                                                 DefaultParameters.PRE_TRAIN_REQUIRED,
                                                 DefaultParameters.PRE_TRAINS_COUNT,
                                                 DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
-                                                new NetworkBuilderParameters(
-                                                        Arrays.asList(1, 8, 1),
-                                                        Arrays.asList(new Tanh(), new Linear()),
-                                                        new MeanSquaredError()
-                                                ),  // end NetworkBuilderParameters
-                                                new SGD(DefaultParameters.START_LR, DefaultParameters.STOP_LR)
+                                                new Network.AnotherBuilder()
+                                                        .sizes(Arrays.asList(1, 8, 1))
+                                                        .activations(Arrays.asList(
+                                                                new Tanh(),
+                                                                new Linear()))
+                                                        .loss(new MeanSquaredError())
+                                                        .getBuilder(),
+                                                new SGD.Builder()
+                                                        .startLR(DefaultParameters.START_LR)
+                                                        .stopLR(DefaultParameters.STOP_LR),
+                                                QueriesRangeType.LINEAR
                                         )  // end FitParameters
                                 ),  // end RunConfiguration
 
@@ -153,12 +173,17 @@ public abstract class ExperimentConfigurations {
                                                 DefaultParameters.PRE_TRAIN_REQUIRED,
                                                 DefaultParameters.PRE_TRAINS_COUNT,
                                                 DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
-                                                new NetworkBuilderParameters(
-                                                        Arrays.asList(1, 8, 1),
-                                                        Arrays.asList(new Tanh(), new Linear()),
-                                                        new MeanSquaredError()
-                                                ),  // end NetworkBuilderParameters
-                                                new SGD(DefaultParameters.START_LR, DefaultParameters.STOP_LR)
+                                                new Network.AnotherBuilder()
+                                                        .sizes(Arrays.asList(1, 8, 1))
+                                                        .activations(Arrays.asList(
+                                                                new Tanh(),
+                                                                new Linear()))
+                                                        .loss(new MeanSquaredError())
+                                                        .getBuilder(),
+                                                new SGD.Builder()
+                                                        .startLR(DefaultParameters.START_LR)
+                                                        .stopLR(DefaultParameters.STOP_LR),
+                                                QueriesRangeType.LINEAR
                                         )  // end FitParameters
                                 ),  // end RunConfiguration
 
@@ -179,12 +204,17 @@ public abstract class ExperimentConfigurations {
                                                 DefaultParameters.PRE_TRAIN_REQUIRED,
                                                 DefaultParameters.PRE_TRAINS_COUNT,
                                                 DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
-                                                new NetworkBuilderParameters(
-                                                        Arrays.asList(1, 8, 1),
-                                                        Arrays.asList(new Tanh(), new Linear()),
-                                                        new MeanSquaredError()
-                                                ),  // end NetworkBuilderParameters
-                                                new SGD(DefaultParameters.START_LR, DefaultParameters.STOP_LR)
+                                                new Network.AnotherBuilder()
+                                                        .sizes(Arrays.asList(1, 8, 1))
+                                                        .activations(Arrays.asList(
+                                                                new Tanh(),
+                                                                new Linear()))
+                                                        .loss(new MeanSquaredError())
+                                                        .getBuilder(),
+                                                new SGD.Builder()
+                                                        .startLR(DefaultParameters.START_LR)
+                                                        .stopLR(DefaultParameters.STOP_LR),
+                                                QueriesRangeType.LINEAR
                                         )  // end FitParameters
                                 )  // end RunConfiguration
                         )  // end List<RunConfiguration>
@@ -216,18 +246,16 @@ public abstract class ExperimentConfigurations {
                                                 true,
                                                 2,
                                                 5.0,
-                                                new NetworkBuilderParameters(
-                                                        Arrays.asList(1, 8, 1),
-                                                        Arrays.asList(
+                                                new Network.AnotherBuilder()
+                                                        .sizes(Arrays.asList(1, 8, 1))
+                                                        .activations(Arrays.asList(
                                                                 new Tanh(),
-                                                                new Linear()
-                                                        ),
-                                                        new MeanSquaredError()
-                                                ),
-                                                new SGD(
-                                                        0.1,
-                                                        0.001
-                                                ),
+                                                                new Linear()))
+                                                        .loss(new MeanSquaredError())
+                                                        .getBuilder(),
+                                                new SGD.Builder()
+                                                        .startLR(0.1)
+                                                        .stopLR(0.001),
                                                 QueriesRangeType.NON_LINEAR
                                         )
                                 ),
@@ -251,18 +279,16 @@ public abstract class ExperimentConfigurations {
                                                 true,
                                                 2,
                                                 5.0,
-                                                new NetworkBuilderParameters(
-                                                        Arrays.asList(1, 8, 1),
-                                                        Arrays.asList(
+                                                new Network.AnotherBuilder()
+                                                        .sizes(Arrays.asList(1, 8, 1))
+                                                        .activations(Arrays.asList(
                                                                 new Tanh(),
-                                                                new Linear()
-                                                        ),
-                                                        new MeanSquaredError()
-                                                ),
-                                                new SGD(
-                                                        0.1,
-                                                        0.001
-                                                ),
+                                                                new Linear()))
+                                                        .loss(new MeanSquaredError())
+                                                        .getBuilder(),
+                                                new SGD.Builder()
+                                                        .startLR(0.1)
+                                                        .stopLR(0.001),
                                                 QueriesRangeType.LINEAR
                                         )
                                 )
@@ -290,18 +316,16 @@ public abstract class ExperimentConfigurations {
                                                 true,
                                                 2,
                                                 5.0,
-                                                new NetworkBuilderParameters(
-                                                        Arrays.asList(2, 16, 1),
-                                                        Arrays.asList(
+                                                new Network.AnotherBuilder()
+                                                        .sizes(Arrays.asList(2, 16, 1))
+                                                        .activations(Arrays.asList(
                                                                 new Tanh(),
-                                                                new Linear()
-                                                        ),
-                                                        new MeanSquaredError()
-                                                ),
-                                                new SGD(
-                                                        0.1,
-                                                        0.0001
-                                                ),
+                                                                new Linear()))
+                                                        .loss(new MeanSquaredError())
+                                                        .getBuilder(),
+                                                new SGD.Builder()
+                                                        .startLR(0.1)
+                                                        .stopLR(0.001),
                                                 QueriesRangeType.NON_LINEAR
                                         )
                                 ),
@@ -325,18 +349,16 @@ public abstract class ExperimentConfigurations {
                                                 true,
                                                 2,
                                                 5.0,
-                                                new NetworkBuilderParameters(
-                                                        Arrays.asList(2, 16, 1),
-                                                        Arrays.asList(
+                                                new Network.AnotherBuilder()
+                                                        .sizes(Arrays.asList(2, 16, 1))
+                                                        .activations(Arrays.asList(
                                                                 new Tanh(),
-                                                                new Linear()
-                                                        ),
-                                                        new MeanSquaredError()
-                                                ),
-                                                new SGD(
-                                                        0.1,
-                                                        0.0001
-                                                ),
+                                                                new Linear()))
+                                                        .loss(new MeanSquaredError())
+                                                        .getBuilder(),
+                                                new SGD.Builder()
+                                                        .startLR(0.1)
+                                                        .stopLR(0.001),
                                                 QueriesRangeType.NON_LINEAR
                                         )
                                 )

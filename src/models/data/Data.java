@@ -7,7 +7,6 @@ import models.math.MatrixOperations;
 import utils.Utils;
 
 import java.util.Iterator;
-import java.util.Objects;
 
 /**
  * Элемент выборки, объединяющий входные и соответствующие им выходные значения. Атрибуты модели:
@@ -77,20 +76,6 @@ public class Data implements Copyable<Data> {
     @Override
     public Data copy() {
         return new Data(Utils.copyNullable(inputs), Utils.copyNullable(outputs));
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Data data = (Data) o;
-        return Objects.equals(getInputs(), data.getInputs()) &&
-               Objects.equals(getOutputs(), data.getOutputs());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getInputs(), getOutputs());
     }
 
     @Override

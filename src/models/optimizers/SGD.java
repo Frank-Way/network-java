@@ -9,20 +9,8 @@ import utils.Utils;
  * Стохастический градиентный спуск. Наследник {@link Optimizer}.
  */
 public class SGD extends Optimizer {
-    public SGD(double startLR, double stopLR) {
-        super(startLR, stopLR);
-    }
-
-    /***
-     * copy-constructor
-     */
-    private SGD(Network network,
-               double learningRate,
-               double decayLR,
-               double startLR,
-               double stopLR,
-               int epochs) {
-        super(network, learningRate, decayLR, startLR, stopLR, epochs);
+    public SGD(Network network, double learningRate, double decayLR) {
+        super(network, learningRate, decayLR);
     }
 
     @Override
@@ -33,7 +21,7 @@ public class SGD extends Optimizer {
 
     @Override
     public SGD copy() {
-        return new SGD(Utils.copyNullable(network), learningRate, decayLR, startLR, stopLR, epochs);
+        return new SGD(Utils.copyNullable(network), learningRate, decayLR);
     }
 
     @Override
@@ -44,5 +32,24 @@ public class SGD extends Optimizer {
     @Override
     protected String getDebugClassName() {
         return "SGD";
+    }
+
+    public static class Builder extends Optimizer.Builder {
+        public Builder() {
+        }
+
+        private Builder(Network network, double learningRate, double decayLR, double startLR, double stopLR, int epochs) {
+            super(network, learningRate, decayLR, startLR, stopLR, epochs);
+        }
+
+        @Override
+        protected Optimizer createObject() {
+            return new SGD(network, learningRate, decayLR);
+        }
+
+        @Override
+        public Optimizer.Builder copy() {
+            return new Builder(network, learningRate, decayLR, startLR, stopLR, epochs);
+        }
     }
 }

@@ -2,11 +2,10 @@ package models.losses;
 
 import com.sun.istack.internal.NotNull;
 import models.interfaces.Copyable;
-import models.math.Matrix;
 import models.interfaces.Debuggable;
+import models.math.Matrix;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 /**
  * Потеря. Позволяет оценить точность работы сети. Атрибуты модели:
@@ -84,22 +83,6 @@ public abstract class Loss implements Copyable<Loss>, Debuggable, Serializable {
 
     @Override
     public abstract Loss copy();
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Loss loss = (Loss) o;
-        return Double.compare(output, loss.output) == 0 &&
-               Objects.equals(prediction, loss.prediction) &&
-               Objects.equals(target, loss.target) &&
-               Objects.equals(inputGradient, loss.inputGradient);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(prediction, target, output, inputGradient);
-    }
 
     @Override
     public String toString() {

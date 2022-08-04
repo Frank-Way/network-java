@@ -2,15 +2,14 @@ package models.layers;
 
 import com.sun.istack.internal.NotNull;
 import models.interfaces.Copyable;
+import models.interfaces.Debuggable;
 import models.math.Matrix;
 import models.operations.Operation;
 import models.operations.ParametrizedOperation;
-import models.interfaces.Debuggable;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -156,22 +155,6 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
 
     @Override
     public abstract Layer copy();
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Layer layer = (Layer) o;
-        return neurons == layer.neurons &&
-               Objects.equals(input, layer.input) &&
-               Objects.equals(output, layer.output) &&
-               Objects.equals(operations, layer.operations);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(input, output, neurons, operations);
-    }
 
     @Override
     public String toString() {
