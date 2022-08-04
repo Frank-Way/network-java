@@ -31,7 +31,7 @@ public class MyId implements Copyable<MyId> {
      * @return  идентификатор
      */
     public static MyId buildNewFromParent(@NotNull MyId parentMyId) {
-        return buildNewFromParent(parentMyId);
+        return new MyId(UUID.randomUUID().toString(), parentMyId.getUid());
     }
 
     public String getUid() {
