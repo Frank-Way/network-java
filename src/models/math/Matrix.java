@@ -234,13 +234,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return результат умножения
      */
     public Matrix mul(Matrix matrix) {
-        assertEqualRowsAndCols(matrix,
-                "Матрица размерности (%d; %d) не может быть поэлементно умножена на предоставленную матрицу размера (%d; %d)");
-        double[][] result = copy().values;
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++)
-                result[row][col] *= matrix.values[row][col];
-        return new Matrix(result);
+        return doOperation(Operator.MUL, matrix);
     }
 
     /**
@@ -250,13 +244,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return результат умножения
      */
     public Matrix mulCol(Matrix colMatrix) {
-        assertEqualRows(colMatrix,
-                "Матрица размерности (%d; %d) не может быть умножена на предоставленный вектор-столбец размера (%d; %d)");
-        double[][] result = copy().values;
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++)
-                result[row][col] *= colMatrix.values[row][0];
-        return new Matrix(result);
+        return doColOperation(Operator.MUL, colMatrix);
     }
 
     /**
@@ -266,13 +254,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return результат умножения
      */
     public Matrix mulRow(Matrix rowMatrix) {
-        assertEqualCols(rowMatrix,
-                "Матрица размерности (%d; %d) не может быть умножена на предоставленный вектор-строка размера (%d; %d)");
-        double[][] result = copy().values;
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++)
-                result[row][col] *= rowMatrix.values[0][col];
-        return new Matrix(result);
+        return doRowOperation(Operator.MUL, rowMatrix);
     }
 
     /**
@@ -281,11 +263,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return результат умножения
      */
     public Matrix mul(Number number) {
-        double[][] result = copy().values;
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++)
-                result[row][col] *= number.doubleValue();
-        return new Matrix(result);
+        return doOperation(Operator.MUL, number);
     }
 
     /**
@@ -294,13 +272,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return результат сложения
      */
     public Matrix add(Matrix matrix) {
-        assertEqualRowsAndCols(matrix,
-                "Матрица размерности (%d; %d) не может быть сложена с предоставленной матрицей размера (%d; %d)");
-        double[][] result = copy().values;
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++)
-                result[row][col] += matrix.values[row][col];
-        return new Matrix(result);
+        return doOperation(Operator.ADD, matrix);
     }
 
     /**
@@ -309,13 +281,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return результат сложения
      */
     public Matrix addCol(Matrix colMatrix) {
-        assertEqualRows(colMatrix,
-                "Матрица размерности (%d; %d) не может быть сложена с предоставленным вектором-столбцом размера (%d; %d)");
-        double[][] result = copy().values;
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++)
-                result[row][col] += colMatrix.values[row][0];
-        return new Matrix(result);
+        return doColOperation(Operator.ADD, colMatrix);
     }
 
     /**
@@ -324,14 +290,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return результат сложения
      */
     public Matrix addRow(Matrix rowMatrix) {
-        assertEqualCols(rowMatrix,
-                "Матрица размерности (%d; %d) не может быть сложена с предоставленным вектором-строкой размера (%d; %d)");
-        double[][] result = copy().values;
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++) {
-                result[row][col] += rowMatrix.values[0][col];
-            }
-        return new Matrix(result);
+        return doRowOperation(Operator.ADD, rowMatrix);
     }
 
     /**
@@ -340,11 +299,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return результат сложения
      */
     public Matrix add(Number number) {
-        double[][] result = copy().values;
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++)
-                result[row][col] += number.doubleValue();
-        return new Matrix(result);
+        return doOperation(Operator.ADD, number);
     }
 
     /**
@@ -353,13 +308,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return результат вычитания
      */
     public Matrix sub(Matrix matrix) {
-        assertEqualRowsAndCols(matrix,
-                "Из матрицы размерности (%d; %d) не может быть вычтена предоставленная матрица размера (%d; %d)");
-        double[][] result = copy().values;
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++)
-                result[row][col] -= matrix.values[row][col];
-        return new Matrix(result);
+        return doOperation(Operator.SUB, matrix);
     }
 
     /**
@@ -368,13 +317,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return результат вычитания
      */
     public Matrix subCol(Matrix colMatrix) {
-        assertEqualRows(colMatrix,
-                "Из матрицы размерности (%d; %d) не может быть вычтен предоставленный вектор-столбец размера (%d; %d)");
-        double[][] result = copy().values;
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++)
-                result[row][col] -= colMatrix.values[row][0];
-        return new Matrix(result);
+        return doColOperation(Operator.SUB, colMatrix);
     }
 
     /**
@@ -383,13 +326,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return результат вычитания
      */
     public Matrix subRow(Matrix rowMatrix) {
-        assertEqualCols(rowMatrix,
-                "Из матрицы размерности (%d; %d) не может быть вычтен предоставленный вектор-строка размера (%d; %d)");
-        double[][] result = copy().values;
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++)
-                result[row][col] -= rowMatrix.values[0][col];
-        return new Matrix(result);
+        return doRowOperation(Operator.SUB, rowMatrix);
     }
 
     /**
@@ -398,11 +335,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return результат вычитания
      */
     public Matrix sub(Number number) {
-        double[][] result = copy().values;
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++)
-                result[row][col] -= number.doubleValue();
-        return new Matrix(result);
+        return doOperation(Operator.SUB, number);
     }
 
     /**
@@ -411,13 +344,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return результат деления
      */
     public Matrix div(Matrix matrix) {
-        assertEqualRowsAndCols(matrix,
-                "Матрица размерности (%d; %d) не может быть поделена на предоставленную матрицу размера (%d; %d)");
-        double[][] result = copy().values;
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++)
-                result[row][col] /= matrix.values[row][col];
-        return new Matrix(result);
+        return doOperation(Operator.DIV, matrix);
     }
 
     /**
@@ -426,13 +353,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return результат деления
      */
     public Matrix divCol(Matrix colMatrix) {
-        assertEqualRows(colMatrix,
-                "Матрица размерности (%d; %d) не может быть поделена на предоставленный вектор-столбец размера (%d; %d)");
-        double[][] result = copy().values;
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++)
-                result[row][col] /= colMatrix.values[row][0];
-        return new Matrix(result);
+        return doColOperation(Operator.DIV, colMatrix);
     }
 
     /**
@@ -441,13 +362,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return результат деления
      */
     public Matrix divRow(Matrix rowMatrix) {
-        assertEqualCols(rowMatrix,
-                "Матрица размерности (%d; %d) не может быть поделена на предоставленный вектор-строку размера (%d; %d)");
-        double[][] result = copy().values;
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++)
-                result[row][col] /= rowMatrix.values[0][col];
-        return new Matrix(result);
+        return doRowOperation(Operator.DIV, rowMatrix);
     }
 
     /**
@@ -456,11 +371,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return результат деления
      */
     public Matrix div(Number number) {
-        double[][] result = copy().values;
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++)
-                result[row][col] /= number.doubleValue();
-        return new Matrix(result);
+        return doOperation(Operator.DIV, number);
     }
 
     /**
