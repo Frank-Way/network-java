@@ -2,7 +2,6 @@ package utils;
 
 import com.sun.istack.internal.NotNull;
 import models.data.Data;
-import models.exceptions.SerializationException;
 import models.interfaces.Copyable;
 import models.interfaces.Debuggable;
 import models.math.Matrix;
@@ -13,9 +12,6 @@ import models.operations.WeightMultiply;
 import models.trainers.FitResults;
 import options.PrintOptions;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -301,50 +297,10 @@ public abstract class Utils {
     }
 
     /**
-     * Сериализация объекта в файл
-     * @param object  объект
-     * @param path  путь
-     * @param filename  имя файла
-     * @throws SerializationException
+     * Перевод времени (не время суток!) из миллисекунд в формат "HH:MM:SS.mmm"
+     * @param millis время в миллисекундах
+     * @return время в нужном формате
      */
-    public static void save(Object object, String path, String filename) throws SerializationException {
-        try {
-            Files.createDirectories(Paths.get(path));
-        } catch (IOException e) {
-            logger.severe("Ошибка при создании папки для сохранения нейросетей: " + e.getMessage());
-            throw new SerializationException(e.getMessage(), e);
-        }
-
-        String fullPath = path + File.separator + filename;
-
-        try (FileOutputStream fos = new FileOutputStream(fullPath);
-             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-            oos.writeObject(object);
-        } catch (IOException e) {
-            logger.severe("Ошибка при сохранении: " + e.getMessage());
-            throw new SerializationException(e.getMessage(), e);
-        }
-        logger.fine("Сохранена нейросеть в файл: " + fullPath);
-    }
-
-    /**
-     * Десериализация объекта из файла
-     * @param path  путь
-     * @param filename  имя файла
-     * @return  десериализованный объект
-     * @throws SerializationException
-     */
-    public static Object load(String path, String filename) throws SerializationException {
-        String fullPath = path + File.separator + filename;
-        try (FileInputStream fis = new FileInputStream(fullPath);
-             ObjectInputStream ois = new ObjectInputStream(fis)) {
-            return ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            logger.severe("Ошибка при загрузке: " + e.getMessage());
-            throw new SerializationException(e.getMessage(), e);
-        }
-    }
-
     public static String millisToHMS(long millis) {
         final int MILLIS_PER_SECOND = 1000;
         final int SECONDS_PER_MINUTE = 60;

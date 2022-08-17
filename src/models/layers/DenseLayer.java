@@ -41,6 +41,10 @@ public class DenseLayer extends Layer{
         addOperation(activation);
     }
 
+    protected DenseLayer(int neurons, List<Operation> operations) {
+        super(neurons, operations);
+    }
+
     /***
      * copy-constructor
      */

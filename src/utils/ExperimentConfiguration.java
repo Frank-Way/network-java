@@ -1,10 +1,12 @@
 package utils;
 
 import com.sun.istack.internal.NotNull;
-import models.exceptions.SerializationException;
+import com.sun.xml.internal.ws.encoding.soap.SerializationException;
 import models.interfaces.Debuggable;
 import models.trainers.FitResults;
 import options.Constants;
+import serialization.SerializationType;
+import serialization.SerializationUtils;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -158,11 +160,10 @@ public class ExperimentConfiguration implements Debuggable {
 
         // сохранение сети
         if (Constants.SAVE_REQUIRED && Constants.SAVE_EXPERIMENT_BEST) {
-            bestResultsThread.getBestFitResults().getNetwork().clear();
             try {
-                Utils.save(bestResultsThread.getBestFitResults().getNetwork(), Constants.SAVE_FOLDER,
+                SerializationUtils.save(bestResultsThread.getBestFitResults().getNetwork(), Constants.SAVE_FOLDER,
                         String.format(Constants.SAVE_NETWORK_PATTERN,
-                                bestResultsThread.getRunConfiguration().getMyId().getUid() + '_' + System.currentTimeMillis()));
+                                bestResultsThread.getRunConfiguration().getMyId().getUid() + '_' + System.currentTimeMillis()), Constants.SERIALIZATION_TYPE);
             } catch (SerializationException e) {
                 logger.severe(e.getMessage());
             }

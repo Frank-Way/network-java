@@ -1,6 +1,8 @@
-import models.exceptions.SerializationException;
+import com.sun.xml.internal.ws.encoding.soap.SerializationException;
 import models.trainers.FitResults;
 import options.Constants;
+import serialization.SerializationType;
+import serialization.SerializationUtils;
 import utils.ExperimentConfiguration;
 import utils.RunConfiguration;
 import utils.Utils;
@@ -69,12 +71,11 @@ public class Main {
                             Constants.DEBUG_MODE, Constants.TABLE_PART, Constants.DOUBLE_FORMAT));
 
         if (Constants.SAVE_REQUIRED && Constants.SAVE_ALL_EXPERIMENTS_BEST) {
-            bestFitResults.getNetwork().clear();  // очистка сети перед сериализацией для снижения "веса" файла
             String filename = String.format(Constants.SAVE_NETWORK_PATTERN,
                     bestRunConfiguration.getMyId().getUid() + '_' + System.currentTimeMillis());
             logger.info("Сохранение нейросети в файл: " + filename);
             try {
-                Utils.save(bestFitResults.getNetwork(), Constants.SAVE_FOLDER, filename);
+                SerializationUtils.save(bestFitResults.getNetwork(), Constants.SAVE_FOLDER, filename, Constants.SERIALIZATION_TYPE);
             } catch (SerializationException e) {
                 logger.severe(e.getMessage());
             }

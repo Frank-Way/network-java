@@ -308,7 +308,7 @@ public abstract class ExperimentConfigurations {
                                                                 1.05
                                                         )
                                                 ),
-                                                2000,
+                                                500,
                                                 64,
                                                 10,
                                                 true,
@@ -341,7 +341,7 @@ public abstract class ExperimentConfigurations {
                                                                 1.05
                                                         )
                                                 ),
-                                                1000,
+                                                250,
                                                 64,
                                                 10,
                                                 true,

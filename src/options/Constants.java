@@ -1,5 +1,7 @@
 package options;
 
+import serialization.SerializationType;
+
 import java.io.File;
 
 /**
@@ -42,7 +44,7 @@ public abstract class Constants {
     // папка для сохранения обученных сетей
     public final static String SAVE_FOLDER = System.getProperty("user.dir") + File.separator + "networks";
     // шаблон для имени файлов с сетями
-    public final static String SAVE_NETWORK_PATTERN = "network_%s.dat";
+    public final static String SAVE_NETWORK_PATTERN = "network_%s";
 
     // сохранение сети по попытке обучения
     public final static boolean SAVE_EACH_CONFIGURATION = false;
@@ -55,5 +57,7 @@ public abstract class Constants {
 
     // сохранение сети по наилучшей попытке обучения для всех экспериментов
     public final static boolean SAVE_ALL_EXPERIMENTS_BEST = false;
+
+    public final static SerializationType SERIALIZATION_TYPE = SerializationType.YAML;
 
 }

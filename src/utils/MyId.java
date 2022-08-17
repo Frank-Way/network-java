@@ -47,7 +47,8 @@ public class MyId implements Copyable<MyId> {
      * @return  строка формата [uid]-[parentUid]
      */
     public String toThreadId() {
-        return String.format("[%s]-[%s]", uid, parentUid);
+        return String.format("[%s]-[%s]", uid.substring(0, uid.indexOf("-")),
+                parentUid.substring(0, parentUid.indexOf("-")));
     }
 
     @Override

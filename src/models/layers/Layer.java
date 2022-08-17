@@ -6,11 +6,16 @@ import models.interfaces.Debuggable;
 import models.math.Matrix;
 import models.operations.Operation;
 import models.operations.ParametrizedOperation;
+import serialization.YamlSerializationOptions;
+import serialization.YamlSerializationUtils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static serialization.YamlSerializationOptions.CRLF;
 
 /**
  * Слой сети. Представляет собой набор {@link Operation}, которые выполняется при прямом и обратном проходе.
@@ -22,8 +27,8 @@ import java.util.stream.Collectors;
  */
 public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable {
     private static final long serialVersionUID = 548499734630114863L;
-    protected Matrix input;
-    protected Matrix output;
+    protected transient Matrix input;
+    protected transient Matrix output;
     protected final int neurons;
     protected final List<Operation> operations;
 
@@ -37,6 +42,14 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
                     "Число нейронов слоя должно быть положительным (получено neurons=%d)", neurons));
         this.neurons = neurons;
         operations = new ArrayList<>();
+    }
+
+    protected Layer(int neurons, List<Operation> operations) {
+        if (neurons <= 0)
+            throw new IllegalArgumentException(String.format(
+                    "Число нейронов слоя должно быть положительным (получено neurons=%d)", neurons));
+        this.neurons = neurons;
+        this.operations = operations;
     }
 
     /**
@@ -82,15 +95,6 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
             // операции берутся в обратном порядке
             result = operations.get(operations.size() - 1 - i).backward(result);
         return result;
-    }
-
-    /**
-     * Очистка промежуточных результатов
-     */
-    public void clear() {
-        input = null;
-        output = null;
-        operations.forEach(Operation::clear);
     }
 
     public Matrix getInput() {
@@ -179,4 +183,42 @@ public abstract class Layer implements Copyable<Layer>, Debuggable, Serializable
     protected abstract String getClassName();
 
     protected abstract String getDebugClassName();
+
+    public String toYaml(int baseIndent, String doubleFormat) {
+        StringBuilder sb = new StringBuilder();
+        final String baseIndentString = YamlSerializationUtils.repeat(" ", baseIndent);
+        sb.append(baseIndentString).append("class: ").append(this.getClass().getCanonicalName()).append(CRLF);
+        sb.append(baseIndentString).append("neurons: ").append(neurons).append(CRLF);
+        sb.append(baseIndentString).append("operations: ");
+        for (Operation operation: operations)
+            sb.append(CRLF).append(YamlSerializationUtils.makeListInstance(operation.toYaml(
+                    baseIndent + YamlSerializationOptions.YAML_INDENT * 2, doubleFormat)));
+        return sb.toString();
+    }
+
+    public static Layer fromYaml(String yaml, int baseIndent) {
+        String[] lines = YamlSerializationUtils.removeFirstCharacters(yaml.split(CRLF), yaml.indexOf('c'));
+        String cls = YamlSerializationUtils.getClassAsString(lines, 0);
+        final String[] patterns = {"(\\" + YamlSerializationOptions.YAML_LIST_PREFIX + ")?class: " + cls.replace(".", "\\.") + "\\n?",
+                "neurons: \\d+\\n?",
+                "operations:\\s?\\n?"};
+        for (int i = 0; i < patterns.length; i++)
+            if (!lines[i].matches(patterns[i]))
+                throw new IllegalArgumentException("Не верный формат строки: " + lines[i]);
+        int neurons = YamlSerializationUtils.readIntFromYaml(lines[1]);
+        List<String> operationsAsStrings = YamlSerializationUtils.readListAsStringsArray(Arrays.copyOfRange(lines, 3, lines.length));
+        List<Operation> operations = operationsAsStrings.stream()
+                .map(operationAsString ->
+                        Operation.fromYaml(operationAsString, baseIndent + YamlSerializationOptions.YAML_INDENT))
+                .collect(Collectors.toList());
+
+        return createLayer(cls, neurons, operations);
+    }
+
+    private static Layer createLayer(String cls, int neurons, List<Operation> operations) {
+        if (cls.equals(DenseLayer.class.getCanonicalName()))
+            return new DenseLayer(neurons, operations);
+        else
+            throw new IllegalArgumentException("Не известный класс: " + cls);
+    }
 }

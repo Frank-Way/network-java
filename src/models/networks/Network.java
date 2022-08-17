@@ -8,12 +8,17 @@ import models.layers.Layer;
 import models.losses.Loss;
 import models.math.Matrix;
 import models.operations.Operation;
+import serialization.YamlSerializationOptions;
+import serialization.YamlSerializationUtils;
 import utils.Utils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static serialization.YamlSerializationOptions.CRLF;
 
 /**
  * Нейросеть, представленная как набор слоёв и потеря. Атрибуты модели:
@@ -82,14 +87,6 @@ public class Network implements Copyable<Network>, Debuggable, Serializable {
         Matrix lossGradient = loss.backward();
         backward(lossGradient);
         return batchLoss;
-    }
-
-    /**
-     * Очистка промежуточных результатов
-     */
-    public void clear() {
-        loss.clear();
-        layers.forEach(Layer::clear);
     }
 
     private List<Layer> getLayers() {
@@ -245,5 +242,42 @@ public class Network implements Copyable<Network>, Debuggable, Serializable {
                         activations.get(layer).copy()));  // с копией функции активации
             return layers;
         }
+    }
+
+    public String toYaml(int baseIndent, String doubleFormat) {
+        StringBuilder sb = new StringBuilder();
+        final String baseIndentString = YamlSerializationUtils.repeat(" ", baseIndent);
+        sb.append(baseIndentString).append("class: ").append(this.getClass().getCanonicalName()).append(CRLF);
+        sb.append(baseIndentString).append("loss: ").append(CRLF);
+        sb.append(loss.toYaml(baseIndent + YamlSerializationOptions.YAML_INDENT, doubleFormat));
+        sb.append(baseIndentString).append("layers: ");
+        for (Layer layer: layers) {
+            sb.append(CRLF).append(YamlSerializationUtils.makeListInstance(layer.toYaml(
+                    baseIndent + YamlSerializationOptions.YAML_INDENT * 2, doubleFormat)));
+            sb.deleteCharAt(sb.length() - 1);
+        }
+        return sb.toString();
+    }
+
+    public static Network fromYaml(String yaml, int baseIndent) {
+        String[] lines = YamlSerializationUtils.removeFirstCharacters(yaml.split(CRLF), yaml.indexOf('c'));
+        String cls = YamlSerializationUtils.getClassAsString(lines, Math.max(baseIndent - YamlSerializationOptions.YAML_INDENT, 0));
+        final String[] patterns = {"class: " + cls.replace(".", "\\.") + "\\n?",
+                "loss:\\s?\\n?",
+                ".*",
+                "layers:\\s?\\n?"};
+        for (int i = 0; i < patterns.length; i++)
+            if (!lines[i].matches(patterns[i]))
+                throw new IllegalArgumentException("Не верный формат строки: " + lines[i]);
+        Loss loss = Loss.fromYaml(String.join("\n", YamlSerializationUtils.filterByIndent(lines, 2)),
+                YamlSerializationOptions.YAML_INDENT);
+        List<String> layersAsStrings = YamlSerializationUtils.readListAsStringsArray(Arrays.copyOfRange(
+                lines, YamlSerializationUtils.getIndexOfStringMatchingPattern(lines, patterns[3]) + 1, lines.length));
+        List<Layer> layers = layersAsStrings.stream()
+                .map(layerAsString ->
+                        Layer.fromYaml(layerAsString, baseIndent + YamlSerializationOptions.YAML_INDENT * 2))
+                .collect(Collectors.toList());
+
+        return new Network(layers, loss);
     }
 }

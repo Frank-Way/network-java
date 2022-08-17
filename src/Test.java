@@ -1,40 +1,62 @@
+import com.sun.xml.internal.ws.encoding.soap.SerializationException;
 import models.data.Dataset;
 import models.data.approximation.ApproximationDataLoader;
 import models.data.approximation.ApproximationLoadParameters;
 import models.data.approximation.functions.Function;
-import models.data.approximation.functions.examples.Sin2X;
-import models.exceptions.SerializationException;
+import models.data.approximation.functions.examples.SinX;
+import models.data.approximation.functions.examples.SinX1_mul_X2;
+import models.layers.DenseLayer;
+import models.layers.Layer;
+import models.losses.Loss;
+import models.losses.MeanSquaredError;
 import models.math.Matrix;
 import models.networks.Network;
+import models.operations.BiasAdd;
+import models.operations.Operation;
+import models.operations.ParametrizedOperation;
+import models.operations.WeightMultiply;
+import models.operations.activations.Linear;
+import models.operations.activations.Tanh;
 import options.Constants;
 import options.DefaultParameters;
+import serialization.SerializationType;
+import serialization.SerializationUtils;
+import serialization.YamlSerializationUtils;
 import utils.Errors;
 import utils.Utils;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Класс для тестирования сериализованной сети
  */
 public class Test {
     public static void main(String[] args) {
+//        /*
         String networksDirectory = "networks";  // путь к директории с сетями
         Path pathToNetworks = Paths.get(networksDirectory);
-        String networkFilename = "network_3bb4b7a9-93f0-4df0-a335-30bc8d25f47f_1659520632364.dat";  // имя файла с сетью
+
+        // имя файла с сетью (без расширения!!!)
+        String networkFilename = "";
         Network network = null;
+
         try {
-            network = (Network) Utils.load(pathToNetworks.toAbsolutePath().toString(), networkFilename);  // десериализация
+            network = SerializationUtils.load(pathToNetworks.toAbsolutePath().toString(), networkFilename,
+                    SerializationType.YAML);  // десериализация
         } catch (SerializationException e) {
             e.printStackTrace();
         }
+
         if (network == null)
             System.exit(-1);
 
-        Function function = new Sin2X(Sin2X.getDefaultVariableRanges());  // функция, на которую была обучена сеть
+        Function function = new SinX1_mul_X2(SinX1_mul_X2.getDefaultVariableRanges());  // функция, на которую была обучена сеть
         ApproximationLoadParameters parameters = new ApproximationLoadParameters(
                 function,
-                4096,  // размер выборки
+                64,  // размер выборки
                 DefaultParameters.TEST_PART,  // не имеет значения
                 1.0,  // 1.0, чтобы для валидации использовалась вся выборка
                 DefaultParameters.EXTENDING_FACTOR);  // не имеет значения
@@ -60,5 +82,6 @@ public class Test {
                 .append("\n");  // таблица по всей выборке
 
         System.out.println(sb);
+//        */
     }
 }

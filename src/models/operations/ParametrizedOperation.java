@@ -2,6 +2,13 @@ package models.operations;
 
 import com.sun.istack.internal.NotNull;
 import models.math.Matrix;
+import serialization.YamlSerializationOptions;
+import serialization.YamlSerializationUtils;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static serialization.YamlSerializationOptions.CRLF;
 
 /**
  * Операция с параметром, наследник {@link Operation}. Параметры модели:
@@ -49,12 +56,24 @@ public abstract class ParametrizedOperation extends Operation {
         return inputGradient;
     }
 
-    /**
-     * Очистка промежуточных результатов
-     */
-    public void clear() {
-        super.clear();
-        parameterGradient = null;
+    public String toYaml(int baseIndent, String doubleFormat) {
+        StringBuilder sb = new StringBuilder();
+        final String baseIndentString = YamlSerializationUtils.repeat(" ", baseIndent);
+        sb.append(baseIndentString).append("class: ").append(this.getClass().getCanonicalName()).append(CRLF);
+        sb.append(baseIndentString).append("parameter: ").append(CRLF);
+        sb.append(parameter.toYaml(baseIndent + YamlSerializationOptions.YAML_INDENT, doubleFormat));
+        return sb.toString();
+    }
+
+    public static ParametrizedOperation fromYaml(String yaml, int baseIndent) {
+        String[] lines = YamlSerializationUtils.removeFirstCharacters(yaml.split(CRLF), yaml.indexOf('c'));
+        String cls = YamlSerializationUtils.getClassAsString(lines, 0);
+        final String[] patterns = {"class: " + cls.replace(".", "\\.") + "\\n?",
+                "parameter:\\s?\\n?"};
+        Matrix parameter = Matrix.fromYaml(String.join("\n", YamlSerializationUtils.filterByIndent(lines, 2)),
+                YamlSerializationOptions.YAML_INDENT);
+
+        return createParametrizedOperation(cls, parameter);
     }
 
     /**
@@ -89,5 +108,18 @@ public abstract class ParametrizedOperation extends Operation {
                 ", parameter=" + parameter +
                 ", parameterGradient=" + parameterGradient +
                 '}';
+    }
+
+    protected static List<String> getSubclasses() {
+        return Arrays.asList(BiasAdd.class.getCanonicalName(), WeightMultiply.class.getCanonicalName());
+    }
+
+    protected static ParametrizedOperation createParametrizedOperation(String cls, Matrix parameter) {
+        if (cls.equals(BiasAdd.class.getCanonicalName()))
+            return new BiasAdd(parameter);
+        else if (cls.equals(WeightMultiply.class.getCanonicalName()))
+            return new WeightMultiply(parameter);
+        else
+            throw new IllegalArgumentException("Не известный класс: " + cls);
     }
 }

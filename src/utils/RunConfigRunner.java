@@ -1,10 +1,12 @@
 package utils;
 
 import com.sun.istack.internal.NotNull;
-import models.exceptions.SerializationException;
+import com.sun.xml.internal.ws.encoding.soap.SerializationException;
 import models.trainers.FitResults;
 import models.trainers.Trainer;
 import options.Constants;
+import serialization.SerializationType;
+import serialization.SerializationUtils;
 
 import java.util.logging.Logger;
 
@@ -61,11 +63,11 @@ public class RunConfigRunner extends Thread {
 
         // сохранение сети
         if (Constants.SAVE_REQUIRED && Constants.SAVE_EACH_CONFIGURATION) {
-            this.fitResults.getNetwork().clear();
             try {
-                Utils.save(this.fitResults.getNetwork(), Constants.SAVE_FOLDER,
+                SerializationUtils.save(this.fitResults.getNetwork(), Constants.SAVE_FOLDER,
                         String.format(Constants.SAVE_NETWORK_PATTERN,
-                                runConfiguration.getMyId().getUid() + '_' + System.currentTimeMillis()));
+                                runConfiguration.getMyId().getUid() + '_' + System.currentTimeMillis()),
+                        Constants.SERIALIZATION_TYPE);
             } catch (SerializationException e) {
                 logger.severe(e.getMessage());
             }

@@ -1,11 +1,15 @@
 package models.math;
 
 import models.interfaces.Copyable;
+import serialization.YamlSerializationOptions;
+import serialization.YamlSerializationUtils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static serialization.YamlSerializationOptions.CRLF;
 
 /**
  * Двумерная матрица вещественных чисел. Внутри используется double[][]. Реализует различные полезные методы для работы
@@ -30,7 +34,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         this.cols = values[0].length;
     }
 
-    static enum Operator {
+    enum Operator {
         MUL,
         ADD,
         SUB,
@@ -761,6 +765,52 @@ public class Matrix implements Copyable<Matrix>, Serializable {
                     rows, cols));
     }
 
+    public String toYaml(int baseIndent, String doubleFormat) {
+        StringBuilder sb = new StringBuilder();
+        final String baseIndentString = YamlSerializationUtils.repeat(" ", baseIndent);
+        sb.append(baseIndentString).append("class: ").append(this.getClass().getCanonicalName()).append(CRLF);
+        sb.append(baseIndentString).append("rows: ").append(rows).append(CRLF);
+        sb.append(baseIndentString).append("cols: ").append(cols).append(CRLF);
+        sb.append(baseIndentString).append("values:").append(CRLF);
+        String[] valuesSA = YamlSerializationUtils.addStringAtBegin(YamlSerializationUtils.double2DArrayToYaml(values, doubleFormat),
+                baseIndentString + YamlSerializationOptions.YAML_INDENT_STRING);
+        sb.append(String.join("\n", valuesSA));
+//        for (int row = 0; row < rows; row++) {
+//            StringBuilder rowSB = new StringBuilder().append('[');
+//            for (int col = 0; col < cols; col++)
+//                rowSB.append(String.format(doubleFormat, values[row][col])).append(", ");
+//            rowSB.delete(rowSB.length() - 2, rowSB.length()).append(']');
+//            sb.append(baseIndentString).append(Constants.YAML_INDENT_STRING).append("- ").append(rowSB).append(CRLF);
+//        }
+        return sb.toString();
+    }
+
+    public static Matrix fromYaml(String yaml, int baseIndent) {
+        final String[] patterns = {
+                "class: " + Matrix.class.getCanonicalName().replace(".", "\\.") + "\\n?",
+                "rows: \\d+\\n?",
+                "cols: \\d+\\n?",
+                "values:\\n?"};
+        String[] lines = YamlSerializationUtils.removeFirstCharacters(yaml.split(CRLF), yaml.indexOf('c'));
+        for (int assertNum = 0; assertNum < patterns.length; assertNum++)
+            if (!lines[assertNum].matches(patterns[assertNum]))
+                throw new IllegalArgumentException(String.format("Формат не верный, строка %d: %s", assertNum + 1, lines[assertNum]));
+        int rows = Integer.parseInt(lines[1].split(":")[1].trim());
+        int cols = Integer.parseInt(lines[2].split(":")[1].trim());
+
+        double[][] array = YamlSerializationUtils.double2DArrayFromYaml(Arrays.copyOfRange(lines, 4, lines.length), YamlSerializationOptions.YAML_INDENT);
+
+        int readRows = array.length;
+        int readCols = array[0].length;
+
+        if (readRows != rows || readCols != cols)
+            throw new IllegalArgumentException(String.format(
+                    "Количество строк/столбцов не совпадает с заявленным (указано %dx%d, считано %dx%d",
+                    rows, cols, readRows, readCols));
+
+        return new Matrix(array);
+    }
+
     /**
      * Проверка равенства количества строк и столбцов
      * @param matrix вторая матрица
@@ -859,5 +909,4 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         assertEqualRows(matrix, message);
         assertEqualCols(matrix, message);
     }
-
 }
