@@ -1,7 +1,6 @@
 import com.sun.xml.internal.ws.encoding.soap.SerializationException;
 import models.trainers.FitResults;
 import options.Constants;
-import serialization.SerializationType;
 import serialization.SerializationUtils;
 import utils.ExperimentConfiguration;
 import utils.RunConfiguration;

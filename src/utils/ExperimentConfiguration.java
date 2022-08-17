@@ -5,7 +5,6 @@ import com.sun.xml.internal.ws.encoding.soap.SerializationException;
 import models.interfaces.Debuggable;
 import models.trainers.FitResults;
 import options.Constants;
-import serialization.SerializationType;
 import serialization.SerializationUtils;
 
 import java.util.*;

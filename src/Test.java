@@ -3,32 +3,18 @@ import models.data.Dataset;
 import models.data.approximation.ApproximationDataLoader;
 import models.data.approximation.ApproximationLoadParameters;
 import models.data.approximation.functions.Function;
-import models.data.approximation.functions.examples.SinX;
 import models.data.approximation.functions.examples.SinX1_mul_X2;
-import models.layers.DenseLayer;
-import models.layers.Layer;
-import models.losses.Loss;
-import models.losses.MeanSquaredError;
 import models.math.Matrix;
 import models.networks.Network;
-import models.operations.BiasAdd;
-import models.operations.Operation;
-import models.operations.ParametrizedOperation;
-import models.operations.WeightMultiply;
-import models.operations.activations.Linear;
-import models.operations.activations.Tanh;
 import options.Constants;
 import options.DefaultParameters;
 import serialization.SerializationType;
 import serialization.SerializationUtils;
-import serialization.YamlSerializationUtils;
 import utils.Errors;
 import utils.Utils;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Класс для тестирования сериализованной сети

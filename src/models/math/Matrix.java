@@ -88,7 +88,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         double[][] result = copy().values;
         for (int row = 0; row < rows; row++)
             for (int col = 0; col < cols; col++)
-                result[row][col] *= rowMatrix.values[0][col];
+                result[row][col] = applyOperator(operator, result[row][col], rowMatrix.values[0][col]);
         return new Matrix(result);
     }
 
