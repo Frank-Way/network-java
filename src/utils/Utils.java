@@ -10,6 +10,7 @@ import models.networks.Network;
 import models.operations.BiasAdd;
 import models.operations.WeightMultiply;
 import models.trainers.FitResults;
+import options.Constants;
 import options.PrintOptions;
 
 import java.util.*;
@@ -55,6 +56,8 @@ public abstract class Utils {
         if (printOptions.isDynamicRequired())
             sb.append("динамика:\n")
                     .append(trainDynamicToTable(results.getTestLossesMap(), doubleFormat)).append("\n");
+
+        sb.append("обучение заняло: ").append(millisToHMS(results.getTimeSpent())).append("\n");
 
         return sb.toString();
     }
@@ -220,47 +223,6 @@ public abstract class Utils {
     }
 
     /**
-     * Запуск всех потоков коллекции с небольшой задержкой
-     * @param threads  потоки
-     * @param <T>  наследник Thread
-     * @param timeout  задержка между запусками потоков в мс
-     */
-    public static <T extends Thread> void startThreads(@NotNull Collection<T> threads, int timeout) {
-        for (T thread: threads) {
-            thread.start();
-            try {
-                Thread.sleep(timeout);
-            } catch (InterruptedException e) {
-                logger.severe("Ошибка во время ожидания при запуске потоков: " + e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * Запуск всех потоков коллекции с задержкой по умолчанию
-     * @param threads  потоки
-     * @param <T>  наследник Thread
-     */
-    public static <T extends Thread> void startThreads(@NotNull Collection<T> threads) {
-        startThreads(threads, 500);
-    }
-
-    /**
-     * Ожидание завершения всех потоков коллекции
-     * @param threads  потоки
-     * @param <T>  наследник Thread
-     */
-    public static <T extends Thread> void joinThreads(@NotNull Collection<T> threads) {
-        for (T thread: threads) {
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                logger.severe(e.getMessage());
-            }
-        }
-    }
-
-    /**
      * Вычисление значения, если оно null
      * @param t  nullable значение
      * @param supplier  поставщик значения
@@ -308,6 +270,14 @@ public abstract class Utils {
         int minutes = (int) ((millis / (MILLIS_PER_SECOND * SECONDS_PER_MINUTE)) % MINUTES_PER_HOUR);
         int hours   = (int) (millis / (MILLIS_PER_SECOND * SECONDS_PER_MINUTE * MINUTES_PER_HOUR));
         return String.format("%d:%d:%d.%d", hours, minutes, seconds, milliseconds);
+    }
+
+    public static void myWait(int timeout) {
+        try {
+            Thread.sleep(timeout);
+        } catch (InterruptedException e) {
+            logger.severe("Ошибка во время ожидания: " + e.getMessage());
+        }
     }
 
     /**

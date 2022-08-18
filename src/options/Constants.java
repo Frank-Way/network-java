@@ -30,10 +30,10 @@ public abstract class Constants {
     public final static PrintOptions PRINT_EACH_CONFIGURATION_BEST = new PrintOptions(false);
 
     // вывод по наилучшей попытке обучения для всех конфигураций каждого эксперимента
-    public final static PrintOptions PRINT_EXPERIMENT_BEST = new PrintOptions(true, 0.5);
+    public final static PrintOptions PRINT_EXPERIMENT_BEST = new PrintOptions(false);
 
     // вывод по наилучшей попытке обучения для всех экспериментов
-    public final static PrintOptions PRINT_ALL_EXPERIMENTS_BEST = new PrintOptions(false);
+    public final static PrintOptions PRINT_ALL_EXPERIMENTS_BEST = new PrintOptions(true);
 
     // флаг, аналогичный PRINT_REQUIRED, но для сохранения обученных сетей
     public final static boolean SAVE_REQUIRED = true;
@@ -50,11 +50,13 @@ public abstract class Constants {
     public final static boolean SAVE_EACH_CONFIGURATION_BEST = false;
 
     // сохранение сети по наилучшей попытке обучения для всех конфигураций каждого эксперимента
-    public final static boolean SAVE_EXPERIMENT_BEST = true;
+    public final static boolean SAVE_EXPERIMENT_BEST = false;
 
     // сохранение сети по наилучшей попытке обучения для всех экспериментов
-    public final static boolean SAVE_ALL_EXPERIMENTS_BEST = false;
+    public final static boolean SAVE_ALL_EXPERIMENTS_BEST = true;
 
     public final static SerializationType SERIALIZATION_TYPE = SerializationType.YAML;
+
+    public final static int MAX_THREADS = 10;
 
 }
