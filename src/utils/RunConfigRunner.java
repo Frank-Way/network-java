@@ -57,8 +57,7 @@ public class RunConfigRunner extends Thread {
         if (Constants.PRINT_REQUIRED && Constants.PRINT_EACH_CONFIGURATION.isRequired())
             logger.info(String.format("Результаты для конфигурации [[%s]]\n", runConfiguration.getDescription()) +
                     Utils.runConfigurationAndFitResultsToString(runConfiguration, this.fitResults,
-                            Constants.PRINT_EACH_CONFIGURATION, Constants.DEBUG_MODE,
-                            Constants.TABLE_PART, Constants.DOUBLE_FORMAT));
+                            Constants.PRINT_EACH_CONFIGURATION, Constants.DEBUG_MODE, Constants.DOUBLE_FORMAT));
 
         // сохранение сети
         if (Constants.SAVE_REQUIRED && Constants.SAVE_EACH_CONFIGURATION) {

@@ -30,7 +30,6 @@ public abstract class Utils {
      * @param results  результаты обучения
      * @param printOptions  опции вывода
      * @param debugMode  режим вывода
-     * @param part  какая часть таблиц выводится
      * @param doubleFormat  формат вывода вещественных чисел
      * @return  строка с требуемыми значениями
      */
@@ -38,7 +37,6 @@ public abstract class Utils {
                                                                @NotNull FitResults results,
                                                                @NotNull PrintOptions printOptions,
                                                                boolean debugMode,
-                                                               double part,
                                                                String doubleFormat) {
         StringBuilder sb = new StringBuilder();
 
@@ -52,7 +50,7 @@ public abstract class Utils {
         if (printOptions.isTableRequired())
             sb.append("таблица:\n")
                     .append(networkOutputToTable(runConfiguration.getFitParameters().getDataset().getValidData(),
-                            results.getNetwork(), part, doubleFormat)).append("\n");
+                            results.getNetwork(), printOptions.getTablePart(), doubleFormat)).append("\n");
 
         if (printOptions.isDynamicRequired())
             sb.append("динамика:\n")

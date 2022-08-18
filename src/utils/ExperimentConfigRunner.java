@@ -95,7 +95,7 @@ public class ExperimentConfigRunner extends Thread {
         if (Constants.PRINT_REQUIRED && Constants.PRINT_EACH_CONFIGURATION_BEST.isRequired())
             logger.info(String.format("Наилучшие результаты обучения для конфигурации [[%s]]\n", runConfiguration.getDescription()) +
                     Utils.runConfigurationAndFitResultsToString(runConfiguration, bestFitResults,
-                            Constants.PRINT_EACH_CONFIGURATION_BEST, Constants.DEBUG_MODE, Constants.TABLE_PART, Constants.DOUBLE_FORMAT));
+                            Constants.PRINT_EACH_CONFIGURATION_BEST, Constants.DEBUG_MODE, Constants.DOUBLE_FORMAT));
 
         // сохранение
         if (Constants.SAVE_REQUIRED && Constants.SAVE_EACH_CONFIGURATION_BEST) {

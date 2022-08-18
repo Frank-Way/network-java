@@ -155,7 +155,7 @@ public class ExperimentConfiguration implements Debuggable {
             logger.info(String.format("Наилучшие результаты обучения для всех конфигураций [эксперимент \"%s\"]\n", description) +
                     Utils.runConfigurationAndFitResultsToString(bestResultsThread.getRunConfiguration(),
                             bestResultsThread.getBestFitResults(), Constants.PRINT_EXPERIMENT_BEST,
-                            Constants.DEBUG_MODE, Constants.TABLE_PART, Constants.DOUBLE_FORMAT));
+                            Constants.DEBUG_MODE, Constants.DOUBLE_FORMAT));
 
         // сохранение сети
         if (Constants.SAVE_REQUIRED && Constants.SAVE_EXPERIMENT_BEST) {

@@ -14,9 +14,6 @@ public abstract class Constants {
     // формат вывода дробных чисел (до точки - общее количество цифр, после - количество цифр дробной части
     public final static String DOUBLE_FORMAT = "%25.20f";
 
-    // какую часть таблиц печатать (1.0 - полностью, 0.5 - каждую вторую строчку и т.д.)
-    public final static double TABLE_PART = 0.1;
-
     // нужно ли выводить какую-либо информацию
     // флаг объединяется с другими настройками вывода по И, так что можно в одном месте "выключить" весь вывод, не меняя
     // остальные настройки вывода
@@ -33,7 +30,7 @@ public abstract class Constants {
     public final static PrintOptions PRINT_EACH_CONFIGURATION_BEST = new PrintOptions(false);
 
     // вывод по наилучшей попытке обучения для всех конфигураций каждого эксперимента
-    public final static PrintOptions PRINT_EXPERIMENT_BEST = new PrintOptions(true);
+    public final static PrintOptions PRINT_EXPERIMENT_BEST = new PrintOptions(true, 0.5);
 
     // вывод по наилучшей попытке обучения для всех экспериментов
     public final static PrintOptions PRINT_ALL_EXPERIMENTS_BEST = new PrintOptions(false);

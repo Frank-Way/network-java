@@ -67,7 +67,7 @@ public class Main {
             logger.info("Наилучшие результаты обучения для всех конфигураций экспериментов\n" +
                     Utils.runConfigurationAndFitResultsToString(
                             bestRunConfiguration, bestFitResults, Constants.PRINT_ALL_EXPERIMENTS_BEST,
-                            Constants.DEBUG_MODE, Constants.TABLE_PART, Constants.DOUBLE_FORMAT));
+                            Constants.DEBUG_MODE, Constants.DOUBLE_FORMAT));
 
         if (Constants.SAVE_REQUIRED && Constants.SAVE_ALL_EXPERIMENTS_BEST) {
             String filename = String.format(Constants.SAVE_NETWORK_PATTERN,
