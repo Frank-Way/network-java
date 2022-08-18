@@ -47,8 +47,7 @@ public abstract class ExperimentConfigurations {
                                                         .activations(Arrays.asList(
                                                                 new Tanh(),
                                                                 new Linear()))
-                                                        .loss(new MeanSquaredError())
-                                                        .getBuilder(),
+                                                        .loss(new MeanSquaredError()),
                                                 new SGD.Builder()
                                                         .startLR(DefaultParameters.START_LR)
                                                         .stopLR(DefaultParameters.STOP_LR),
@@ -78,8 +77,7 @@ public abstract class ExperimentConfigurations {
                                                     .activations(Arrays.asList(
                                                             new Tanh(),
                                                             new Linear()))
-                                                    .loss(new MeanSquaredError())
-                                                    .getBuilder(),
+                                                    .loss(new MeanSquaredError()),
                                             new SGD.Builder()
                                                     .startLR(DefaultParameters.START_LR)
                                                     .stopLR(DefaultParameters.STOP_LR),
@@ -110,7 +108,7 @@ public abstract class ExperimentConfigurations {
                                                             new Tanh(),
                                                             new Linear()))
                                                     .loss(new MeanSquaredError())
-                                                    .getBuilder(),
+                                                    .getBasicBuilder(),
                                             new SGD.Builder()
                                                     .startLR(DefaultParameters.START_LR)
                                                     .stopLR(DefaultParameters.STOP_LR),
@@ -148,7 +146,7 @@ public abstract class ExperimentConfigurations {
                                                                 new Tanh(),
                                                                 new Linear()))
                                                         .loss(new MeanSquaredError())
-                                                        .getBuilder(),
+                                                        .getBasicBuilder(),
                                                 new SGD.Builder()
                                                         .startLR(DefaultParameters.START_LR)
                                                         .stopLR(DefaultParameters.STOP_LR),
@@ -179,7 +177,7 @@ public abstract class ExperimentConfigurations {
                                                                 new Tanh(),
                                                                 new Linear()))
                                                         .loss(new MeanSquaredError())
-                                                        .getBuilder(),
+                                                        .getBasicBuilder(),
                                                 new SGD.Builder()
                                                         .startLR(DefaultParameters.START_LR)
                                                         .stopLR(DefaultParameters.STOP_LR),
@@ -210,7 +208,7 @@ public abstract class ExperimentConfigurations {
                                                                 new Tanh(),
                                                                 new Linear()))
                                                         .loss(new MeanSquaredError())
-                                                        .getBuilder(),
+                                                        .getBasicBuilder(),
                                                 new SGD.Builder()
                                                         .startLR(DefaultParameters.START_LR)
                                                         .stopLR(DefaultParameters.STOP_LR),
@@ -252,7 +250,7 @@ public abstract class ExperimentConfigurations {
                                                                 new Tanh(),
                                                                 new Linear()))
                                                         .loss(new MeanSquaredError())
-                                                        .getBuilder(),
+                                                        .getBasicBuilder(),
                                                 new SGD.Builder()
                                                         .startLR(0.1)
                                                         .stopLR(0.001),
@@ -285,7 +283,7 @@ public abstract class ExperimentConfigurations {
                                                                 new Tanh(),
                                                                 new Linear()))
                                                         .loss(new MeanSquaredError())
-                                                        .getBuilder(),
+                                                        .getBasicBuilder(),
                                                 new SGD.Builder()
                                                         .startLR(0.1)
                                                         .stopLR(0.001),
@@ -322,7 +320,7 @@ public abstract class ExperimentConfigurations {
                                                                 new Tanh(),
                                                                 new Linear()))
                                                         .loss(new MeanSquaredError())
-                                                        .getBuilder(),
+                                                        .getBasicBuilder(),
                                                 new SGD.Builder()
                                                         .startLR(0.1)
                                                         .stopLR(0.001),
@@ -355,7 +353,7 @@ public abstract class ExperimentConfigurations {
                                                                 new Tanh(),
                                                                 new Linear()))
                                                         .loss(new MeanSquaredError())
-                                                        .getBuilder(),
+                                                        .getBasicBuilder(),
                                                 new SGD.Builder()
                                                         .startLR(0.1)
                                                         .stopLR(0.001),

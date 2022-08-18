@@ -141,43 +141,66 @@ public class Network implements Copyable<Network>, Debuggable, Serializable {
         return "Network";
     }
 
-    /**
-     * Билдер для сети
-     */
-    public static class Builder implements Copyable<Builder> {
-        private List<Layer> layers;
-        private Loss loss;
-
-        public Builder() {}
-
-        private Builder(List<Layer> layers, Loss loss) {
-            this.layers = layers;
-            this.loss = loss;
-        }
-
-        public Builder layers(List<Layer> layers) {
-            this.layers = layers;
-            return this;
-        }
-
-        public Builder loss(Loss loss) {
-            this.loss = loss;
-            return this;
-        }
+    public static abstract class Builder implements Copyable<Builder> {
+        protected Builder() {}
 
         public Network build() {
             validate();
-            return new Network(layers, loss);
+            return new Network(getLayers(), getLoss());
         }
 
-        private void validate() {
+        protected abstract void validate();
+
+        protected abstract List<Layer> getLayers();
+
+        protected abstract Loss getLoss();
+
+        public abstract Builder copy();
+    }
+
+    /**
+     * Билдер для сети
+     */
+    public static class BasicBuilder extends Builder {
+        private List<Layer> layers;
+        private Loss loss;
+
+        public BasicBuilder() {}
+
+        private BasicBuilder(List<Layer> layers, Loss loss) {
+            this.layers = layers;
+            this.loss = loss;
+        }
+
+        public BasicBuilder layers(List<Layer> layers) {
+            this.layers = layers;
+            return this;
+        }
+
+        public BasicBuilder loss(Loss loss) {
+            this.loss = loss;
+            return this;
+        }
+
+        @Override
+        protected List<Layer> getLayers() {
+            return layers.stream().map(Utils::copyNullable).collect(Collectors.toList());
+        }
+
+        @Override
+        protected Loss getLoss() {
+            return loss.copy();
+        }
+
+        @Override
+        protected void validate() {
             if (layers == null || layers.size() < 1 || loss == null)
                 throw new IllegalStateException("Невозможно построить сеть. Обязательно указание всех параметров");
         }
 
         @Override
-        public Builder copy() {
-            return new Builder(layers.stream().map(Utils::copyNullable).collect(Collectors.toList()),
+        public BasicBuilder copy() {
+            return new BasicBuilder(layers.stream().map(Utils::copyNullable).collect(Collectors.toList()),
                     Utils.copyNullable(loss));
         }
     }
@@ -186,12 +209,18 @@ public class Network implements Copyable<Network>, Debuggable, Serializable {
      * Билдер для сети, позволяющий строить сеть путем задания отдельных конфигураций слоёв
      * (размер, функция активации) и потери для сети.
      */
-    public static class AnotherBuilder {
+    public static class AnotherBuilder extends Builder {
         private List<Integer> sizes;
         private List<Operation> activations;
         private Loss loss;
 
         public AnotherBuilder() {}
+
+        private AnotherBuilder(List<Integer> sizes, List<Operation> activations, Loss loss) {
+            this.sizes = sizes;
+            this.activations = activations;
+            this.loss = loss;
+        }
 
         public AnotherBuilder sizes(List<Integer> sizes) {
             this.sizes = sizes;
@@ -208,24 +237,19 @@ public class Network implements Copyable<Network>, Debuggable, Serializable {
             return this;
         }
 
-        public Network build() {
-            validate();
-            List<Layer> layers = prepareLayers();
-            return new Network(layers, loss.copy());  // в сеть попадает копия потери
-        }
-
         /**
          * Возвращает "обычный" билдер
          * @return билдер
          */
-        public Builder getBuilder() {
+        public Builder getBasicBuilder() {
             validate();
-            List<Layer> layers = prepareLayers();
-            Network.Builder builder = new Network.Builder();
+            List<Layer> layers = getLayers();
+            BasicBuilder builder = new BasicBuilder();
             return builder.layers(layers).loss(loss.copy());  // в сеть попадает копия потери
         }
 
-        private void validate() {
+        @Override
+        protected void validate() {
             if (sizes == null || activations == null || loss == null)
                 throw new IllegalStateException("Невозможно построить сеть. Обязательно указание всех параметров");
             if (sizes.size() != (1 + activations.size()) || activations.size() < 2)
@@ -234,7 +258,20 @@ public class Network implements Copyable<Network>, Debuggable, Serializable {
                                 sizes.size(), activations.size()));
         }
 
-        private List<Layer> prepareLayers() {
+        @Override
+        public AnotherBuilder copy() {
+            return new AnotherBuilder(new ArrayList<>(sizes),
+                    activations.stream().map(Utils::copyNullable).collect(Collectors.toList()),
+                    Utils.copyNullable(loss));
+        }
+
+        @Override
+        protected Loss getLoss() {
+            return loss.copy();
+        }
+
+        @Override
+        protected List<Layer> getLayers() {
             List<Layer> layers = new ArrayList<>();
             for (int layer = 0; layer < sizes.size() - 1; layer++)  // сеть строится послойно
                 layers.add(new DenseLayer(sizes.get(layer),  // по заданным размерностям текущего
