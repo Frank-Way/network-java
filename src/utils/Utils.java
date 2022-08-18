@@ -10,6 +10,7 @@ import models.networks.Network;
 import models.operations.BiasAdd;
 import models.operations.WeightMultiply;
 import models.trainers.FitResults;
+import options.Constants;
 import options.PrintOptions;
 
 import java.util.*;
@@ -226,13 +227,30 @@ public abstract class Utils {
      * @param timeout  задержка между запусками потоков в мс
      */
     public static <T extends Thread> void startThreads(@NotNull Collection<T> threads, int timeout) {
+        if (Constants.MAX_THREADS > 0)
+            startThreadsPool(threads, timeout, Constants.MAX_THREADS);
+        else
+            startThreadsUnrestricted(threads, timeout);
+    }
+
+    public static <T extends Thread> void startThreadsPool(@NotNull Collection<T> threads, int timeout, int poolSize) {
+        for (T thread: threads) {
+            boolean started = false;
+            while (!started)
+                if (Thread.activeCount() < poolSize) {
+                    thread.start();
+                    started = true;
+                }
+                else
+                    wait(timeout * 5);
+            wait(timeout);
+        }
+    }
+
+    public static <T extends Thread> void startThreadsUnrestricted(@NotNull Collection<T> threads, int timeout) {
         for (T thread: threads) {
             thread.start();
-            try {
-                Thread.sleep(timeout);
-            } catch (InterruptedException e) {
-                logger.severe("Ошибка во время ожидания при запуске потоков: " + e.getMessage());
-            }
+            wait(timeout);
         }
     }
 
@@ -324,5 +342,13 @@ public abstract class Utils {
             sb.append(header).append(" ");
         }
         return sb.toString();
+    }
+
+    private static void wait(int timeout) {
+        try {
+            Thread.sleep(timeout);
+        } catch (InterruptedException e) {
+            logger.severe("Ошибка во время ожидания: " + e.getMessage());
+        }
     }
 }

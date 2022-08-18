@@ -57,4 +57,6 @@ public abstract class Constants {
 
     public final static SerializationType SERIALIZATION_TYPE = SerializationType.YAML;
 
+    public final static int MAX_THREADS = 100;
+
 }
