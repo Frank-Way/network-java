@@ -1,16 +1,13 @@
 package models.math;
 
-import com.sun.istack.internal.NotNull;
-import models.math.functions.*;
-
-import java.util.List;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
 /**
  * Набор операций с матрицами
  */
-public abstract class MatrixOperations {
+public abstract class MatrixUtils {
 
     /**
      * Получение случайной матрицы с равномерным распределением с заданными параметрами
@@ -99,16 +96,16 @@ public abstract class MatrixOperations {
      * @param matrices векторы-столбцы
      * @return результат
      */
-    public static Matrix cartesianProduct(@NotNull List<Matrix> matrices) {
-        if (matrices.size() == 0)
+    public static Matrix cartesianProduct(Matrix ... matrices) {
+        if (matrices.length == 0)
             return null;
-        if (matrices.size() == 1)
-            return matrices.get(0);
-        matrices.forEach(Matrix::assertColMatrix);
-        int[] sizes = matrices.stream().map(Matrix::getRows).mapToInt(Integer::intValue).toArray();
-        int totalRows = reduceIntArrayByMultiplyUpToIndex(sizes, matrices.size());
-        return IntStream.range(0, matrices.size())
-                .mapToObj(i -> extendAndStack(matrices.get(i),
+        if (matrices.length == 1)
+            return matrices[0];
+        Arrays.stream(matrices).forEach(Matrix::assertColMatrix);
+        int[] sizes = Arrays.stream(matrices).map(Matrix::getRows).mapToInt(Integer::intValue).toArray();
+        int totalRows = reduceIntArrayByMultiplyUpToIndex(sizes, matrices.length);
+        return IntStream.range(0, matrices.length)
+                .mapToObj(i -> extendAndStack(matrices[i],
                         totalRows / reduceIntArrayByMultiplyUpToIndex(sizes, i + 1),
                         reduceIntArrayByMultiplyUpToIndex(sizes, i)))
                 .reduce((m1, m2) -> m1.stack(m2, 0))
@@ -207,69 +204,4 @@ public abstract class MatrixOperations {
         return new Matrix(result);
     }
 
-    /**
-     * Набор функций, применяемых к каждому элементу матрицы. Доступные операции:
-     *  abs - f(x) = |x| (получение абсолютных значений);
-     *  exp - f(x) = exp(x) (экспонента);
-     *  pow - f(x, scale) = x ^ scale (возведение в степень);
-     *  tanh - f(x) = tanh(x) (гиперболический тангенс).
-     */
-    public abstract static class Functions {
-        private static Abs absOperation = new Abs();
-        private static Exp expOperation = new Exp();
-        private static Tanh tanhOperation = new Tanh();
-        private static Pow powOperation;
-
-        /**
-         * Применение экспоненты
-         * @param matrix исходная матрица
-         * @return матрица после применения операции
-         */
-        public static Matrix exp(Matrix matrix) {
-            return applyToEachCell(matrix, expOperation);
-        }
-
-        /**
-         * Применение гиперболического тангенса
-         * @param matrix исходная матрица
-         * @return матрица после применения операции
-         */
-        public static Matrix tanh(Matrix matrix) {
-            return applyToEachCell(matrix, tanhOperation);
-        }
-
-        /**
-         * Получение абсолютных значений
-         * @param matrix исходная матрица
-         * @return матрица после применения операции
-         */
-        public static Matrix abs(Matrix matrix) {
-            return applyToEachCell(matrix, absOperation);
-        }
-
-        /**
-         * Возведение в степень
-         * @param matrix исходная матрица
-         * @param scale степень
-         * @return матрица после применения операции
-         */
-        public static Matrix pow(Matrix matrix, double scale) {
-            powOperation = new Pow(scale);
-            return applyToEachCell(matrix, powOperation);
-        }
-
-        /**
-         * Применение операции к каждому элементу матрицы
-         * @param matrix матрица
-         * @param operation операция
-         * @return матрица после применения операции
-         */
-        private static Matrix applyToEachCell(Matrix matrix, DoubleOperation operation) {
-            double[][] result = new double[matrix.getRows()][matrix.getCols()];
-            for (int row = 0; row < matrix.getRows(); row++)
-                for (int col = 0; col < matrix.getCols(); col++)
-                    result[row][col] = operation.apply(matrix.getValue(row, col));
-            return new Matrix(result);
-        }
-    }
 }

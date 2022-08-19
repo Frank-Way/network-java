@@ -4,18 +4,15 @@ import options.AppProperties;
 import options.PrintOptions;
 import serialization.SerializationType;
 import serialization.SerializationUtils;
-import utils.ExperimentConfiguration;
 import utils.MyTask;
-import utils.RunConfiguration;
 import utils.Utils;
+import utils.automatization.ExperimentConfiguration;
+import utils.automatization.RunConfiguration;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -49,13 +46,32 @@ public class Main {
             return;
         }
 
-        List<ExperimentConfiguration> experimentConfigurations = ExperimentConfigurations.getTwoDefaultExperimentConfigurations();
-//        List<ExperimentConfiguration> experimentConfigurations = ExperimentConfigurations.getExperimentConfigurations();
+        ExperimentConfiguration[] experimentConfigurations = null;
+        switch (appProperties.getExperimentsSourceType()) {
+            case CODE:
+                experimentConfigurations = ExperimentConfigurations.getDefaultExperimentConfigurations();
+                break;
+            case YAML_FILE:
+                experimentConfigurations = ExperimentConfigurations.getExperimentConfigurationsFromFile(
+                        appProperties.getExperimentsSourceYamlPath(),
+                        appProperties.getExperimentsSourceYamlFilename(),
+                        SerializationType.YAML);
+                break;
+            default:
+                throw new IllegalArgumentException("Не известный тип источника описания экспериментов: " +
+                        appProperties.getExperimentsSourceType());
+        }
 
         logger.fine("Успешно считаны конфигурации экспериментов");
-        logger.finer(experimentConfigurations.stream()
-                .map(ec -> ec.toString(appProperties.isDebugMode()))
-                .collect(Collectors.toList()).toString());
+        logger.finer(Arrays.toString(experimentConfigurations));
+
+        Arrays.stream(experimentConfigurations).parallel().forEach(experimentConfiguration -> {
+            Arrays.stream(experimentConfiguration.getRunConfigurations()).parallel().forEach(runConfiguration ->  {
+                runConfiguration.getFitParameters().loadDataset();
+            });
+        });
+
+        logger.fine("Успешно загружены все обучающие выборки");
 
         logger.fine("Начало запуска экспериментов");
         ExecutorService executorService = Executors.newFixedThreadPool(appProperties.getThreadPoolSize());
@@ -65,14 +81,14 @@ public class Main {
             for (RunConfiguration runConfiguration: experimentConfiguration.getRunConfigurations())
                 runConfigurationToFuturesToResultsMap.put(runConfiguration,
                         IntStream.range(0, runConfiguration.getRetries())
-                                .mapToObj(value -> executorService.submit(new MyTask(runConfiguration.getFitParameters().copy())))
+                                .mapToObj(value -> executorService.submit(new MyTask(runConfiguration.getFitParameters().deepCopy())))
                                 .collect(Collectors.toSet()));
 
         Map<ExperimentConfiguration, Set<Future<FitResults>>> experimentConfigurationToFuturesMap = new HashMap<>();
         for (ExperimentConfiguration experimentConfiguration: experimentConfigurations) {
             experimentConfigurationToFuturesMap.put(experimentConfiguration, new HashSet<>());
             for (Map.Entry<RunConfiguration, Set<Future<FitResults>>> entry : runConfigurationToFuturesToResultsMap.entrySet())
-                if (experimentConfiguration.getRunConfigurations().contains(entry.getKey()))
+                if (Utils.contains(experimentConfiguration.getRunConfigurations(), entry.getKey()))
                     experimentConfigurationToFuturesMap.get(experimentConfiguration).addAll(entry.getValue());
         }
 
@@ -101,7 +117,7 @@ public class Main {
 
                 tryToSave(appProperties.isSaveRequired() && appProperties.isSaveConfigurationEach(),
                         runConfiguration, fitResults, appProperties.getSaveFilenamePattern(),
-                        appProperties.getSaveFolder(), appProperties.getSaveSerializationType(),
+                        appProperties.getSavePath(), appProperties.getSaveSerializationType(),
                         appProperties.getDoubleFormat());
 
                 // если обрабатываемый результат был последним для соответствующей конфигурации запуска,
@@ -118,7 +134,7 @@ public class Main {
 
                     tryToSave(appProperties.isSaveRequired() && appProperties.isSaveConfigurationBest(),
                             runConfiguration, bestFitResults, appProperties.getSaveFilenamePattern(),
-                            appProperties.getSaveFolder(), appProperties.getSaveSerializationType(),
+                            appProperties.getSavePath(), appProperties.getSaveSerializationType(),
                             appProperties.getDoubleFormat());
 
                     logTimeSpent(runConfigurationToFuturesToResultsMap.get(runConfiguration),
@@ -141,7 +157,7 @@ public class Main {
 
                     tryToSave(appProperties.isSaveRequired() && appProperties.isSaveExperimentBest(),
                             bestRunConfiguration, bestFitResults, appProperties.getSaveFilenamePattern(),
-                            appProperties.getSaveFolder(), appProperties.getSaveSerializationType(),
+                            appProperties.getSavePath(), appProperties.getSaveSerializationType(),
                             appProperties.getDoubleFormat());
 
                     logTimeSpent(experimentConfigurationToFuturesMap.get(experimentConfiguration),
@@ -150,6 +166,7 @@ public class Main {
                 }
             }  // завершение обработки полученных результатов
             Utils.myWait(1_000);  // таймаут перед проверкой наличия новых результатов
+            logger.fine("Количество активных потоков: " + ((ThreadPoolExecutor) executorService).getActiveCount());
         }
 
         // после получения всех результатов обязательно завершается executorService, иначе программа никогда не
@@ -170,7 +187,7 @@ public class Main {
 
         tryToSave(appProperties.isSaveRequired() && appProperties.isSaveExperimentBest(),
                 bestRunConfiguration, bestFitResults, appProperties.getSaveFilenamePattern(),
-                appProperties.getSaveFolder(), appProperties.getSaveSerializationType(),
+                appProperties.getSavePath(), appProperties.getSaveSerializationType(),
                 appProperties.getDoubleFormat());
 
         logTimeSpent(processedFutures, "Выполнение всех экспериментов заняло");

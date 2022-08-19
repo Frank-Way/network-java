@@ -1,7 +1,6 @@
 package models.data;
 
-import models.interfaces.Copyable;
-import utils.Utils;
+import utils.copy.DeepCopyable;
 
 /**
  * Обучающая выборка, состоящая из трёх частей типа {@link Data}:
@@ -9,7 +8,7 @@ import utils.Utils;
  *  testData - данные для тестов (предполагается использование для оценки во время обучения);
  *  validData - данные для валидации (предполагается использование для оценки после обучения).
  */
-public class Dataset implements Copyable<Dataset> {
+public class Dataset implements DeepCopyable {
     private final Data validData;
     private final Data testData;
     private final Data trainData;
@@ -39,16 +38,16 @@ public class Dataset implements Copyable<Dataset> {
     }
 
     @Override
-    public Dataset copy() {
-        return new Dataset(Utils.copyNullable(trainData), Utils.copyNullable(testData), Utils.copyNullable(validData));
-    }
-
-    @Override
     public String toString() {
         return "Dataset{" +
                 "validData=" + validData +
                 ", testData=" + testData +
                 ", trainData=" + trainData +
                 '}';
+    }
+
+    @Override
+    public Dataset deepCopy() {
+        return new Dataset(trainData.deepCopy(), testData.deepCopy(), validData.deepCopy());
     }
 }

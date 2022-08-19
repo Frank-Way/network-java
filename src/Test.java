@@ -1,26 +1,9 @@
-import com.sun.xml.internal.ws.encoding.soap.SerializationException;
-import models.data.Dataset;
-import models.data.approximation.ApproximationDataLoader;
-import models.data.approximation.ApproximationLoadParameters;
-import models.data.approximation.functions.Function;
-import models.data.approximation.functions.examples.SinX1_mul_X2;
-import models.math.Matrix;
-import models.networks.Network;
-import options.DefaultParameters;
-import serialization.SerializationType;
-import serialization.SerializationUtils;
-import utils.Errors;
-import utils.Utils;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 /**
  * Класс для тестирования сериализованной сети
  */
 public class Test {
     public static void main(String[] args) {
-//        /*
+        /*
         String doubleFormat = "%15.10f";
         String networksDirectory = "networks";  // путь к директории с сетями
         Path pathToNetworks = Paths.get(networksDirectory);
@@ -68,6 +51,6 @@ public class Test {
                 .append("\n");  // таблица по всей выборке
 
         System.out.println(sb);
-//        */
+        */
     }
 }

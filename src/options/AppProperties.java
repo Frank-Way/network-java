@@ -45,7 +45,7 @@ public class AppProperties {
     private final boolean saveRequired;
 
     // папка для сохранения обученных сетей
-    private final String saveFolder;
+    private final String savePath;
     // шаблон для имени файлов с сетями
     private final String saveFilenamePattern;
 
@@ -67,6 +67,15 @@ public class AppProperties {
     // максимальный размер пула тредов
     private final int threadPoolSize;
 
+    // откуда считывать описание экспериментов
+    private final ExperimentsSourceType experimentsSourceType;
+
+    // папка с YAML-файлом с описанием экспериментов
+    private final String experimentsSourceYamlPath;
+
+    // имя YAML-файла с описанием экспериментов
+    private final String experimentsSourceYamlFilename;
+
     public AppProperties() throws IOException {
         this(propertiesFileName);
     }
@@ -85,16 +94,17 @@ public class AppProperties {
             printExperimentEach = readPrintOptions(properties, "experiment.each");
             printExperimentBest = readPrintOptions(properties, "experiment.best");
             saveRequired = Boolean.parseBoolean(properties.getProperty("save.required", "false"));
-            saveFolder = userDir + File.separator + properties.getProperty("save.folder", "networks");
+            savePath = userDir + File.separator + properties.getProperty("save.path", "networks");
             saveFilenamePattern = properties.getProperty("save.filename.pattern", "network_%s");
             saveConfigurationEach = Boolean.parseBoolean(properties.getProperty("save.configuration.each", "false"));
             saveConfigurationBest = Boolean.parseBoolean(properties.getProperty("save.configuration.best", "false"));
             saveExperimentEach = Boolean.parseBoolean(properties.getProperty("save.experiment.each", "false"));
             saveExperimentBest = Boolean.parseBoolean(properties.getProperty("save.experiment.best", "false"));
-            saveSerializationType = SerializationType.valueOf(properties.getProperty("save.serialization.type", "YAML"));
-//            saveSerializationType = SerializationType.YAML;
+            saveSerializationType = SerializationType.valueOf(properties.getProperty("save.serialization.type", "JAVA"));
             threadPoolSize = Integer.parseInt(properties.getProperty("thread.pool.size", "10"));
-
+            experimentsSourceType = ExperimentsSourceType.valueOf(properties.getProperty("experiments.source", "CODE"));
+            experimentsSourceYamlPath = properties.getProperty("experiments.source.yaml.path", "");
+            experimentsSourceYamlFilename = properties.getProperty("experiments.source.yaml.filename", "");
         } catch (IOException ex) {
             logger.severe("Ошибка при загрузке параметров: " + ex);
             throw ex;
@@ -142,8 +152,8 @@ public class AppProperties {
         return saveRequired;
     }
 
-    public String getSaveFolder() {
-        return saveFolder;
+    public String getSavePath() {
+        return savePath;
     }
 
     public String getSaveFilenamePattern() {
@@ -174,6 +184,18 @@ public class AppProperties {
         return threadPoolSize;
     }
 
+    public ExperimentsSourceType getExperimentsSourceType() {
+        return experimentsSourceType;
+    }
+
+    public String getExperimentsSourceYamlPath() {
+        return experimentsSourceYamlPath;
+    }
+
+    public String getExperimentsSourceYamlFilename() {
+        return experimentsSourceYamlFilename;
+    }
+
     @Override
     public String toString() {
         return "AppProperties{" +
@@ -185,7 +207,7 @@ public class AppProperties {
                 ", printExperimentEach=" + printExperimentEach +
                 ", printExperimentBest=" + printExperimentBest +
                 ", saveRequired=" + saveRequired +
-                ", saveFolder='" + saveFolder + '\'' +
+                ", savePath='" + savePath + '\'' +
                 ", saveFilenamePattern='" + saveFilenamePattern + '\'' +
                 ", saveConfigurationEach=" + saveConfigurationEach +
                 ", saveConfigurationBest=" + saveConfigurationBest +
@@ -193,6 +215,9 @@ public class AppProperties {
                 ", saveExperimentBest=" + saveExperimentBest +
                 ", saveSerializationType=" + saveSerializationType +
                 ", threadPoolSize=" + threadPoolSize +
+                ", experimentsSourceType=" + experimentsSourceType +
+                ", experimentsSourceYamlPath='" + experimentsSourceYamlPath + '\'' +
+                ", experimentsSourceYamlFilename='" + experimentsSourceYamlFilename + '\'' +
                 '}';
     }
 }

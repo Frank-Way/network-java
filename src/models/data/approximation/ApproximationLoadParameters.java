@@ -1,28 +1,38 @@
 package models.data.approximation;
 
-import com.sun.istack.internal.NotNull;
 import models.data.LoadParameters;
 import models.data.approximation.functions.Function;
+import serialization.annotations.YamlField;
+import serialization.annotations.YamlSerializable;
 
 /**
  * Параметры метода load класса {@link ApproximationDataLoader}
  */
+@YamlSerializable
 public class ApproximationLoadParameters extends LoadParameters {
-    private final Function function;
-    private final int size;
-    private final int testSize;
-    private final int validSize;
-    private final double testPart;
-    private final double validPart;
-    private final double extendingFactor;
+    @YamlField private final Function function;
+    @YamlField private final int size;
+    @YamlField private final int testSize;
+    @YamlField private final int validSize;
+    @YamlField private final double extendingFactor;
 
-    public ApproximationLoadParameters(@NotNull Function function, int size, double testPart, double validPart, double extendingFactor) {
+    private ApproximationLoadParameters() {
+        this(null, 0, 0, 0, 0);
+    }
+
+    public ApproximationLoadParameters(Function function, int size, double testPart, double validPart, double extendingFactor) {
         this.function = function;
         this.size = size;
         this.testSize = (int)(size * testPart);
         this.validSize = (int)(size * validPart);
-        this.testPart = testPart;
-        this.validPart = validPart;
+        this.extendingFactor = extendingFactor;
+    }
+
+    public ApproximationLoadParameters(Function function, int size, int testSize, int validSize, double extendingFactor) {
+        this.function = function;
+        this.size = size;
+        this.testSize = testSize;
+        this.validSize = validSize;
         this.extendingFactor = extendingFactor;
     }
 
@@ -32,14 +42,6 @@ public class ApproximationLoadParameters extends LoadParameters {
 
     public int getSize() {
         return size;
-    }
-
-    public double getTestPart() {
-        return testPart;
-    }
-
-    public double getValidPart() {
-        return validPart;
     }
 
     public int getTestSize() {
@@ -61,8 +63,11 @@ public class ApproximationLoadParameters extends LoadParameters {
                 ", size=" + size +
                 ", testSize=" + testSize +
                 ", validSize=" + validSize +
-                ", testPart=" + testPart +
-                ", validPart=" + validPart +
                 '}';
+    }
+
+    @Override
+    public ApproximationLoadParameters deepCopy() {
+        return new ApproximationLoadParameters(function.deepCopy(), size, testSize, validSize, extendingFactor);
     }
 }

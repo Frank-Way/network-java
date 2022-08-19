@@ -1,12 +1,11 @@
-package utils;
+package utils.automatization;
 
-import com.sun.istack.internal.NotNull;
-import models.interfaces.Debuggable;
 import models.trainers.FitResults;
+import serialization.annotations.YamlField;
+import serialization.annotations.YamlSerializable;
 
-import java.util.List;
+import java.util.Arrays;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Класс с описанием эксперимента для исследования зависимости влияния отдельных параметров. Представляет собой
@@ -19,60 +18,48 @@ import java.util.stream.Collectors;
  *  мапа<{@link RunConfiguration}, список<{@link FitResults}>> - отражение результатов обучения для каждой конфигурации;
  *  мапа<{@link RunConfiguration}, <{@link FitResults}> - отражение наилучших результатов обучения для каждой конфигурации;
  */
-public class ExperimentConfiguration implements Debuggable {
-    private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+@YamlSerializable
+public class ExperimentConfiguration {
+    private static final transient Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
-    private final String description;
-    private final List<RunConfiguration> runConfigurations;
+    @YamlField private final String description;
+    @YamlField private final RunConfiguration[] runConfigurations;
 
     /**
      * Конструктор
      * @param description  описание эксперимента (например, "Влияние размера выборки")
      * @param runConfigurations  набор {@link RunConfiguration} для запуска эксперимента
      */
-    public ExperimentConfiguration(String description, @NotNull List<RunConfiguration> runConfigurations) {
+    public ExperimentConfiguration(String description, RunConfiguration[] runConfigurations) {
         this.runConfigurations = runConfigurations;
         this.description = description;
     }
 
-    public List<RunConfiguration> getRunConfigurations() {
+    private ExperimentConfiguration() {
+        this(null, null);
+    }
+
+    public RunConfiguration[] getRunConfigurations() {
         return runConfigurations;
     }
 
     public RunConfiguration getRunConfiguration(int index) {
-        return runConfigurations.get(index);
-    }
-
-    public void addRunConfiguration(@NotNull RunConfiguration runConfiguration) {
-        runConfigurations.add(runConfiguration);
-    }
-
-    public void addRunConfiguration(int index, @NotNull RunConfiguration runConfiguration) {
-        runConfigurations.add(index, runConfiguration);
+        return runConfigurations[index];
     }
 
     public int runConfigurationsCount() {
-        return runConfigurations.size();
+        return runConfigurations.length;
     }
 
     public String getDescription() {
         return description;
     }
+
     @Override
     public String toString() {
         return "ExperimentConfiguration{" +
                 "description='" + description + '\'' +
-                ", runConfigurations=" + runConfigurations +
-                '}';
-    }
-
-    @Override
-    public String toString(boolean debugMode) {
-        if (debugMode)
-            return toString();
-        return "КонфигурацияЭксперимента{" +
-                "описание='" + description + '\'' +
-                ", конфигурацииЗапуска=" + runConfigurations.stream().map(rc -> rc.toString(debugMode)).collect(Collectors.toList()) +
+                ", runConfigurations=" + Arrays.toString(runConfigurations) +
                 '}';
     }
 }

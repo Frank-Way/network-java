@@ -1,43 +1,40 @@
 package models.networks;
 
-import com.sun.istack.internal.NotNull;
-import models.interfaces.Copyable;
-import models.interfaces.Debuggable;
-import models.layers.DenseLayer;
 import models.layers.Layer;
 import models.losses.Loss;
 import models.math.Matrix;
-import models.operations.Operation;
-import serialization.YamlSerializationOptions;
-import serialization.YamlSerializationUtils;
-import utils.Utils;
+import serialization.annotations.YamlField;
+import serialization.annotations.YamlSerializable;
+import utils.copy.CopyUtils;
+import utils.copy.DeepCopyable;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static serialization.YamlSerializationOptions.CRLF;
+import java.util.Objects;
 
 /**
  * Нейросеть, представленная как набор слоёв и потеря. Атрибуты модели:
  *  список<{@link Layer}> - набор слоёв;
  *  {@link Loss} - потеря для оценки работы сети
  */
-public class Network implements Copyable<Network>, Debuggable, Serializable {
-    private static final long serialVersionUID = 5657416029976548410L;
-    private final List<Layer> layers;
-    private final Loss loss;
+@YamlSerializable
+public class Network implements DeepCopyable, Serializable {
+//    private static final transient long serialVersionUID = 5657416029976548410L;
+    @YamlField private final Layer[] layers;
+    @YamlField private final Loss loss;
 
     /**
      * Конструктор
      * @param layers набор слоёв
      * @param loss потеря
      */
-    public Network(@NotNull List<Layer> layers, @NotNull Loss loss) {
+    public Network(Layer[] layers, Loss loss) {
         this.layers = layers;
         this.loss = loss;
+    }
+
+    private Network() {
+        this(null, null);
     }
 
     /**
@@ -45,8 +42,8 @@ public class Network implements Copyable<Network>, Debuggable, Serializable {
      * @param inputs вход
      * @return выход
      */
-    public Matrix forward(@NotNull Matrix inputs) {
-        Matrix result = inputs.copy();
+    public Matrix forward(Matrix inputs) {
+        Matrix result = inputs.deepCopy();
         for (Layer layer: layers)
             result = layer.forward(result);
         return result;
@@ -57,10 +54,10 @@ public class Network implements Copyable<Network>, Debuggable, Serializable {
      * @param lossGradient градиент на выходе сети (градиент потери)
      * @return градиент на входе сети
      */
-    public Matrix backward(@NotNull Matrix lossGradient) {
-        Matrix result = lossGradient.copy();
-        for (int i = 0; i < layers.size(); i++)
-            result = layers.get(layers.size() - 1 - i).backward(result);
+    public Matrix backward(Matrix lossGradient) {
+        Matrix result = lossGradient.deepCopy();
+        for (int i = 0; i < layers.length; i++)
+            result = layers[layers.length - 1 - i].backward(result);
         return result;
     }
 
@@ -70,7 +67,7 @@ public class Network implements Copyable<Network>, Debuggable, Serializable {
      * @param targets требуемые выходы
      * @return потеря
      */
-    public double calculateLoss(@NotNull Matrix inputs, @NotNull Matrix targets) {
+    public double calculateLoss(Matrix inputs, Matrix targets) {
         Matrix prediction = forward(inputs);
         return loss.forward(prediction, targets);
     }
@@ -81,7 +78,7 @@ public class Network implements Copyable<Network>, Debuggable, Serializable {
      * @param targets требуемые выходы
      * @return потеря
      */
-    public double trainBatch(@NotNull Matrix inputs, @NotNull Matrix targets) {
+    public double trainBatch(Matrix inputs, Matrix targets) {
         Matrix predictions = forward(inputs);
         double batchLoss = loss.forward(predictions, targets);
         Matrix lossGradient = loss.backward();
@@ -89,232 +86,46 @@ public class Network implements Copyable<Network>, Debuggable, Serializable {
         return batchLoss;
     }
 
-    private List<Layer> getLayers() {
+    private Layer[] getLayers() {
         return layers;
     }
 
     public Layer getLayer(int index) {
-        return layers.get(index);
-    }
-
-    public void addLayer(@NotNull Layer layer) {
-        layers.add(layer);
-    }
-
-    public void addLayer(int index, @NotNull Layer layer) {
-        layers.add(index, layer);
+        return layers[index];
     }
 
     public int layersCount() {
-        return layers.size();
+        return layers.length;
+    }
+
+    public Loss getLoss() {
+        return loss;
     }
 
     @Override
-    public Network copy() {
-        return new Network(layers.stream().map(Utils::copyNullable).collect(Collectors.toList()),
-                Utils.copyNullable(loss));
+    public Network deepCopy() {
+        return new Network(Arrays.stream(layers).map(Layer::deepCopy).toArray(Layer[]::new),
+                loss.deepCopy());
     }
 
     @Override
     public String toString() {
-        return getDebugClassName() + "{" +
-                "layers=" + layers +
+        return "Network{" +
+                "layers=" + Arrays.toString(layers) +
                 ", loss=" + loss +
                 '}';
     }
 
     @Override
-    public String toString(boolean debugMode) {
-        if (debugMode)
-            return toString();
-        return getClassName() + "{" +
-                "слои=" + layers.stream().map(layer -> layer.toString(debugMode)).collect(Collectors.toList()) +
-                ", потеря=" + loss.toString(debugMode) +
-                '}';
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Network network = (Network) o;
+        return Arrays.equals(layers, network.layers) && loss.equals(network.loss);
     }
 
-    private String getClassName() {
-        return "Нейросеть";
-    }
-
-    private String getDebugClassName() {
-        return "Network";
-    }
-
-    public static abstract class Builder implements Copyable<Builder> {
-        protected Builder() {}
-
-        public Network build() {
-            validate();
-            return new Network(getLayers(), getLoss());
-        }
-
-        protected abstract void validate();
-
-        protected abstract List<Layer> getLayers();
-
-        protected abstract Loss getLoss();
-
-        public abstract Builder copy();
-    }
-
-    /**
-     * Билдер для сети
-     */
-    public static class BasicBuilder extends Builder {
-        private List<Layer> layers;
-        private Loss loss;
-
-        public BasicBuilder() {}
-
-        private BasicBuilder(List<Layer> layers, Loss loss) {
-            this.layers = layers;
-            this.loss = loss;
-        }
-
-        public BasicBuilder layers(List<Layer> layers) {
-            this.layers = layers;
-            return this;
-        }
-
-        public BasicBuilder loss(Loss loss) {
-            this.loss = loss;
-            return this;
-        }
-
-        @Override
-        protected List<Layer> getLayers() {
-            return layers.stream().map(Utils::copyNullable).collect(Collectors.toList());
-        }
-
-        @Override
-        protected Loss getLoss() {
-            return loss.copy();
-        }
-
-        @Override
-        protected void validate() {
-            if (layers == null || layers.size() < 1 || loss == null)
-                throw new IllegalStateException("Невозможно построить сеть. Обязательно указание всех параметров");
-        }
-
-        @Override
-        public BasicBuilder copy() {
-            return new BasicBuilder(layers.stream().map(Utils::copyNullable).collect(Collectors.toList()),
-                    Utils.copyNullable(loss));
-        }
-    }
-
-    /**
-     * Билдер для сети, позволяющий строить сеть путем задания отдельных конфигураций слоёв
-     * (размер, функция активации) и потери для сети.
-     */
-    public static class AnotherBuilder extends Builder {
-        private List<Integer> sizes;
-        private List<Operation> activations;
-        private Loss loss;
-
-        public AnotherBuilder() {}
-
-        private AnotherBuilder(List<Integer> sizes, List<Operation> activations, Loss loss) {
-            this.sizes = sizes;
-            this.activations = activations;
-            this.loss = loss;
-        }
-
-        public AnotherBuilder sizes(List<Integer> sizes) {
-            this.sizes = sizes;
-            return this;
-        }
-
-        public AnotherBuilder activations(List<Operation> activations) {
-            this.activations = activations;
-            return this;
-        }
-
-        public AnotherBuilder loss(Loss loss) {
-            this.loss = loss;
-            return this;
-        }
-
-        /**
-         * Возвращает "обычный" билдер
-         * @return билдер
-         */
-        public Builder getBasicBuilder() {
-            validate();
-            List<Layer> layers = getLayers();
-            BasicBuilder builder = new BasicBuilder();
-            return builder.layers(layers).loss(loss.copy());  // в сеть попадает копия потери
-        }
-
-        @Override
-        protected void validate() {
-            if (sizes == null || activations == null || loss == null)
-                throw new IllegalStateException("Невозможно построить сеть. Обязательно указание всех параметров");
-            if (sizes.size() != (1 + activations.size()) || activations.size() < 2)
-                throw new IllegalStateException(String.format(
-                        "Размеры sizes и activations должны быть равны и больше 1 (sizes=%d, activations=%d)",
-                                sizes.size(), activations.size()));
-        }
-
-        @Override
-        public AnotherBuilder copy() {
-            return new AnotherBuilder(new ArrayList<>(sizes),
-                    activations.stream().map(Utils::copyNullable).collect(Collectors.toList()),
-                    Utils.copyNullable(loss));
-        }
-
-        @Override
-        protected Loss getLoss() {
-            return loss.copy();
-        }
-
-        @Override
-        protected List<Layer> getLayers() {
-            List<Layer> layers = new ArrayList<>();
-            for (int layer = 0; layer < sizes.size() - 1; layer++)  // сеть строится послойно
-                layers.add(new DenseLayer(sizes.get(layer),  // по заданным размерностям текущего
-                        sizes.get(layer + 1),  // и следующего слоёв
-                        activations.get(layer).copy()));  // с копией функции активации
-            return layers;
-        }
-    }
-
-    public String toYaml(int baseIndent, String doubleFormat) {
-        StringBuilder sb = new StringBuilder();
-        final String baseIndentString = YamlSerializationUtils.repeat(" ", baseIndent);
-        sb.append(baseIndentString).append("class: ").append(this.getClass().getCanonicalName()).append(CRLF);
-        sb.append(baseIndentString).append("loss: ").append(CRLF);
-        sb.append(loss.toYaml(baseIndent + YamlSerializationOptions.YAML_INDENT, doubleFormat));
-        sb.append(baseIndentString).append("layers: ");
-        for (Layer layer: layers) {
-            sb.append(CRLF).append(YamlSerializationUtils.makeListInstance(layer.toYaml(
-                    baseIndent + YamlSerializationOptions.YAML_INDENT * 2, doubleFormat)));
-            sb.deleteCharAt(sb.length() - 1);
-        }
-        return sb.toString();
-    }
-
-    public static Network fromYaml(String yaml, int baseIndent) {
-        String[] lines = YamlSerializationUtils.removeFirstCharacters(yaml.split(CRLF), yaml.indexOf('c'));
-        String cls = YamlSerializationUtils.getClassAsString(lines, Math.max(baseIndent - YamlSerializationOptions.YAML_INDENT, 0));
-        final String[] patterns = {"class: " + cls.replace(".", "\\.") + "\\n?",
-                "loss:\\s?\\n?",
-                ".*",
-                "layers:\\s?\\n?"};
-        for (int i = 0; i < patterns.length; i++)
-            if (!lines[i].matches(patterns[i]))
-                throw new IllegalArgumentException("Не верный формат строки: " + lines[i]);
-        Loss loss = Loss.fromYaml(String.join("\n", YamlSerializationUtils.filterByIndent(lines, 2)),
-                YamlSerializationOptions.YAML_INDENT);
-        List<String> layersAsStrings = YamlSerializationUtils.readListAsStringsArray(Arrays.copyOfRange(
-                lines, YamlSerializationUtils.getIndexOfStringMatchingPattern(lines, patterns[3]) + 1, lines.length));
-        List<Layer> layers = layersAsStrings.stream()
-                .map(layerAsString ->
-                        Layer.fromYaml(layerAsString, baseIndent + YamlSerializationOptions.YAML_INDENT * 2))
-                .collect(Collectors.toList());
-
-        return new Network(layers, loss);
+    @Override
+    public int hashCode() {
+        return Objects.hash(Arrays.hashCode(layers), loss);
     }
 }

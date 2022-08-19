@@ -1,9 +1,12 @@
 package models.data.approximation.functions;
 
-import com.sun.istack.internal.NotNull;
+import serialization.annotations.YamlField;
+import serialization.annotations.YamlSerializable;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import utils.copy.DeepCopyable;
 
-import java.util.List;
+import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * Описание функции, для воспроизведения которого будет обучена сеть. Функция может быть многомерной (при этом выход ё
@@ -12,44 +15,48 @@ import java.util.List;
  *  expression - строковое представление функции;
  *  список<{@link VariableRange}> - набор диапазонов изменения каждой входной переменной.
  */
-public abstract class Function {
-    private final String expression;
-    private final List<VariableRange> variableRanges;
+@YamlSerializable
+public abstract class Function implements DeepCopyable, Serializable {
+    @YamlField protected final String expression;
+    @YamlField protected final VariableRange[] variableRanges;
 
     /**
      * Конструктор
      * @param expression строковое представление
      * @param variableRanges диапазоны входных переменных
      */
-    public Function(@NotNull String expression, @NotNull List<VariableRange> variableRanges) {
+    public Function(String expression, VariableRange[] variableRanges) {
         this.expression = expression;
         this.variableRanges = variableRanges;
     }
 
     public int getInputsCount() {
-        return variableRanges.size();
+        return variableRanges.length;
     }
 
     public String getExpression() {
         return expression;
     }
 
-    public List<VariableRange> getVariableRanges() {
+    public VariableRange[] getVariableRanges() {
         return variableRanges;
     }
 
     // логика вычислений определяется наследниками
-    public abstract double calculate(@NotNull double[] arguments);
+    public abstract double calculate(double[] arguments);
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{" +
                 "expression='" + expression + '\'' +
-                ", variableRanges=" + variableRanges +
+                ", variableRanges=" + Arrays.toString(variableRanges) +
                 '}';
     }
 
-    protected static List<VariableRange> getDefaultVariableRanges() {
+    protected static VariableRange[] getDefaultVariableRanges() {
         throw new NotImplementedException();
     }
+
+    @Override
+    public abstract Function deepCopy();
 }

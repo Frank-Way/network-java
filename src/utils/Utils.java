@@ -1,27 +1,27 @@
 package utils;
 
-import com.sun.istack.internal.NotNull;
 import models.data.Data;
-import models.interfaces.Copyable;
-import models.interfaces.Debuggable;
 import models.math.Matrix;
-import models.math.MatrixOperations;
+import models.math.MatrixUtils;
 import models.networks.Network;
 import models.operations.BiasAdd;
 import models.operations.WeightMultiply;
 import models.trainers.FitResults;
 import options.PrintOptions;
+import utils.automatization.RunConfiguration;
 
 import java.util.*;
+import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Утилитарные методы, используемые в различных частях проекта
  */
 public abstract class Utils {
-    private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+    private static final transient Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
     /**
      * Получение строки с описанием конфигурации запуска и результатов обучения, представленных, соответственно,
@@ -33,15 +33,15 @@ public abstract class Utils {
      * @param doubleFormat  формат вывода вещественных чисел
      * @return  строка с требуемыми значениями
      */
-    public static String runConfigurationAndFitResultsToString(@NotNull RunConfiguration runConfiguration,
-                                                               @NotNull FitResults results,
-                                                               @NotNull PrintOptions printOptions,
+    public static String runConfigurationAndFitResultsToString(RunConfiguration runConfiguration,
+                                                               FitResults results,
+                                                               PrintOptions printOptions,
                                                                boolean debugMode,
                                                                String doubleFormat) {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("конфигурация:\n").append(runConfiguration.toString(debugMode)).append("\n");
-        sb.append("результаты:\n").append(results.toString(debugMode)).append("\n");
+        sb.append("конфигурация:\n").append(runConfiguration.toString()).append("\n");
+        sb.append("результаты:\n").append(results.toString()).append("\n");
 
         if (printOptions.isParametersRequired())
             sb.append("параметры:\n")
@@ -49,7 +49,7 @@ public abstract class Utils {
 
         if (printOptions.isTableRequired())
             sb.append("таблица:\n")
-                    .append(networkOutputToTable(runConfiguration.getFitParameters().getDataset().getValidData(),
+                    .append(networkOutputToTable(results.getDataset().getValidData(),
                             results.getNetwork(), printOptions.getTablePart(), doubleFormat)).append("\n");
 
         if (printOptions.isDynamicRequired())
@@ -131,10 +131,10 @@ public abstract class Utils {
      * @param doubleFormat  формат вывода вещественных чисел
      * @return  строка с таблицей
      */
-    public static String networkIOToStringTable(@NotNull Matrix inputs,
-                                                @NotNull Matrix targets,
-                                                @NotNull Matrix predictions,
-                                                @NotNull Matrix errors,
+    public static String networkIOToStringTable(Matrix inputs,
+                                                Matrix targets,
+                                                Matrix predictions,
+                                                Matrix errors,
                                                 double part, String doubleFormat) {
         List<String> xHeaders = new ArrayList<>();
         List<String> yHeaders = new ArrayList<>();
@@ -166,10 +166,10 @@ public abstract class Utils {
      * @param doubleFormat  формат вывода вещественных чисел
      * @return  строка с таблицей
      */
-    public static String buildStringTableFromHeadersAndBody(@NotNull List<String> xHeaders,
-                                                            @NotNull Matrix xValues,
-                                                            @NotNull List<String> yHeaders,
-                                                            @NotNull Matrix yValues,
+    public static String buildStringTableFromHeadersAndBody(List<String> xHeaders,
+                                                            Matrix xValues,
+                                                            List<String> yHeaders,
+                                                            Matrix yValues,
                                                             double part, String doubleFormat) {
         char mainSpliterator = '|';
         char separatorBase = '-';
@@ -188,7 +188,7 @@ public abstract class Utils {
         separatorSB.append(separatorSpliterator);
         while (separatorSB.length() < headerSB.length())
             separatorSB.append(separatorBase);
-        int[] indices = MatrixOperations.getLinSpace(0, xValues.getRows() - 1, (int)Math.round(xValues.getRows() * part));
+        int[] indices = MatrixUtils.getLinSpace(0, xValues.getRows() - 1, (int)Math.round(xValues.getRows() * part));
         for (int row: indices) {
             for (int col = 0; col < xValues.getCols(); col++)
                 bodySB.append(String.format(format, xValues.getValue(row, col)));
@@ -201,36 +201,15 @@ public abstract class Utils {
     }
 
     /**
-     * Преобразование мапы в строку, где ключ и значение реализуют интерфейс Debuggable
-     * @param map  мапа
-     * @param debugMode  режим
-     * @param <T>  ключ, реализующий Debuggable
-     * @param <E>  значение, реализующее Debuggable
-     * @return  строковое представление мапы
-     */
-    public static <T extends Debuggable, E extends Debuggable> String mapToDebugString(@NotNull Map<T, E> map, boolean debugMode) {
-        if (debugMode)
-            return map.toString();
-        if (map.size() < 1)
-            return "{}";
-        return '{' +
-                map.entrySet().stream()
-                .map(entry -> entry != null ? ((entry.getKey() != null ? entry.getKey().toString(debugMode) : "null") +
-                        ":" + (entry.getValue() != null ?entry.getValue().toString(debugMode) : "null")) : "")
-                .collect(Collectors.joining(", ")) +
-                '}';
-    }
-
-    /**
      * Вычисление значения, если оно null
-     * @param t  nullable значение
+     * @param nullableValue  nullable значение
      * @param supplier  поставщик значения
      * @param <T>  тип значения
      * @return  t или значение от поставщика
      */
-    public static <T> T computeIfAbsent(T t, @NotNull Supplier<T> supplier) {
-        if (t != null)
-            return t;
+    public static <T> T computeIfAbsent(T nullableValue, Supplier<T> supplier) {
+        if (nullableValue != null)
+            return nullableValue;
         return supplier.get();
     }
 
@@ -243,16 +222,6 @@ public abstract class Utils {
         return Thread.getAllStackTraces().keySet().stream()
                 .filter(t -> t.getId() == threadId)
                 .findFirst();
-    }
-
-    /**
-     * Копирует nullable-объект, реализующий интерфейс Copyable
-     * @param t  nullable-объект
-     * @param <T>  тип объекта
-     * @return  null или копия объекта
-     */
-    public static <T extends Copyable<T>> T copyNullable(T t) {
-        return t != null ? t.copy() : null;
     }
 
     /**
@@ -277,6 +246,38 @@ public abstract class Utils {
         } catch (InterruptedException e) {
             logger.severe("Ошибка во время ожидания: " + e.getMessage());
         }
+    }
+
+    public static boolean allTrue(Collection<Boolean> booleans) {
+        return !booleans.contains(false);
+    }
+
+    public static boolean anyTrue(Collection<Boolean> booleans) {
+        return booleans.contains(true);
+    }
+
+    protected static <T> T reduceCollection(Collection<T> collection, BinaryOperator<T> accumulator, T defaultValue) {
+        return collection.stream().reduce(accumulator).orElse(defaultValue);
+    }
+
+    public static <T> boolean listsDeepEquals(List<T> list1, List<T> list2) {
+        return list1.size() == list2.size() && allTrue(IntStream.range(0, list1.size())
+                .mapToObj(i -> list1.get(i).equals(list2.get(i)))
+                .collect(Collectors.toSet()));
+    }
+
+    public static <T> T computeOrGetNull(T nullableValue, Supplier<T> supplier) {
+        if (nullableValue == null)
+            return null;
+        return supplier.get();
+    }
+
+    public static <T> boolean contains(T[] array, T value) {
+        boolean result = false;
+        int i = 0;
+        while (!result || i++ < array.length)
+            result = array[i].equals(value);
+        return result;
     }
 
     /**

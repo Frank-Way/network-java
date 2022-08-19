@@ -1,26 +1,34 @@
 package models.data.approximation.functions.examples;
 
-import com.sun.istack.internal.NotNull;
 import models.data.approximation.functions.Function;
 import models.data.approximation.functions.VariableRange;
+import utils.copy.CopyUtils;
 
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * f(x) = x
  */
 public class X extends Function {
-    public X(@NotNull List<VariableRange> variableRanges) {
-        super("x1", variableRanges);
+    private X() {
+        this(null);
+    }
+
+    public X(VariableRange[] variableRanges) {
+        super("f(x1) = x1", variableRanges);
     }
 
     @Override
-    public double calculate(@NotNull double[] arguments) {
+    public double calculate(double[] arguments) {
         return arguments[0];
     }
 
-    public static List<VariableRange> getDefaultVariableRanges() {
-        return Arrays.asList(new VariableRange(1.0, 2.0));
+    public static VariableRange[] getDefaultVariableRanges() {
+        return new VariableRange[]{new VariableRange(1.0, 2.0)};
+    }
+
+    @Override
+    public X deepCopy() {
+        return new X(Arrays.stream(variableRanges).map(VariableRange::deepCopy).toArray(VariableRange[]::new));
     }
 }

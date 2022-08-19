@@ -1,11 +1,9 @@
 package models.trainers;
 
 import models.data.Dataset;
-import models.interfaces.Copyable;
-import models.interfaces.Debuggable;
 import models.networks.Network;
 import utils.Errors;
-import utils.Utils;
+import utils.copy.DeepCopyable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +15,7 @@ import java.util.Map;
  *  {@link Errors} - ошибки работы сети при прогоне части обучающей выборки для валидации;
  *  {@link models.data.Dataset} - обучающая выборка;
  */
-public class FitResults implements Copyable<FitResults>, Debuggable {
+public class FitResults implements DeepCopyable {
     private final Map<Integer, Double> testLossesMap;
     private final Network network;
     private final Errors errors;
@@ -81,7 +79,7 @@ public class FitResults implements Copyable<FitResults>, Debuggable {
     public String toString() {
         return "FitResults{" +
                 "testLossesMap=" + testLossesMap +
-                ", bestNetwork=" + network +
+                ", network=" + network +
                 ", errors=" + errors +
                 ", dataset=" + dataset +
                 ", timeSpent=" + timeSpent +
@@ -89,20 +87,8 @@ public class FitResults implements Copyable<FitResults>, Debuggable {
     }
 
     @Override
-    public String toString(boolean debugMode) {
-        if (debugMode)
-            return toString();
-        return "РезультатыОбучения{" +
-                "потериПоЭпохам=" + testLossesMap +
-                ", лучшаяСеть=" + network.toString(debugMode) +
-                ", ошибки=" + errors.toString(debugMode) +
-                ", длилосьМс=" + Utils.millisToHMS(timeSpent) +
-                '}';
-    }
-
-    @Override
-    public FitResults copy() {
-        return new FitResults(new HashMap<>(testLossesMap), Utils.copyNullable(network),
-                Utils.copyNullable(errors), Utils.copyNullable(dataset), timeSpent);
+    public FitResults deepCopy() {
+        return new FitResults(new HashMap<>(testLossesMap), network.deepCopy(),
+                errors.deepCopy(), dataset.deepCopy(), timeSpent);
     }
 }

@@ -1,7 +1,6 @@
 package models.losses;
 
 import models.math.Matrix;
-import utils.Utils;
 
 /**
  * Среднеквадратическая ошибка.
@@ -15,10 +14,7 @@ public class MeanSquaredError extends Loss{
     /***
      * copy-constructor
      */
-    private MeanSquaredError(Matrix prediction,
-                            Matrix target,
-                            double output,
-                            Matrix inputGradient) {
+    protected MeanSquaredError(Matrix prediction, Matrix target, double output, Matrix inputGradient) {
         super(prediction, target, output, inputGradient);
     }
 
@@ -50,18 +46,7 @@ public class MeanSquaredError extends Loss{
     }
 
     @Override
-    public MeanSquaredError copy() {
-        return new MeanSquaredError(Utils.copyNullable(prediction), Utils.copyNullable(target),
-                output, Utils.copyNullable(inputGradient));
-    }
-
-    @Override
-    protected String getClassName() {
-        return "СреднеквадратическаяОшибка";
-    }
-
-    @Override
-    protected String getDebugClassName() {
-        return "MeanSquaredError";
+    public MeanSquaredError deepCopy() {
+        return new MeanSquaredError();
     }
 }

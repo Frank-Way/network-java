@@ -8,4 +8,5 @@ public class YamlSerializationOptions {
     public final static String YAML_LIST_PREFIX = "- ";
     public final static String YAML_SEPARATOR = ": ";
     public final static String YAML_SPACE = " ";
+    public final static String YAML_COMMENT_START = "  # ";
 }

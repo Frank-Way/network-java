@@ -1,7 +1,13 @@
 package models.data;
 
+import serialization.annotations.YamlSerializable;
+import utils.copy.DeepCopyable;
+
 /**
  * Параметры для загрузки данных
  */
-public abstract class LoadParameters {
+@YamlSerializable
+public abstract class LoadParameters implements DeepCopyable {
+    @Override
+    public abstract LoadParameters deepCopy();
 }

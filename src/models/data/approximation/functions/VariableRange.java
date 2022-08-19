@@ -1,7 +1,13 @@
 package models.data.approximation.functions;
 
 import models.math.Matrix;
-import models.math.MatrixOperations;
+import models.math.MatrixUtils;
+import serialization.annotations.YamlField;
+import serialization.annotations.YamlSerializable;
+import utils.copy.DeepCopyable;
+
+import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * Диапазон изменения входных переменных. Обе границы включаются в диапазон. Имеется возможность расширить границы на
@@ -9,9 +15,14 @@ import models.math.MatrixOperations;
  *  left - левая граница диапазона;
  *  right - правая граница диапазона.
  */
-public class VariableRange {
-    private final double left;
-    private final double right;
+@YamlSerializable
+public class VariableRange implements DeepCopyable, Serializable {
+    @YamlField private final double left;
+    @YamlField private final double right;
+
+    private VariableRange() {
+        this(0, 0);
+    }
 
     /**
      * Конструктор
@@ -37,7 +48,7 @@ public class VariableRange {
      * @return вектор-строка с диапазоном
      */
     public Matrix getRange(int size) {
-        return MatrixOperations.getLinSpace(left, right, size);
+        return MatrixUtils.getLinSpace(left, right, size);
     }
 
     /**
@@ -49,6 +60,32 @@ public class VariableRange {
     public Matrix getExtendedRange(int size, double extendingFactor) {
         double mid = (right + left) / 2.0;
         double halfRange = (right - left) / 2.0 * extendingFactor;
-        return MatrixOperations.getLinSpace(mid - halfRange, mid + halfRange, size);
+        return MatrixUtils.getLinSpace(mid - halfRange, mid + halfRange, size);
+    }
+
+    @Override
+    public VariableRange deepCopy() {
+        return new VariableRange(left, right);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        VariableRange that = (VariableRange) o;
+        return Double.compare(that.left, left) == 0 && Double.compare(that.right, right) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(left, right);
+    }
+
+    @Override
+    public String toString() {
+        return "VariableRange{" +
+                "left=" + left +
+                ", right=" + right +
+                '}';
     }
 }

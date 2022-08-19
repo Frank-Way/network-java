@@ -1,7 +1,7 @@
 package models.trainers;
 
-import com.sun.istack.internal.NotNull;
 import models.data.Data;
+import models.data.Dataset;
 import models.networks.Network;
 import models.optimizers.Optimizer;
 import utils.Errors;
@@ -24,7 +24,7 @@ public class Trainer {
      * @param parameters параметры обучения
      * @return результаты обучения
      */
-    public static FitResults fit(@NotNull FitParameters parameters) {
+    public static FitResults fit(FitParameters parameters) {
         if (parameters.isPreTrainRequired())
             return fitWithPreTrain(parameters);
         return fitSingleTry(parameters, parameters.getNetworkBuilder().build());
@@ -40,6 +40,8 @@ public class Trainer {
         long startTime = System.currentTimeMillis();
         double bestTestLoss = Double.MAX_VALUE;  // наилучшая потеря на тестовой выборке
         Network bestNetwork = network;  // сеть, обеспечившая наилучшую потерю
+
+        Dataset dataset = parameters.getDataset();
 
         Map<Integer, Double> testLossesMap = new HashMap<>();  // мапа зависимости потери от эпохи
 
@@ -63,7 +65,7 @@ public class Trainer {
 
         for (int epoch = 1; epoch <= parameters.getEpochs(); epoch++) {
             double trainLoss = 0.0;  // потеря на обучающей выборке
-            for (Data batch: parameters.getDataset().getTrainData().getBatchesGenerator(parameters.getBatchSize(),
+            for (Data batch: dataset.getTrainData().getBatchesGenerator(parameters.getBatchSize(),
                     true)) {
                 // обучение
                 trainLoss += network.trainBatch(batch.getInputs(), batch.getOutputs());
@@ -75,13 +77,13 @@ public class Trainer {
                 continue;
 
             double testLoss = 0.0;  // потеря на тестовой выборке
-            for (Data batch: parameters.getDataset().getTestData().getBatchesGenerator(parameters.getBatchSize(),
+            for (Data batch: dataset.getTestData().getBatchesGenerator(parameters.getBatchSize(),
                     true))
                 testLoss += network.calculateLoss(batch.getInputs(), batch.getOutputs());
 
             if (testLoss < bestTestLoss) {  // сохранение наилучших результатов
                 bestTestLoss = testLoss;
-                bestNetwork = network.copy();
+                bestNetwork = network.deepCopy();
             }
 
             testLossesMap.put(epoch, testLoss);
@@ -102,22 +104,23 @@ public class Trainer {
 
         return new FitResults(testLossesMap,
                 bestNetwork,
-                Errors.buildFromTargetsAndPredictions(parameters.getDataset().getValidData().getOutputs(),
-                        bestNetwork.forward(parameters.getDataset().getValidData().getInputs())),
-                parameters.getDataset(),
+                Errors.buildFromTargetsAndPredictions(dataset.getValidData().getOutputs(),
+                        bestNetwork.forward(dataset.getValidData().getInputs())),
+                dataset,
                 System.currentTimeMillis() - startTime);
     }
 
     private static FitResults fitWithPreTrain(FitParameters parameters) {
         Network bestNetwork = null;
         double bestLoss = Double.MAX_VALUE;
+        Dataset dataset = parameters.getDataLoader().load(parameters.getLoadParameters());
         FitParameters preTrainParameters = parameters.preTrainCopy();
         for (int preTrain = 0; preTrain < parameters.getPreTrainsCount(); preTrain++) {
-            FitResults results = fitSingleTry(preTrainParameters.copy(),
+            FitResults results = fitSingleTry(preTrainParameters.deepCopy(),
                     parameters.getNetworkBuilder().build());
             Network network = results.getNetwork();
-            double loss = network.calculateLoss(parameters.getDataset().getValidData().getInputs(),
-                    parameters.getDataset().getValidData().getOutputs());
+            double loss = network.calculateLoss(dataset.getValidData().getInputs(),
+                    dataset.getValidData().getOutputs());
             if (loss < bestLoss) {
                 bestLoss = loss;
                 bestNetwork = network;

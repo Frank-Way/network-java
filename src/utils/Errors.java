@@ -1,9 +1,8 @@
 package utils;
 
-import models.interfaces.Copyable;
-import models.interfaces.Debuggable;
 import models.losses.MeanSquaredError;
 import models.math.Matrix;
+import utils.copy.DeepCopyable;
 
 /**
  * Ошибки работы сети. Параметры модели:
@@ -13,7 +12,7 @@ import models.math.Matrix;
  *  meanAbsoluteError - средняя абсолютная ошибка;
  *  lossMSE - средняя квадратическая ошибка.
  */
-public class Errors implements Copyable<Errors>, Debuggable {
+public class Errors implements DeepCopyable {
     private final double maxAbsoluteError;
     private final double maxRelativeError;
     private final double meanAbsoluteError;
@@ -66,7 +65,7 @@ public class Errors implements Copyable<Errors>, Debuggable {
     }
 
     @Override
-    public Errors copy() {
+    public Errors deepCopy() {
         return new Errors(maxAbsoluteError, maxRelativeError, meanAbsoluteError, lossMSE);
     }
 
@@ -77,18 +76,6 @@ public class Errors implements Copyable<Errors>, Debuggable {
                 ", maxRelativeError=" + maxRelativeError +
                 ", meanAbsoluteError=" + meanAbsoluteError +
                 ", lossMSE=" + lossMSE +
-                '}';
-    }
-
-    @Override
-    public String toString(boolean debugMode) {
-        if (debugMode)
-            return toString();
-        return "Ошибки{" +
-                "максимальнаяАбсолютнаяОшибка=" + maxAbsoluteError +
-                ", максимальнаяОтносительнаяОшибка=" + maxRelativeError +
-                ", средняяАбсолютнаяОшибка=" + meanAbsoluteError +
-                ", средняяКвадратическаяОшибка=" + lossMSE +
                 '}';
     }
 }

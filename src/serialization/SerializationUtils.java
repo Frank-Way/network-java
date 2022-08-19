@@ -1,7 +1,11 @@
 package serialization;
 
 import com.sun.xml.internal.ws.encoding.soap.SerializationException;
-import models.networks.Network;
+import serialization.formatters.Formatter;
+import serialization.formatters.yaml.YamlFormatter;
+import serialization.wrappers.ObjectWrapper;
+import serialization.wrappers.Wrapper;
+import serialization.wrappers.WrapperFactory;
 
 import javax.imageio.IIOException;
 import java.io.*;
@@ -16,29 +20,31 @@ public class SerializationUtils {
     private static final String JAVA_EXTENSION = "dat";
     private static final String YAML_EXTENSION = "yaml";
     /**
-     * Сериализация сети в файл
-     * @param network сеть
+     * Сериализация объекта в файл
+     * @param object объект
      * @param path путь
      * @param filename имя файла
      * @param serializationType тип сериализации
      * @param doubleFormat формат вещественных чисел
      */
-    public static void save(Network network, String path, String filename,
+    public static void save(Object object, String path, String filename,
                             SerializationType serializationType, String doubleFormat) throws SerializationException {
         try {
             switch (serializationType) {
                 case JAVA:
-                    saveToFile(convertToBytes(network), path, filename, JAVA_EXTENSION);
+                    saveToFile(convertToBytes(object), path, filename, JAVA_EXTENSION);
                     break;
                 case YAML:
-                    saveToFile(network.toYaml(0, doubleFormat).getBytes(StandardCharsets.UTF_8),
+                    Formatter formatter = new YamlFormatter(doubleFormat);
+                    Wrapper wrapper = WrapperFactory.createWrapper(object.getClass(), formatter);
+                    saveToFile(wrapper.writeValue(object).getBytes(StandardCharsets.UTF_8),
                             path, filename, YAML_EXTENSION);
                     break;
                 default:
                     throw new IllegalArgumentException("Не известный тип сериализации: " + serializationType);
             }
-        } catch (IOException ioe) {
-            throw new SerializationException(ioe);
+        } catch (IOException e) {
+            throw new SerializationException(e);
         }
     }
 
@@ -70,20 +76,23 @@ public class SerializationUtils {
     }
 
     /**
-     * Десериализация сети из файла
+     * Десериализация объекта из файла
+     * @param clazz класс объекта
      * @param path путь
      * @param filename имя файла
      * @param serializationType тип сериализации
      * @return десериализованная сеть
      */
-    public static Network load(String path, String filename, SerializationType serializationType) throws SerializationException {
+    public static Object load(Class<?> clazz, String path, String filename, SerializationType serializationType) throws SerializationException {
         try {
             switch (serializationType) {
                 case JAVA:
-                    return (Network) convertFromBytes(loadFromFile(path, filename, JAVA_EXTENSION));
+                    return convertFromBytes(loadFromFile(path, filename, JAVA_EXTENSION));
                 case YAML:
-                    return Network.fromYaml(new String(loadFromFile(path, filename, YAML_EXTENSION),
-                            StandardCharsets.UTF_8), 0);
+                    Formatter formatter = new YamlFormatter(null);
+                    Wrapper wrapper = WrapperFactory.createWrapper(clazz, formatter);
+                    return wrapper.readValue(new String(loadFromFile(path, filename, YAML_EXTENSION),
+                            StandardCharsets.UTF_8));
                 default:
                     throw new IllegalArgumentException("Не известный тип сериализации: " + serializationType);
             }
@@ -113,6 +122,8 @@ public class SerializationUtils {
     }
 
     private static String getFullPath(String path, String filename, String extension) {
-        return path + File.separator + filename + "." + extension;
+        if (!path.isEmpty())
+            return path + File.separator + filename + "." + extension;
+        else return filename + "." + extension;
     }
 }

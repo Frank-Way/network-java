@@ -1,246 +1,185 @@
 import models.data.approximation.ApproximationDataLoader;
 import models.data.approximation.ApproximationLoadParameters;
 import models.data.approximation.functions.examples.Sin2X;
-import models.data.approximation.functions.examples.SinX;
-import models.data.approximation.functions.examples.SinX1_mul_X2;
 import models.losses.MeanSquaredError;
-import models.networks.Network;
-import models.operations.activations.Linear;
-import models.operations.activations.Tanh;
-import models.optimizers.SGD;
+import models.networks.AnotherNetworkBuilder;
+import models.operations.LinearActivation;
+import models.operations.Operation;
+import models.operations.TanhActivation;
+import models.optimizers.SGDBuilder;
 import models.trainers.FitParameters;
 import models.trainers.QueriesRangeType;
-import options.DefaultParameters;
-import utils.ExperimentConfiguration;
-import utils.RunConfiguration;
+import serialization.SerializationType;
+import serialization.SerializationUtils;
+import utils.automatization.ExperimentConfiguration;
+import utils.automatization.RunConfiguration;
 
 import java.util.Arrays;
-import java.util.List;
 
 public abstract class ExperimentConfigurations {
     private static final String DEFAULT_DOUBLE_FORMAT = "%15.10f";
-    public static List<ExperimentConfiguration> getExperimentConfigurations() {
-        return getExperimentConfigurations(DEFAULT_DOUBLE_FORMAT);
-    }
-    public static List<ExperimentConfiguration> getExperimentConfigurations(String doubleFormat) {
-        return Arrays.asList(
 
+    public static ExperimentConfiguration[] getDefaultExperimentConfigurations() {
+        return getDefaultExperimentConfigurations(DEFAULT_DOUBLE_FORMAT);
+    }
+
+    public static ExperimentConfiguration[] getDefaultExperimentConfigurations(String doubleFormat) {
+        return new ExperimentConfiguration[]{
                 new ExperimentConfiguration("Исследование влияния размера выборки",
-                        Arrays.asList(
-                                new RunConfiguration(DefaultParameters.RETRIES, "Размер по умолчанию",
+                        new RunConfiguration[]{
+                                new RunConfiguration(2, "1024 элементов",
                                         new FitParameters(
-                                                new ApproximationDataLoader().load(
-                                                        new ApproximationLoadParameters(
-                                                                new Sin2X(Sin2X.getDefaultVariableRanges()),
-                                                                DefaultParameters.SIZE,
-                                                                DefaultParameters.TEST_PART,
-                                                                DefaultParameters.VALID_PART,
-                                                                DefaultParameters.EXTENDING_FACTOR)),
-                                                DefaultParameters.EPOCHS,
-                                                DefaultParameters.BATCH_SIZE,
-                                                DefaultParameters.QUERIES,
-                                                DefaultParameters.EARLY_STOPPING,
+                                                new ApproximationDataLoader(),
+                                                new ApproximationLoadParameters(
+                                                        new Sin2X(Sin2X.getDefaultVariableRanges()),
+                                                        1024,
+                                                        0.5,
+                                                        0.25,
+                                                        1.1
+                                                ),
+                                                500,
+                                                64,
+                                                10,
+                                                true,
                                                 doubleFormat,
-                                                DefaultParameters.PRE_TRAIN_REQUIRED,
-                                                DefaultParameters.PRE_TRAINS_COUNT,
-                                                DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
-                                                new Network.AnotherBuilder()
-                                                        .sizes(Arrays.asList(1, 8, 1))
-                                                        .activations(Arrays.asList(
-                                                                new Tanh(),
-                                                                new Linear()))
+                                                true,
+                                                3,
+                                                10,
+                                                new AnotherNetworkBuilder()
+                                                        .sizes(new int[]{
+                                                                1,
+                                                                8,
+                                                                1
+                                                        })
+                                                        .activations(new Operation[] {
+                                                                new TanhActivation(),
+                                                                new LinearActivation()
+                                                        })
                                                         .loss(new MeanSquaredError()),
-                                                new SGD.Builder()
-                                                        .startLR(DefaultParameters.START_LR)
-                                                        .stopLR(DefaultParameters.STOP_LR),
-                                                QueriesRangeType.LINEAR
-                                        )  // end FitParameters
-                                ),  // end RunConfiguration
-
-                            new RunConfiguration(DefaultParameters.RETRIES, "Размер * 2",
-                                    new FitParameters(
-                                            new ApproximationDataLoader().load(
-                                                    new ApproximationLoadParameters(
-                                                            new Sin2X(Sin2X.getDefaultVariableRanges()),
-                                                            DefaultParameters.SIZE * 2,
-                                                            DefaultParameters.TEST_PART,
-                                                            DefaultParameters.VALID_PART,
-                                                            DefaultParameters.EXTENDING_FACTOR)),
-                                            DefaultParameters.EPOCHS,
-                                            DefaultParameters.BATCH_SIZE,
-                                            DefaultParameters.QUERIES,
-                                            DefaultParameters.EARLY_STOPPING,
-                                            doubleFormat,
-                                            DefaultParameters.PRE_TRAIN_REQUIRED,
-                                            DefaultParameters.PRE_TRAINS_COUNT,
-                                            DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
-                                            new Network.AnotherBuilder()
-                                                    .sizes(Arrays.asList(1, 8, 1))
-                                                    .activations(Arrays.asList(
-                                                            new Tanh(),
-                                                            new Linear()))
-                                                    .loss(new MeanSquaredError()),
-                                            new SGD.Builder()
-                                                    .startLR(DefaultParameters.START_LR)
-                                                    .stopLR(DefaultParameters.STOP_LR),
-                                            QueriesRangeType.LINEAR
-                                    )  // end FitParameters
-                            ),  // end RunConfiguration
-
-                            new RunConfiguration(DefaultParameters.RETRIES, "Размер * 4",
-                                    new FitParameters(
-                                            new ApproximationDataLoader().load(
-                                                    new ApproximationLoadParameters(
-                                                            new Sin2X(Sin2X.getDefaultVariableRanges()),
-                                                            DefaultParameters.SIZE * 4,
-                                                            DefaultParameters.TEST_PART,
-                                                            DefaultParameters.VALID_PART,
-                                                            DefaultParameters.EXTENDING_FACTOR)),
-                                            DefaultParameters.EPOCHS,
-                                            DefaultParameters.BATCH_SIZE,
-                                            DefaultParameters.QUERIES,
-                                            DefaultParameters.EARLY_STOPPING,
-                                            doubleFormat,
-                                            DefaultParameters.PRE_TRAIN_REQUIRED,
-                                            DefaultParameters.PRE_TRAINS_COUNT,
-                                            DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
-                                            new Network.AnotherBuilder()
-                                                    .sizes(Arrays.asList(1, 8, 1))
-                                                    .activations(Arrays.asList(
-                                                            new Tanh(),
-                                                            new Linear()))
-                                                    .loss(new MeanSquaredError())
-                                                    .getBasicBuilder(),
-                                            new SGD.Builder()
-                                                    .startLR(DefaultParameters.START_LR)
-                                                    .stopLR(DefaultParameters.STOP_LR),
-                                            QueriesRangeType.LINEAR
-                                    )  // end FitParameters
-                            )  // end RunConfiguration
-                        )  // end List<RunConfiguration>
-                ),  // end ExperimentConfiguration
-
-
-
-                new ExperimentConfiguration("Исследование влияния количества эпох",
-                        Arrays.asList(
-
-                                new RunConfiguration(DefaultParameters.RETRIES, "Эпох по умолчанию",
+                                                new SGDBuilder()
+                                                        .startLR(0.1)
+                                                        .stopLR(0.0001),
+                                                QueriesRangeType.NON_LINEAR
+                                        )  // new FitParameters
+                                ),  // new RunConfiguration
+                                new RunConfiguration(2, "2048 элементов",
                                         new FitParameters(
-                                                new ApproximationDataLoader().load(
-                                                        new ApproximationLoadParameters(
-                                                                new Sin2X(Sin2X.getDefaultVariableRanges()),
-                                                                DefaultParameters.SIZE,
-                                                                DefaultParameters.TEST_PART,
-                                                                DefaultParameters.VALID_PART,
-                                                                DefaultParameters.EXTENDING_FACTOR)),
-                                                DefaultParameters.EPOCHS,
-                                                DefaultParameters.BATCH_SIZE,
-                                                DefaultParameters.QUERIES,
-                                                DefaultParameters.EARLY_STOPPING,
+                                                new ApproximationDataLoader(),
+                                                new ApproximationLoadParameters(
+                                                        new Sin2X(Sin2X.getDefaultVariableRanges()),
+                                                        2048,
+                                                        0.5,
+                                                        0.25,
+                                                        1.1
+                                                ),
+                                                500,
+                                                64,
+                                                10,
+                                                true,
                                                 doubleFormat,
-                                                DefaultParameters.PRE_TRAIN_REQUIRED,
-                                                DefaultParameters.PRE_TRAINS_COUNT,
-                                                DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
-                                                new Network.AnotherBuilder()
-                                                        .sizes(Arrays.asList(1, 8, 1))
-                                                        .activations(Arrays.asList(
-                                                                new Tanh(),
-                                                                new Linear()))
-                                                        .loss(new MeanSquaredError())
-                                                        .getBasicBuilder(),
-                                                new SGD.Builder()
-                                                        .startLR(DefaultParameters.START_LR)
-                                                        .stopLR(DefaultParameters.STOP_LR),
-                                                QueriesRangeType.LINEAR
-                                        )  // end FitParameters
-                                ),  // end RunConfiguration
-
-                                new RunConfiguration(DefaultParameters.RETRIES, "Эпох * 2",
+                                                true,
+                                                3,
+                                                10,
+                                                new AnotherNetworkBuilder()
+                                                        .sizes(new int[]{
+                                                                1,
+                                                                8,
+                                                                1
+                                                        })
+                                                        .activations(new Operation[] {
+                                                                new TanhActivation(),
+                                                                new LinearActivation()
+                                                        })
+                                                        .loss(new MeanSquaredError()),
+                                                new SGDBuilder()
+                                                        .startLR(0.1)
+                                                        .stopLR(0.0001),
+                                                QueriesRangeType.NON_LINEAR
+                                        )  // new FitParameters
+                                ),  // new RunConfiguration
+                                new RunConfiguration(2, "4096 элементов",
                                         new FitParameters(
-                                                new ApproximationDataLoader().load(
-                                                        new ApproximationLoadParameters(
-                                                                new Sin2X(Sin2X.getDefaultVariableRanges()),
-                                                                DefaultParameters.SIZE,
-                                                                DefaultParameters.TEST_PART,
-                                                                DefaultParameters.VALID_PART,
-                                                                DefaultParameters.EXTENDING_FACTOR)),
-                                                DefaultParameters.EPOCHS * 2,
-                                                DefaultParameters.BATCH_SIZE,
-                                                DefaultParameters.QUERIES,
-                                                DefaultParameters.EARLY_STOPPING,
+                                                new ApproximationDataLoader(),
+                                                new ApproximationLoadParameters(
+                                                        new Sin2X(Sin2X.getDefaultVariableRanges()),
+                                                        4096,
+                                                        0.5,
+                                                        0.25,
+                                                        1.1
+                                                ),
+                                                500,
+                                                64,
+                                                10,
+                                                true,
                                                 doubleFormat,
-                                                DefaultParameters.PRE_TRAIN_REQUIRED,
-                                                DefaultParameters.PRE_TRAINS_COUNT,
-                                                DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
-                                                new Network.AnotherBuilder()
-                                                        .sizes(Arrays.asList(1, 8, 1))
-                                                        .activations(Arrays.asList(
-                                                                new Tanh(),
-                                                                new Linear()))
-                                                        .loss(new MeanSquaredError())
-                                                        .getBasicBuilder(),
-                                                new SGD.Builder()
-                                                        .startLR(DefaultParameters.START_LR)
-                                                        .stopLR(DefaultParameters.STOP_LR),
-                                                QueriesRangeType.LINEAR
-                                        )  // end FitParameters
-                                ),  // end RunConfiguration
-
-                                new RunConfiguration(DefaultParameters.RETRIES, "Эпох * 4",
+                                                true,
+                                                3,
+                                                10,
+                                                new AnotherNetworkBuilder()
+                                                        .sizes(new int[]{
+                                                                1,
+                                                                8,
+                                                                1
+                                                        })
+                                                        .activations(new Operation[] {
+                                                                new TanhActivation(),
+                                                                new LinearActivation()
+                                                        })
+                                                        .loss(new MeanSquaredError()),
+                                                new SGDBuilder()
+                                                        .startLR(0.1)
+                                                        .stopLR(0.0001),
+                                                QueriesRangeType.NON_LINEAR
+                                        )  // new FitParameters
+                                )  // new RunConfiguration
+                        }  // new RunConfiguration[]
+                ),  // new ExperimentConfiguration
+                new ExperimentConfiguration("Исследование влияния длительности обучения",
+                        new RunConfiguration[]{
+                                new RunConfiguration(2, "500 эпох",
                                         new FitParameters(
-                                                new ApproximationDataLoader().load(
-                                                        new ApproximationLoadParameters(
-                                                                new Sin2X(Sin2X.getDefaultVariableRanges()),
-                                                                DefaultParameters.SIZE,
-                                                                DefaultParameters.TEST_PART,
-                                                                DefaultParameters.VALID_PART,
-                                                                DefaultParameters.EXTENDING_FACTOR)),
-                                                DefaultParameters.EPOCHS * 4,
-                                                DefaultParameters.BATCH_SIZE,
-                                                DefaultParameters.QUERIES,
-                                                DefaultParameters.EARLY_STOPPING,
+                                                new ApproximationDataLoader(),
+                                                new ApproximationLoadParameters(
+                                                        new Sin2X(Sin2X.getDefaultVariableRanges()),
+                                                        1024,
+                                                        0.5,
+                                                        0.25,
+                                                        1.1
+                                                ),
+                                                500,
+                                                64,
+                                                10,
+                                                true,
                                                 doubleFormat,
-                                                DefaultParameters.PRE_TRAIN_REQUIRED,
-                                                DefaultParameters.PRE_TRAINS_COUNT,
-                                                DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
-                                                new Network.AnotherBuilder()
-                                                        .sizes(Arrays.asList(1, 8, 1))
-                                                        .activations(Arrays.asList(
-                                                                new Tanh(),
-                                                                new Linear()))
-                                                        .loss(new MeanSquaredError())
-                                                        .getBasicBuilder(),
-                                                new SGD.Builder()
-                                                        .startLR(DefaultParameters.START_LR)
-                                                        .stopLR(DefaultParameters.STOP_LR),
-                                                QueriesRangeType.LINEAR
-                                        )  // end FitParameters
-                                )  // end RunConfiguration
-                        )  // end List<RunConfiguration>
-                )  // end ExperimentConfiguration
-
-        );  // end List<ExperimentConfiguration>
-    }
-
-    public static List<ExperimentConfiguration> getTwoDefaultExperimentConfigurations() {
-        return getTwoDefaultExperimentConfigurations(DEFAULT_DOUBLE_FORMAT);
-    }
-
-    public static List<ExperimentConfiguration> getTwoDefaultExperimentConfigurations(String doubleFormat) {
-        return Arrays.asList(
-                new ExperimentConfiguration("Тестовый эксперимент #1",
-                        Arrays.asList(
-                                new RunConfiguration(2, "Конфигурация #1.1",
+                                                true,
+                                                3,
+                                                10,
+                                                new AnotherNetworkBuilder()
+                                                        .sizes(new int[]{
+                                                                1,
+                                                                8,
+                                                                1
+                                                        })
+                                                        .activations(new Operation[] {
+                                                                new TanhActivation(),
+                                                                new LinearActivation()
+                                                        })
+                                                        .loss(new MeanSquaredError()),
+                                                new SGDBuilder()
+                                                        .startLR(0.1)
+                                                        .stopLR(0.0001),
+                                                QueriesRangeType.NON_LINEAR
+                                        )  // new FitParameters
+                                ),  // new RunConfiguration
+                                new RunConfiguration(2, "1000 эпох",
                                         new FitParameters(
-                                                new ApproximationDataLoader().load(
-                                                        new ApproximationLoadParameters(
-                                                                new SinX(SinX.getDefaultVariableRanges()),
-                                                                128,
-                                                                0.5,
-                                                                0.25,
-                                                                1.1
-                                                        )
+                                                new ApproximationDataLoader(),
+                                                new ApproximationLoadParameters(
+                                                        new Sin2X(Sin2X.getDefaultVariableRanges()),
+                                                        1024,
+                                                        0.5,
+                                                        0.25,
+                                                        1.1
                                                 ),
                                                 1000,
                                                 64,
@@ -248,126 +187,69 @@ public abstract class ExperimentConfigurations {
                                                 true,
                                                 doubleFormat,
                                                 true,
-                                                2,
-                                                5.0,
-                                                new Network.AnotherBuilder()
-                                                        .sizes(Arrays.asList(1, 8, 1))
-                                                        .activations(Arrays.asList(
-                                                                new Tanh(),
-                                                                new Linear()))
-                                                        .loss(new MeanSquaredError())
-                                                        .getBasicBuilder(),
-                                                new SGD.Builder()
+                                                3,
+                                                10,
+                                                new AnotherNetworkBuilder()
+                                                        .sizes(new int[]{
+                                                                1,
+                                                                8,
+                                                                1
+                                                        })
+                                                        .activations(new Operation[] {
+                                                                new TanhActivation(),
+                                                                new LinearActivation()
+                                                        })
+                                                        .loss(new MeanSquaredError()),
+                                                new SGDBuilder()
                                                         .startLR(0.1)
-                                                        .stopLR(0.001),
+                                                        .stopLR(0.0001),
                                                 QueriesRangeType.NON_LINEAR
-                                        )
-                                ),
-
-                                new RunConfiguration(3, "Конфигурация #1.2",
+                                        )  // new FitParameters
+                                ),  // new RunConfiguration
+                                new RunConfiguration(2, "2000 эпох",
                                         new FitParameters(
-                                                new ApproximationDataLoader().load(
-                                                        new ApproximationLoadParameters(
-                                                                new SinX(SinX.getDefaultVariableRanges()),
-                                                                256,
-                                                                0.5,
-                                                                0.25,
-                                                                1.1
-                                                        )
+                                                new ApproximationDataLoader(),
+                                                new ApproximationLoadParameters(
+                                                        new Sin2X(Sin2X.getDefaultVariableRanges()),
+                                                        1024,
+                                                        0.5,
+                                                        0.25,
+                                                        1.1
                                                 ),
-                                                500,
+                                                2000,
                                                 64,
                                                 10,
                                                 true,
                                                 doubleFormat,
                                                 true,
-                                                2,
-                                                5.0,
-                                                new Network.AnotherBuilder()
-                                                        .sizes(Arrays.asList(1, 8, 1))
-                                                        .activations(Arrays.asList(
-                                                                new Tanh(),
-                                                                new Linear()))
-                                                        .loss(new MeanSquaredError())
-                                                        .getBasicBuilder(),
-                                                new SGD.Builder()
-                                                        .startLR(0.1)
-                                                        .stopLR(0.001),
-                                                QueriesRangeType.LINEAR
-                                        )
-                                )
-                        )
-                ),
-
-                new ExperimentConfiguration("Тестовый эксперимент #2",
-                        Arrays.asList(
-                                new RunConfiguration(2, "Конфигурация #2.1",
-                                        new FitParameters(
-                                                new ApproximationDataLoader().load(
-                                                        new ApproximationLoadParameters(
-                                                                new SinX1_mul_X2(SinX1_mul_X2.getDefaultVariableRanges()),
-                                                                48,
-                                                                0.5,
-                                                                0.25,
-                                                                1.05
-                                                        )
-                                                ),
-                                                500,
-                                                64,
+                                                3,
                                                 10,
-                                                true,
-                                                doubleFormat,
-                                                true,
-                                                2,
-                                                5.0,
-                                                new Network.AnotherBuilder()
-                                                        .sizes(Arrays.asList(2, 16, 1))
-                                                        .activations(Arrays.asList(
-                                                                new Tanh(),
-                                                                new Linear()))
-                                                        .loss(new MeanSquaredError())
-                                                        .getBasicBuilder(),
-                                                new SGD.Builder()
+                                                new AnotherNetworkBuilder()
+                                                        .sizes(new int[]{
+                                                                1,
+                                                                8,
+                                                                1
+                                                        })
+                                                        .activations(new Operation[] {
+                                                                new TanhActivation(),
+                                                                new LinearActivation()
+                                                        })
+                                                        .loss(new MeanSquaredError()),
+                                                new SGDBuilder()
                                                         .startLR(0.1)
-                                                        .stopLR(0.001),
+                                                        .stopLR(0.0001),
                                                 QueriesRangeType.NON_LINEAR
-                                        )
-                                ),
+                                        )  // new FitParameters
+                                )  // new RunConfiguration
+                        }  // new RunConfiguration[]
+                )  // new ExperimentConfiguration
+        };  // new ExperimentConfiguration[]
+    }
 
-                                new RunConfiguration(3, "Конфигурация #2.2",
-                                        new FitParameters(
-                                                new ApproximationDataLoader().load(
-                                                        new ApproximationLoadParameters(
-                                                                new SinX1_mul_X2(SinX1_mul_X2.getDefaultVariableRanges()),
-                                                                80,
-                                                                0.5,
-                                                                0.25,
-                                                                1.05
-                                                        )
-                                                ),
-                                                250,
-                                                64,
-                                                10,
-                                                true,
-                                                doubleFormat,
-                                                true,
-                                                2,
-                                                5.0,
-                                                new Network.AnotherBuilder()
-                                                        .sizes(Arrays.asList(2, 16, 1))
-                                                        .activations(Arrays.asList(
-                                                                new Tanh(),
-                                                                new Linear()))
-                                                        .loss(new MeanSquaredError())
-                                                        .getBasicBuilder(),
-                                                new SGD.Builder()
-                                                        .startLR(0.1)
-                                                        .stopLR(0.001),
-                                                QueriesRangeType.NON_LINEAR
-                                        )
-                                )
-                        )
-                )
-        );
+    public static ExperimentConfiguration[] getExperimentConfigurationsFromFile(String path, String filename,
+                                                                                SerializationType serializationType) {
+        return Arrays.stream((Object[]) SerializationUtils.load(
+                    ExperimentConfiguration[].class, path, filename, serializationType))
+                .map(ExperimentConfiguration.class::cast).toArray(ExperimentConfiguration[]::new);
     }
 }

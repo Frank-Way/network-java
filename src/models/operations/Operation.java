@@ -1,20 +1,13 @@
 package models.operations;
 
-import com.sun.istack.internal.NotNull;
-import models.interfaces.Copyable;
-import models.interfaces.Debuggable;
 import models.math.Matrix;
-import models.operations.activations.Linear;
-import models.operations.activations.Sigmoid;
-import models.operations.activations.Tanh;
-import serialization.YamlSerializationOptions;
-import serialization.YamlSerializationUtils;
+import serialization.annotations.YamlSerializable;
+import utils.ExceptionUtils;
+import utils.copy.CopyUtils;
+import utils.copy.DeepCopyable;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.List;
-
-import static serialization.YamlSerializationOptions.CRLF;
+import java.util.Objects;
 
 /**
  * Операция выполняемая в слое сети. Параметры модели:
@@ -23,21 +16,16 @@ import static serialization.YamlSerializationOptions.CRLF;
  *  outputGradient - градиент на выходе (входное значение при обратном проходе);
  *  inputGradient - градиент на выходе (выходное значение при обратном проходе).
  */
-public abstract class Operation implements Copyable<Operation>, Debuggable, Serializable {
-    private static final long serialVersionUID = 2002727109271183922L;
-    protected Matrix input;
-    protected Matrix output;
-    protected Matrix outputGradient;
-    protected Matrix inputGradient;
+@YamlSerializable
+public abstract class Operation implements DeepCopyable, Serializable {
+//    private static final long serialVersionUID = 2002727109271183922L;
+    protected transient Matrix input;
+    protected transient Matrix output;
+    protected transient Matrix outputGradient;
+    protected transient Matrix inputGradient;
 
-    /**
-     * Пустой конструктор
-     */
     public Operation() {}
 
-    /***
-     * copy-constructor
-     */
     protected Operation(Matrix input, Matrix output, Matrix outputGradient, Matrix inputGradient) {
         this.input = input;
         this.output = output;
@@ -50,8 +38,8 @@ public abstract class Operation implements Copyable<Operation>, Debuggable, Seri
      * @param input вход
      * @return выход
      */
-    public Matrix forward(@NotNull Matrix input) {
-        this.input = input.copy();  // сохраняется копия
+    public Matrix forward(Matrix input) {
+        this.input = input.deepCopy();  // сохраняется копия
         output = computeOutput(this.input);  // вычисление выполнятся с копией
         return output;
     }
@@ -61,8 +49,8 @@ public abstract class Operation implements Copyable<Operation>, Debuggable, Seri
      * @param outputGradient градиент на выходе
      * @return градиент на входе
      */
-    public Matrix backward(@NotNull Matrix outputGradient) {
-        this.outputGradient = outputGradient.copy();  // сохраняется копия
+    public Matrix backward(Matrix outputGradient) {
+        this.outputGradient = outputGradient.deepCopy();  // сохраняется копия
         output.assertSameShape(this.outputGradient);  // проверка совпадения размерностей
 
         inputGradient = computeInputGradient(this.outputGradient); // вычисление
@@ -71,44 +59,23 @@ public abstract class Operation implements Copyable<Operation>, Debuggable, Seri
         return inputGradient;
     }
 
-    public String toYaml(int baseIndent, String doubleFormat) {
-        StringBuilder sb = new StringBuilder();
-        final String baseIndentString = YamlSerializationUtils.repeat(" ", baseIndent);
-        sb.append(baseIndentString).append("class: ").append(this.getClass().getCanonicalName()).append(CRLF);
-        return sb.toString();
-    }
-
-    public static Operation fromYaml(String yaml, int baseIndent) {
-        String[] lines = YamlSerializationUtils.removeFirstCharacters(yaml.split(CRLF), yaml.indexOf('c'));
-        String cls = YamlSerializationUtils.getClassAsString(lines, 0);
-        if (ParametrizedOperation.getSubclasses().contains(cls))
-            return ParametrizedOperation.fromYaml(yaml, baseIndent);
-        final String pattern = "(\\" + YamlSerializationOptions.YAML_LIST_PREFIX + ")?class: " + cls.replace(".", "\\.") + "\\n?";
-        if (lines.length != 1 || !lines[0].matches(pattern))
-            throw new IllegalArgumentException("Не верный формат строки: " + yaml);
-        return createOperation(cls);
-    }
-
     /**
      * Вычисление выхода (определяется наследником)
      * @param input вход
      * @return выход
      */
-    protected abstract Matrix computeOutput(@NotNull Matrix input);
+    protected abstract Matrix computeOutput(Matrix input);
 
     /**
      * Вычисление градиента (определяется наследником)
      * @param outputGradient градиент на выходе
      * @return градиент на входе
      */
-    protected abstract Matrix computeInputGradient(@NotNull Matrix outputGradient);
-
-    @Override
-    public abstract Operation copy();
+    protected abstract Matrix computeInputGradient(Matrix outputGradient);
 
     @Override
     public String toString() {
-        return getDebugClassName() + "{" +
+        return getClass().getSimpleName() + "{" +
                 "input=" + input +
                 ", output=" + output +
                 ", outputGradient=" + outputGradient +
@@ -117,30 +84,38 @@ public abstract class Operation implements Copyable<Operation>, Debuggable, Seri
     }
 
     @Override
-    public String toString(boolean debugMode) {
-        if (debugMode)
-            return toString();
-        return getClassName() + "{" +
-                '}';
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Operation operation = (Operation) o;
+        return Objects.equals(input, operation.input) && Objects.equals(output, operation.output)
+                && Objects.equals(outputGradient, operation.outputGradient)
+                && Objects.equals(inputGradient, operation.inputGradient);
     }
 
-    protected abstract String getClassName();
-
-    protected abstract String getDebugClassName();
-
-    protected static List<String> getSubclasses() {
-        return Arrays.asList(Linear.class.getCanonicalName(), Sigmoid.class.getCanonicalName(),
-                Tanh.class.getCanonicalName());
+    @Override
+    public int hashCode() {
+        return Objects.hash(input, output, outputGradient, inputGradient);
     }
 
-    protected static Operation createOperation(String cls) {
-        if (cls.equals(Linear.class.getCanonicalName()))
-            return new Linear();
-        else if (cls.equals(Sigmoid.class.getCanonicalName()))
-            return new Sigmoid();
-        else if (cls.equals(Tanh.class.getCanonicalName()))
-            return new Tanh();
-        else
-            throw new IllegalArgumentException("Не известный класс: " + cls);
+    @Override
+    public Operation deepCopy() {
+        if (getClass().getSuperclass().equals(ParametrizedOperation.class))
+            return ((ParametrizedOperation) this).deepCopy();
+        return createOperation(getClass(), input == null ? null : input.deepCopy(),
+                output == null ? null : output.deepCopy(),
+                outputGradient == null ? null : outputGradient.deepCopy(),
+                inputGradient == null ? null : inputGradient.deepCopy());
+    }
+
+    protected static Operation createOperation(Class<? extends Operation> clazz, Matrix input, Matrix output,
+                                               Matrix outputGradient, Matrix inputGradient) {
+        if (clazz.equals(LinearActivation.class))
+            return new LinearActivation(input, output, outputGradient, inputGradient);
+        if (clazz.equals(SigmoidActivation.class))
+            return new SigmoidActivation(input, output, outputGradient, inputGradient);
+        if (clazz.equals(TanhActivation.class))
+            return new TanhActivation(input, output, outputGradient, inputGradient);
+        throw ExceptionUtils.newUnknownClassException(clazz);
     }
 }

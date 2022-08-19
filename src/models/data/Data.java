@@ -1,10 +1,8 @@
 package models.data;
 
-import com.sun.istack.internal.NotNull;
-import models.interfaces.Copyable;
 import models.math.Matrix;
-import models.math.MatrixOperations;
-import utils.Utils;
+import models.math.MatrixUtils;
+import utils.copy.DeepCopyable;
 
 import java.util.Iterator;
 
@@ -13,7 +11,7 @@ import java.util.Iterator;
  *  inputs - входные значения;
  *  outputs - выходные значения.
  */
-public class Data implements Copyable<Data> {
+public class Data implements DeepCopyable {
     private final Matrix inputs;
     private final Matrix outputs;
 
@@ -23,7 +21,7 @@ public class Data implements Copyable<Data> {
      * @param inputs входные значения
      * @param outputs выходные значения
      */
-    public Data(@NotNull Matrix inputs, @NotNull Matrix outputs) {
+    public Data(Matrix inputs, Matrix outputs) {
         if (inputs.getRows() != outputs.getRows())
             throw new IllegalArgumentException(String.format(
                     "Количество строк выборки не совпадает для входов (%d; %d) и выходов (%d; %d)",
@@ -53,7 +51,7 @@ public class Data implements Copyable<Data> {
     public Iterable<Data> getBatchesGenerator(int batchSize, boolean needsShuffle) {
         return () -> new Iterator<Data>() {
             private int currentIndex = 0;
-            private final int[] indices = MatrixOperations.getRandomRangePermutation(getRows());
+            private final int[] indices = MatrixUtils.getRandomRangePermutation(getRows());
             private final Matrix x = needsShuffle ? inputs.shuffle(indices, 0) : inputs;
             private final Matrix y = needsShuffle ? outputs.shuffle(indices, 0) : outputs;
 
@@ -74,15 +72,15 @@ public class Data implements Copyable<Data> {
     }
 
     @Override
-    public Data copy() {
-        return new Data(Utils.copyNullable(inputs), Utils.copyNullable(outputs));
-    }
-
-    @Override
     public String toString() {
         return "Data{" +
                 "inputs=" + inputs +
                 ", outputs=" + outputs +
                 '}';
+    }
+
+    @Override
+    public Data deepCopy() {
+        return new Data(inputs.deepCopy(), outputs.deepCopy());
     }
 }

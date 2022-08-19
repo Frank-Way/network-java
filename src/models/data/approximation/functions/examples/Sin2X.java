@@ -1,26 +1,34 @@
 package models.data.approximation.functions.examples;
 
-import com.sun.istack.internal.NotNull;
 import models.data.approximation.functions.Function;
 import models.data.approximation.functions.VariableRange;
+import utils.copy.CopyUtils;
 
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * f(x) = sin(2 * x)
  */
 public class Sin2X extends Function {
-    public Sin2X(@NotNull List<VariableRange> variableRanges) {
-        super("sin(2 * x1)", variableRanges);
+    private Sin2X() {
+        this(null);
+    }
+
+    public Sin2X(VariableRange[] variableRanges) {
+        super("f(x1) = sin(2 * x1)", variableRanges);
     }
 
     @Override
-    public double calculate(@NotNull double[] arguments) {
+    public double calculate(double[] arguments) {
         return Math.sin(2 * arguments[0]);
     }
 
-    public static List<VariableRange> getDefaultVariableRanges() {
-        return Arrays.asList(new VariableRange(0.0, 1.57));
+    public static VariableRange[] getDefaultVariableRanges() {
+        return new VariableRange[]{new VariableRange(0.0, 1.57)};
+    }
+
+    @Override
+    public Sin2X deepCopy() {
+        return new Sin2X(Arrays.stream(variableRanges).map(VariableRange::deepCopy).toArray(VariableRange[]::new));
     }
 }

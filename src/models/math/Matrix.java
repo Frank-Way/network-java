@@ -1,15 +1,15 @@
 package models.math;
 
-import models.interfaces.Copyable;
-import serialization.YamlSerializationOptions;
-import serialization.YamlSerializationUtils;
+import models.math.functions.MatrixFunctions;
+import serialization.annotations.YamlField;
+import serialization.annotations.YamlSerializable;
+import utils.copy.DeepCopyable;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import static serialization.YamlSerializationOptions.CRLF;
+import java.util.Objects;
 
 /**
  * Двумерная матрица вещественных чисел. Внутри используется double[][]. Реализует различные полезные методы для работы
@@ -18,11 +18,12 @@ import static serialization.YamlSerializationOptions.CRLF;
  *  rows - количество строк;
  *  cols - количество столбцов.
  */
-public class Matrix implements Copyable<Matrix>, Serializable {
-    private static final long serialVersionUID = -5198808201700701411L;
-    private final double[][] values;
-    private final int rows;
-    private final int cols;
+@YamlSerializable(delegateValidationToEquals = true)
+public class Matrix implements DeepCopyable, Serializable {
+//    private static final transient long serialVersionUID = -5198808201700701411L;
+    @YamlField private final double[][] values;
+    @YamlField private final int rows;
+    @YamlField private final int cols;
 
     /**
      * Конструктор
@@ -32,6 +33,18 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         this.values = values;
         this.rows = values.length;
         this.cols = values[0].length;
+    }
+
+    private Matrix() {
+        this(new double[1][1]);
+    }
+
+    @Override
+    public Matrix deepCopy() {
+        double[][] valuesCopy = new double[rows][];
+        for (int row = 0; row < rows; row++)
+            valuesCopy[row] = Arrays.copyOf(values[row], cols);
+        return new Matrix(valuesCopy);
     }
 
     enum Operator {
@@ -59,36 +72,36 @@ public class Matrix implements Copyable<Matrix>, Serializable {
     private Matrix doOperation(Operator operator, Matrix matrix) {
         assertEqualRowsAndCols(matrix,
                 "Матрицы размерности (%d; %d) и (%d; %d) имеют разное количество столбцов и/или строк");
-        double[][] result = copy().values;
+        double[][] result = new double[rows][cols];
         for (int row = 0; row < rows; row++)
             for (int col = 0; col < cols; col++)
-                result[row][col] = applyOperator(operator, result[row][col], matrix.values[row][col]);
+                result[row][col] = applyOperator(operator, values[row][col], matrix.values[row][col]);
         return new Matrix(result);
     }
 
     private Matrix doOperation(Operator operator, Number number) {
-        double[][] result = copy().values;
+        double[][] result = new double[rows][cols];
         for (int row = 0; row < rows; row++)
             for (int col = 0; col < cols; col++)
-                result[row][col] = applyOperator(operator, result[row][col], number.doubleValue());
+                result[row][col] = applyOperator(operator, values[row][col], number.doubleValue());
         return new Matrix(result);
     }
 
     private Matrix doColOperation(Operator operator, Matrix colMatrix) {
         assertEqualRows(colMatrix, "Матрицы размерности (%d; %d) и (%d; %d) имеют разное количество строк");
-        double[][] result = copy().values;
+        double[][] result = new double[rows][cols];
         for (int row = 0; row < rows; row++)
             for (int col = 0; col < cols; col++)
-                result[row][col] = applyOperator(operator, result[row][col], colMatrix.values[row][0]);
+                result[row][col] = applyOperator(operator, values[row][col], colMatrix.values[row][0]);
         return new Matrix(result);
     }
 
     private Matrix doRowOperation(Operator operator, Matrix rowMatrix) {
         assertEqualCols(rowMatrix, "Матрицы размерности (%d; %d) и (%d; %d) имеют разное количество столбцов");
-        double[][] result = copy().values;
+        double[][] result = new double[rows][cols];
         for (int row = 0; row < rows; row++)
             for (int col = 0; col < cols; col++)
-                result[row][col] = applyOperator(operator, result[row][col], rowMatrix.values[0][col]);
+                result[row][col] = applyOperator(operator, values[row][col], rowMatrix.values[0][col]);
         return new Matrix(result);
     }
 
@@ -109,18 +122,11 @@ public class Matrix implements Copyable<Matrix>, Serializable {
     }
 
     @Override
-    public Matrix copy() {
-        double[][] result = new double[rows][cols];
-        for (int row = 0; row < rows; row++)
-            result[row] = Arrays.copyOf(values[row], cols);
-        return new Matrix(result);
-    }
-
-    @Override
     public String toString() {
         return "Matrix {" +
                 "rows=" + rows +
                 ", cols=" + cols +
+                ", values=" + valuesToStringOneLine() +
                 '}';
     }
 
@@ -146,12 +152,31 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         return result.toString();
     }
 
+    public String valuesToStringOneLine(String format) {
+        StringBuilder result = new StringBuilder();
+        result.append('[');
+        for (int row = 0; row < rows; row++) {
+            result.append('[');
+            for (int col = 0; col < cols; col++)
+                result.append(String.format(format, values[row][col])).append(", ");
+            result.delete(result.length() - 2, result.length());
+            result.append("], ");
+        }
+        result.delete(result.length() - 2, result.length());
+        result.append(']');
+        return result.toString();
+    }
+
     /**
      * Формирование строки со значениями (формат вывода вещественных чисел - по умолчанию)
      * @return строка со значениями
      */
     public String valuesToString() {
         return valuesToString("%10.5f");
+    }
+
+    public String valuesToStringOneLine() {
+        return valuesToStringOneLine("%10.5f");
     }
 
     private double[][] getValues() {
@@ -228,7 +253,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         double[][] result = new double[rows][matrix.cols];
         for (int row = 0; row < rows; row++)
             for (int col = 0; col < matrix.cols; col++)
-                result[row][col] = MatrixOperations.mulScalar(getRow(row).transpose(), matrix.getCol(col));
+                result[row][col] = MatrixUtils.mulScalar(getRow(row).transpose(), matrix.getCol(col));
         return new Matrix(result);
     }
 
@@ -677,9 +702,9 @@ public class Matrix implements Copyable<Matrix>, Serializable {
     public Matrix shuffle(int axis) {
         switch (axis) {
             case 0:
-                return shuffle(MatrixOperations.getRandomRangePermutation(rows), axis);
+                return shuffle(MatrixUtils.getRandomRangePermutation(rows), axis);
             case 1:
-                return shuffle(MatrixOperations.getRandomRangePermutation(cols), axis);
+                return shuffle(MatrixUtils.getRandomRangePermutation(cols), axis);
             default:
                 throw new IllegalArgumentException(String.format(
                         "Недопустимый параметр shuffle axis=%d (допустимы: %d, %d)", axis, 0, 1));
@@ -725,7 +750,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return матрица абсолютных значений
      */
     public Matrix abs() {
-        return MatrixOperations.Functions.abs(this);
+        return MatrixFunctions.abs(this);
     }
 
     /**
@@ -734,7 +759,7 @@ public class Matrix implements Copyable<Matrix>, Serializable {
      * @return матрица, каждый элемент которой возведен в указанную степень
      */
     public Matrix pow(double scale) {
-        return MatrixOperations.Functions.pow(this, scale);
+        return MatrixFunctions.pow(this, scale);
     }
 
     /**
@@ -763,45 +788,6 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         if (!isRow())
             throw new IllegalArgumentException(String.format("Матрица размерности (%d; %d) не является строкой",
                     rows, cols));
-    }
-
-    public String toYaml(int baseIndent, String doubleFormat) {
-        StringBuilder sb = new StringBuilder();
-        final String baseIndentString = YamlSerializationUtils.repeat(" ", baseIndent);
-        sb.append(baseIndentString).append("class: ").append(this.getClass().getCanonicalName()).append(CRLF);
-        sb.append(baseIndentString).append("rows: ").append(rows).append(CRLF);
-        sb.append(baseIndentString).append("cols: ").append(cols).append(CRLF);
-        sb.append(baseIndentString).append("values:").append(CRLF);
-        String[] valuesSA = YamlSerializationUtils.addStringAtBegin(YamlSerializationUtils.double2DArrayToYaml(values, doubleFormat),
-                baseIndentString + YamlSerializationOptions.YAML_INDENT_STRING);
-        sb.append(String.join("\n", valuesSA));
-        return sb.toString();
-    }
-
-    public static Matrix fromYaml(String yaml, int baseIndent) {
-        final String[] patterns = {
-                "class: " + Matrix.class.getCanonicalName().replace(".", "\\.") + "\\n?",
-                "rows: \\d+\\n?",
-                "cols: \\d+\\n?",
-                "values:\\n?"};
-        String[] lines = YamlSerializationUtils.removeFirstCharacters(yaml.split(CRLF), yaml.indexOf('c'));
-        for (int assertNum = 0; assertNum < patterns.length; assertNum++)
-            if (!lines[assertNum].matches(patterns[assertNum]))
-                throw new IllegalArgumentException(String.format("Формат не верный, строка %d: %s", assertNum + 1, lines[assertNum]));
-        int rows = Integer.parseInt(lines[1].split(":")[1].trim());
-        int cols = Integer.parseInt(lines[2].split(":")[1].trim());
-
-        double[][] array = YamlSerializationUtils.double2DArrayFromYaml(Arrays.copyOfRange(lines, 4, lines.length), YamlSerializationOptions.YAML_INDENT);
-
-        int readRows = array.length;
-        int readCols = array[0].length;
-
-        if (readRows != rows || readCols != cols)
-            throw new IllegalArgumentException(String.format(
-                    "Количество строк/столбцов не совпадает с заявленным (указано %dx%d, считано %dx%d",
-                    rows, cols, readRows, readCols));
-
-        return new Matrix(array);
     }
 
     /**
@@ -901,5 +887,33 @@ public class Matrix implements Copyable<Matrix>, Serializable {
     private void assertEqualRowsAndCols(Matrix matrix, String message) {
         assertEqualRows(matrix, message);
         assertEqualCols(matrix, message);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Matrix matrix = (Matrix) o;
+        return rows == matrix.rows && cols == matrix.cols && equalValues(matrix);
+    }
+
+    public boolean equalValues(Matrix matrix) {
+        return equalValues(matrix, 0.000001);
+    }
+
+    public boolean equalValues(Matrix matrix, double epsilon) {
+        assertEqualRowsAndCols(matrix, "Матрицы не совпадают размерностями: %dx%d и %dx%d");
+        Matrix copy = this.deepCopy();
+        Matrix deltas = copy.sub(matrix);
+        Matrix absoluteDeltas = deltas.abs();
+        double maxAbsoluteDelta = absoluteDeltas.max();
+        return maxAbsoluteDelta < epsilon;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(rows, cols);
+        result = 31 * result + Arrays.deepHashCode(values);
+        return result;
     }
 }
