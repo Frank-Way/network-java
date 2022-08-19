@@ -10,7 +10,6 @@ import models.operations.activations.Tanh;
 import models.optimizers.SGD;
 import models.trainers.FitParameters;
 import models.trainers.QueriesRangeType;
-import options.Constants;
 import options.DefaultParameters;
 import utils.ExperimentConfiguration;
 import utils.RunConfiguration;
@@ -19,12 +18,15 @@ import java.util.Arrays;
 import java.util.List;
 
 public abstract class ExperimentConfigurations {
+    private static final String DEFAULT_DOUBLE_FORMAT = "%15.10f";
     public static List<ExperimentConfiguration> getExperimentConfigurations() {
+        return getExperimentConfigurations(DEFAULT_DOUBLE_FORMAT);
+    }
+    public static List<ExperimentConfiguration> getExperimentConfigurations(String doubleFormat) {
         return Arrays.asList(
 
                 new ExperimentConfiguration("Исследование влияния размера выборки",
                         Arrays.asList(
-
                                 new RunConfiguration(DefaultParameters.RETRIES, "Размер по умолчанию",
                                         new FitParameters(
                                                 new ApproximationDataLoader().load(
@@ -38,7 +40,7 @@ public abstract class ExperimentConfigurations {
                                                 DefaultParameters.BATCH_SIZE,
                                                 DefaultParameters.QUERIES,
                                                 DefaultParameters.EARLY_STOPPING,
-                                                Constants.DOUBLE_FORMAT,
+                                                doubleFormat,
                                                 DefaultParameters.PRE_TRAIN_REQUIRED,
                                                 DefaultParameters.PRE_TRAINS_COUNT,
                                                 DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
@@ -68,7 +70,7 @@ public abstract class ExperimentConfigurations {
                                             DefaultParameters.BATCH_SIZE,
                                             DefaultParameters.QUERIES,
                                             DefaultParameters.EARLY_STOPPING,
-                                            Constants.DOUBLE_FORMAT,
+                                            doubleFormat,
                                             DefaultParameters.PRE_TRAIN_REQUIRED,
                                             DefaultParameters.PRE_TRAINS_COUNT,
                                             DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
@@ -98,7 +100,7 @@ public abstract class ExperimentConfigurations {
                                             DefaultParameters.BATCH_SIZE,
                                             DefaultParameters.QUERIES,
                                             DefaultParameters.EARLY_STOPPING,
-                                            Constants.DOUBLE_FORMAT,
+                                            doubleFormat,
                                             DefaultParameters.PRE_TRAIN_REQUIRED,
                                             DefaultParameters.PRE_TRAINS_COUNT,
                                             DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
@@ -136,7 +138,7 @@ public abstract class ExperimentConfigurations {
                                                 DefaultParameters.BATCH_SIZE,
                                                 DefaultParameters.QUERIES,
                                                 DefaultParameters.EARLY_STOPPING,
-                                                Constants.DOUBLE_FORMAT,
+                                                doubleFormat,
                                                 DefaultParameters.PRE_TRAIN_REQUIRED,
                                                 DefaultParameters.PRE_TRAINS_COUNT,
                                                 DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
@@ -167,7 +169,7 @@ public abstract class ExperimentConfigurations {
                                                 DefaultParameters.BATCH_SIZE,
                                                 DefaultParameters.QUERIES,
                                                 DefaultParameters.EARLY_STOPPING,
-                                                Constants.DOUBLE_FORMAT,
+                                                doubleFormat,
                                                 DefaultParameters.PRE_TRAIN_REQUIRED,
                                                 DefaultParameters.PRE_TRAINS_COUNT,
                                                 DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
@@ -198,7 +200,7 @@ public abstract class ExperimentConfigurations {
                                                 DefaultParameters.BATCH_SIZE,
                                                 DefaultParameters.QUERIES,
                                                 DefaultParameters.EARLY_STOPPING,
-                                                Constants.DOUBLE_FORMAT,
+                                                doubleFormat,
                                                 DefaultParameters.PRE_TRAIN_REQUIRED,
                                                 DefaultParameters.PRE_TRAINS_COUNT,
                                                 DefaultParameters.PRE_TRAIN_REDUCE_FACTOR,
@@ -222,6 +224,10 @@ public abstract class ExperimentConfigurations {
     }
 
     public static List<ExperimentConfiguration> getTwoDefaultExperimentConfigurations() {
+        return getTwoDefaultExperimentConfigurations(DEFAULT_DOUBLE_FORMAT);
+    }
+
+    public static List<ExperimentConfiguration> getTwoDefaultExperimentConfigurations(String doubleFormat) {
         return Arrays.asList(
                 new ExperimentConfiguration("Тестовый эксперимент #1",
                         Arrays.asList(
@@ -240,7 +246,7 @@ public abstract class ExperimentConfigurations {
                                                 64,
                                                 10,
                                                 true,
-                                                Constants.DOUBLE_FORMAT,
+                                                doubleFormat,
                                                 true,
                                                 2,
                                                 5.0,
@@ -273,7 +279,7 @@ public abstract class ExperimentConfigurations {
                                                 64,
                                                 10,
                                                 true,
-                                                Constants.DOUBLE_FORMAT,
+                                                doubleFormat,
                                                 true,
                                                 2,
                                                 5.0,
@@ -310,7 +316,7 @@ public abstract class ExperimentConfigurations {
                                                 64,
                                                 10,
                                                 true,
-                                                Constants.DOUBLE_FORMAT,
+                                                doubleFormat,
                                                 true,
                                                 2,
                                                 5.0,
@@ -343,7 +349,7 @@ public abstract class ExperimentConfigurations {
                                                 64,
                                                 10,
                                                 true,
-                                                Constants.DOUBLE_FORMAT,
+                                                doubleFormat,
                                                 true,
                                                 2,
                                                 5.0,

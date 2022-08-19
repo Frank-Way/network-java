@@ -2,7 +2,6 @@ package serialization;
 
 import com.sun.xml.internal.ws.encoding.soap.SerializationException;
 import models.networks.Network;
-import options.Constants;
 
 import javax.imageio.IIOException;
 import java.io.*;
@@ -22,16 +21,17 @@ public class SerializationUtils {
      * @param path путь
      * @param filename имя файла
      * @param serializationType тип сериализации
-     * @throws IIOException
+     * @param doubleFormat формат вещественных чисел
      */
-    public static void save(Network network, String path, String filename, SerializationType serializationType) throws SerializationException {
+    public static void save(Network network, String path, String filename,
+                            SerializationType serializationType, String doubleFormat) throws SerializationException {
         try {
             switch (serializationType) {
                 case JAVA:
                     saveToFile(convertToBytes(network), path, filename, JAVA_EXTENSION);
                     break;
                 case YAML:
-                    saveToFile(network.toYaml(0, Constants.DOUBLE_FORMAT).getBytes(StandardCharsets.UTF_8),
+                    saveToFile(network.toYaml(0, doubleFormat).getBytes(StandardCharsets.UTF_8),
                             path, filename, YAML_EXTENSION);
                     break;
                 default:
@@ -75,8 +75,6 @@ public class SerializationUtils {
      * @param filename имя файла
      * @param serializationType тип сериализации
      * @return десериализованная сеть
-     * @throws IIOException
-     * @throws ClassNotFoundException
      */
     public static Network load(String path, String filename, SerializationType serializationType) throws SerializationException {
         try {

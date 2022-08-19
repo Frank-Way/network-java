@@ -68,4 +68,15 @@ public class PrintOptions {
     public double getTablePart() {
         return tablePart;
     }
+
+    @Override
+    public String toString() {
+        return "PrintOptions{" +
+                "required=" + required +
+                ", parametersRequired=" + parametersRequired +
+                ", tableRequired=" + tableRequired +
+                ", dynamicRequired=" + dynamicRequired +
+                ", tablePart=" + tablePart +
+                '}';
+    }
 }

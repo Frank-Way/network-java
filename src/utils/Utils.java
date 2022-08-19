@@ -10,7 +10,6 @@ import models.networks.Network;
 import models.operations.BiasAdd;
 import models.operations.WeightMultiply;
 import models.trainers.FitResults;
-import options.Constants;
 import options.PrintOptions;
 
 import java.util.*;

@@ -6,7 +6,6 @@ import models.data.approximation.functions.Function;
 import models.data.approximation.functions.examples.SinX1_mul_X2;
 import models.math.Matrix;
 import models.networks.Network;
-import options.Constants;
 import options.DefaultParameters;
 import serialization.SerializationType;
 import serialization.SerializationUtils;
@@ -22,6 +21,7 @@ import java.nio.file.Paths;
 public class Test {
     public static void main(String[] args) {
 //        /*
+        String doubleFormat = "%15.10f";
         String networksDirectory = "networks";  // путь к директории с сетями
         Path pathToNetworks = Paths.get(networksDirectory);
 
@@ -62,9 +62,9 @@ public class Test {
 
         sb.append(errors).append("\n");  // максимальные ошибки
 
-        sb.append(Utils.networkParametersToString(network, Constants.DOUBLE_FORMAT)).append("\n");  // параметры сети
+        sb.append(Utils.networkParametersToString(network, doubleFormat)).append("\n");  // параметры сети
 
-        sb.append(Utils.networkIOToStringTable(x, t, y, e, 1.0, Constants.DOUBLE_FORMAT))
+        sb.append(Utils.networkIOToStringTable(x, t, y, e, 1.0, doubleFormat))
                 .append("\n");  // таблица по всей выборке
 
         System.out.println(sb);

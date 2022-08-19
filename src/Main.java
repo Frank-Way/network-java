@@ -1,7 +1,8 @@
 import com.sun.xml.internal.ws.encoding.soap.SerializationException;
 import models.trainers.FitResults;
-import options.Constants;
+import options.AppProperties;
 import options.PrintOptions;
+import serialization.SerializationType;
 import serialization.SerializationUtils;
 import utils.ExperimentConfiguration;
 import utils.MyTask;
@@ -38,17 +39,26 @@ public class Main {
             e.printStackTrace();
             return;
         }
+        final AppProperties appProperties;
+        try {
+            appProperties = new AppProperties();
+            logger.fine("Успешно считаны настройки приложения");
+            logger.finer(appProperties.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
 
         List<ExperimentConfiguration> experimentConfigurations = ExperimentConfigurations.getTwoDefaultExperimentConfigurations();
 //        List<ExperimentConfiguration> experimentConfigurations = ExperimentConfigurations.getExperimentConfigurations();
 
         logger.fine("Успешно считаны конфигурации экспериментов");
         logger.finer(experimentConfigurations.stream()
-                .map(ec -> ec.toString(Constants.DEBUG_MODE))
+                .map(ec -> ec.toString(appProperties.isDebugMode()))
                 .collect(Collectors.toList()).toString());
 
         logger.fine("Начало запуска экспериментов");
-        ExecutorService executorService = Executors.newFixedThreadPool(Constants.MAX_THREADS);
+        ExecutorService executorService = Executors.newFixedThreadPool(appProperties.getThreadPoolSize());
 
         Map<RunConfiguration, Set<Future<FitResults>>> runConfigurationToFuturesToResultsMap = new HashMap<>();
         for (ExperimentConfiguration experimentConfiguration: experimentConfigurations)
@@ -84,26 +94,32 @@ public class Main {
                 processedFutures.add(future);  // запоминается факт обработки результата
 
                 // обработка результатов для каждого запуска
-                tryToPrint(Constants.PRINT_EACH_CONFIGURATION, runConfiguration, fitResults,
+                tryToPrint(appProperties.getPrintConfigurationEach(), runConfiguration, fitResults,
                         String.format("Результаты обучения для конфигурации запуска [%s] эксперимента [%s] \n",
-                                runConfiguration.getDescription(), experimentConfiguration.getDescription()));
+                                runConfiguration.getDescription(), experimentConfiguration.getDescription()),
+                        appProperties.isPrintRequired(), appProperties.isDebugMode(), appProperties.getDoubleFormat());
 
-                tryToSave(Constants.SAVE_REQUIRED && Constants.SAVE_EACH_CONFIGURATION,
-                        runConfiguration, fitResults);
+                tryToSave(appProperties.isSaveRequired() && appProperties.isSaveConfigurationEach(),
+                        runConfiguration, fitResults, appProperties.getSaveFilenamePattern(),
+                        appProperties.getSaveFolder(), appProperties.getSaveSerializationType(),
+                        appProperties.getDoubleFormat());
 
                 // если обрабатываемый результат был последним для соответствующей конфигурации запуска,
-                // то есть получены все результаты для соответствующей конфигурации)
+                // то есть получены все результаты для соответствующей конфигурации
                 if (allFuturesDone(runConfigurationToFuturesToResultsMap.get(runConfiguration))) {
                     // тогда начинается обработка результатов для данной конфигурации
                     Future<FitResults> bestFuture = findBestFuture(runConfigurationToFuturesToResultsMap.get(runConfiguration));
                     FitResults bestFitResults = getFromFuture(bestFuture);
 
-                    tryToPrint(Constants.PRINT_EACH_CONFIGURATION_BEST, runConfiguration, bestFitResults,
+                    tryToPrint(appProperties.getPrintConfigurationBest(), runConfiguration, bestFitResults,
                             String.format("Наилучшие результаты обучения для конфигурации запуска [%s] эксперимента [%s] \n",
-                                    runConfiguration.getDescription(), experimentConfiguration.getDescription()));
+                                    runConfiguration.getDescription(), experimentConfiguration.getDescription()),
+                            appProperties.isPrintRequired(), appProperties.isDebugMode(), appProperties.getDoubleFormat());
 
-                    tryToSave(Constants.SAVE_REQUIRED && Constants.SAVE_EACH_CONFIGURATION_BEST,
-                            runConfiguration, bestFitResults);
+                    tryToSave(appProperties.isSaveRequired() && appProperties.isSaveConfigurationBest(),
+                            runConfiguration, bestFitResults, appProperties.getSaveFilenamePattern(),
+                            appProperties.getSaveFolder(), appProperties.getSaveSerializationType(),
+                            appProperties.getDoubleFormat());
 
                     logTimeSpent(runConfigurationToFuturesToResultsMap.get(runConfiguration),
                             String.format("Запуск конфигурации [%s} эксперимента [%s] занял",
@@ -117,13 +133,16 @@ public class Main {
                     RunConfiguration bestRunConfiguration = reverseSearch(runConfigurationToFuturesToResultsMap, bestFuture);
                     FitResults bestFitResults = getFromFuture(bestFuture);
 
-                    tryToPrint(Constants.PRINT_EXPERIMENT_BEST, bestRunConfiguration, bestFitResults,
+                    tryToPrint(appProperties.getPrintExperimentBest(), bestRunConfiguration, bestFitResults,
                             String.format("Наилучшие результаты обучения для всех конфигураций запуска эксперимента [%s]" +
                                             " (соответствуют конфигурации [%s]) \n",
-                                    experimentConfiguration.getDescription(), bestRunConfiguration.getDescription()));
+                                    experimentConfiguration.getDescription(), bestRunConfiguration.getDescription()),
+                            appProperties.isPrintRequired(), appProperties.isDebugMode(), appProperties.getDoubleFormat());
 
-                    tryToSave(Constants.SAVE_REQUIRED && Constants.SAVE_EXPERIMENT_BEST,
-                            bestRunConfiguration, bestFitResults);
+                    tryToSave(appProperties.isSaveRequired() && appProperties.isSaveExperimentBest(),
+                            bestRunConfiguration, bestFitResults, appProperties.getSaveFilenamePattern(),
+                            appProperties.getSaveFolder(), appProperties.getSaveSerializationType(),
+                            appProperties.getDoubleFormat());
 
                     logTimeSpent(experimentConfigurationToFuturesMap.get(experimentConfiguration),
                             String.format("Выполнение эксперимента [%s] заняло",
@@ -143,13 +162,16 @@ public class Main {
         ExperimentConfiguration bestExperimentConfiguration = reverseSearch(experimentConfigurationToFuturesMap, bestFuture);
         FitResults bestFitResults = getFromFuture(bestFuture);
 
-        tryToPrint(Constants.PRINT_ALL_EXPERIMENTS_BEST, bestRunConfiguration, bestFitResults,
+        tryToPrint(appProperties.getPrintExperimentBest(), bestRunConfiguration, bestFitResults,
                 String.format("Наилучшие результаты обучения для всех конфигураций запуска всех экспериментов " +
                                 " (соответствуют конфигурации [%s] эксперимента [%s]) \n",
-                        bestRunConfiguration.getDescription(), bestExperimentConfiguration.getDescription()));
+                        bestRunConfiguration.getDescription(), bestExperimentConfiguration.getDescription()),
+                appProperties.isPrintRequired(), appProperties.isDebugMode(), appProperties.getDoubleFormat());
 
-        tryToSave(Constants.SAVE_REQUIRED && Constants.SAVE_ALL_EXPERIMENTS_BEST,
-                bestRunConfiguration, bestFitResults);
+        tryToSave(appProperties.isSaveRequired() && appProperties.isSaveExperimentBest(),
+                bestRunConfiguration, bestFitResults, appProperties.getSaveFilenamePattern(),
+                appProperties.getSaveFolder(), appProperties.getSaveSerializationType(),
+                appProperties.getDoubleFormat());
 
         logTimeSpent(processedFutures, "Выполнение всех экспериментов заняло");
 
@@ -171,22 +193,26 @@ public class Main {
         throw new IllegalArgumentException("Не найден ключ по значению: " + value);
     }
 
-    private static void tryToPrint(PrintOptions printOptions, RunConfiguration runConfiguration, FitResults fitResults, String prompt) {
-        if (Constants.PRINT_REQUIRED && printOptions.isRequired()) {
+    private static void tryToPrint(PrintOptions printOptions, RunConfiguration runConfiguration, FitResults fitResults,
+                                   String prompt, boolean printRequired, boolean debugMode, String doubleFormat) {
+        if (printRequired && printOptions.isRequired()) {
             logger.info(prompt +
                     Utils.runConfigurationAndFitResultsToString(
                             runConfiguration, fitResults, printOptions,
-                            Constants.DEBUG_MODE, Constants.DOUBLE_FORMAT));
+                            debugMode, doubleFormat));
         }
     }
 
-    private static void tryToSave(boolean saveRequired, RunConfiguration runConfiguration, FitResults fitResults) {
+    private static void tryToSave(boolean saveRequired, RunConfiguration runConfiguration, FitResults fitResults,
+                                  String saveFilenamePattern, String saveFolder, SerializationType serializationType,
+                                  String doubleFormat) {
         if (saveRequired) {
-            String filename = String.format(Constants.SAVE_NETWORK_PATTERN,
+            String filename = String.format(saveFilenamePattern,
                     UUID.randomUUID().toString().substring(0, 5) + '_' + System.currentTimeMillis());
             logger.info("Сохранение нейросети в файл: " + filename);
             try {
-                SerializationUtils.save(fitResults.getNetwork(), Constants.SAVE_FOLDER, filename, Constants.SERIALIZATION_TYPE);
+                SerializationUtils.save(fitResults.getNetwork(), saveFolder, filename,
+                        serializationType, doubleFormat);
             } catch (SerializationException e) {
                 logger.severe(e.getMessage());
             }

@@ -775,13 +775,6 @@ public class Matrix implements Copyable<Matrix>, Serializable {
         String[] valuesSA = YamlSerializationUtils.addStringAtBegin(YamlSerializationUtils.double2DArrayToYaml(values, doubleFormat),
                 baseIndentString + YamlSerializationOptions.YAML_INDENT_STRING);
         sb.append(String.join("\n", valuesSA));
-//        for (int row = 0; row < rows; row++) {
-//            StringBuilder rowSB = new StringBuilder().append('[');
-//            for (int col = 0; col < cols; col++)
-//                rowSB.append(String.format(doubleFormat, values[row][col])).append(", ");
-//            rowSB.delete(rowSB.length() - 2, rowSB.length()).append(']');
-//            sb.append(baseIndentString).append(Constants.YAML_INDENT_STRING).append("- ").append(rowSB).append(CRLF);
-//        }
         return sb.toString();
     }
 
