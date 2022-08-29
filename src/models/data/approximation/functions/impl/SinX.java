@@ -1,8 +1,7 @@
-package models.data.approximation.functions.examples;
+package models.data.approximation.functions.impl;
 
 import models.data.approximation.functions.Function;
 import models.data.approximation.functions.VariableRange;
-import utils.copy.CopyUtils;
 
 import java.util.Arrays;
 

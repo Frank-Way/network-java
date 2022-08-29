@@ -46,7 +46,7 @@ public class Main {
             return;
         }
 
-        ExperimentConfiguration[] experimentConfigurations = null;
+        final ExperimentConfiguration[] experimentConfigurations;
         switch (appProperties.getExperimentsSourceType()) {
             case CODE:
                 experimentConfigurations = ExperimentConfigurations.getDefaultExperimentConfigurations();
@@ -76,6 +76,21 @@ public class Main {
         logger.fine("Начало запуска экспериментов");
         ExecutorService executorService = Executors.newFixedThreadPool(appProperties.getThreadPoolSize());
 
+//        HashSet<Future<FitResults>> allFutures = new HashSet<>();
+//        for (ExperimentConfiguration experimentConfiguration: experimentConfigurations)
+//            for (RunConfiguration runConfiguration: experimentConfiguration.getRunConfigurations())
+//                allFutures.add(executorService.submit(new MyTask(runConfiguration.getFitParameters().deepCopy())));
+
+        Map<ExperimentConfiguration, Set<RunConfiguration>> experimentToConfigMap = new HashMap<>();
+        Arrays.stream(experimentConfigurations).forEach(experimentConfiguration ->
+                experimentToConfigMap.put(experimentConfiguration,
+                        Arrays.stream(experimentConfiguration.getRunConfigurations()).collect(Collectors.toSet())));
+
+        Map<RunConfiguration, ExperimentConfiguration> configToExperimentMap = new HashMap<>();
+        Arrays.stream(experimentConfigurations).forEach(experimentConfiguration ->
+                Arrays.stream(experimentConfiguration.getRunConfigurations()).forEach(runConfiguration ->
+                        configToExperimentMap.put(runConfiguration, experimentConfiguration)));
+
         Map<RunConfiguration, Set<Future<FitResults>>> runConfigurationToFuturesToResultsMap = new HashMap<>();
         for (ExperimentConfiguration experimentConfiguration: experimentConfigurations)
             for (RunConfiguration runConfiguration: experimentConfiguration.getRunConfigurations())
@@ -84,18 +99,11 @@ public class Main {
                                 .mapToObj(value -> executorService.submit(new MyTask(runConfiguration.getFitParameters().deepCopy())))
                                 .collect(Collectors.toSet()));
 
-        Map<ExperimentConfiguration, Set<Future<FitResults>>> experimentConfigurationToFuturesMap = new HashMap<>();
-        for (ExperimentConfiguration experimentConfiguration: experimentConfigurations) {
-            experimentConfigurationToFuturesMap.put(experimentConfiguration, new HashSet<>());
-            for (Map.Entry<RunConfiguration, Set<Future<FitResults>>> entry : runConfigurationToFuturesToResultsMap.entrySet())
-                if (Utils.contains(experimentConfiguration.getRunConfigurations(), entry.getKey()))
-                    experimentConfigurationToFuturesMap.get(experimentConfiguration).addAll(entry.getValue());
-        }
-
         Set<Future<FitResults>> allFutures = runConfigurationToFuturesToResultsMap.values().stream()
                 .flatMap(Set::stream).collect(Collectors.toSet());
 
         Set<Future<FitResults>> processedFutures = new HashSet<>();
+
 
         while (!allFuturesDone(allFutures)) {  // пока не завершены все запущенные попытки обучения
             for (Future<FitResults> future: allFutures.stream()  // для каждого результата
@@ -103,7 +111,7 @@ public class Main {
                     .collect(Collectors.toSet())) {  // если новых результатов нет, то цикл for не запустится
                 // берётся конфигурации запуска и эксперимента
                 RunConfiguration runConfiguration = reverseSearch(runConfigurationToFuturesToResultsMap, future);
-                ExperimentConfiguration experimentConfiguration = reverseSearch(experimentConfigurationToFuturesMap, future);
+                ExperimentConfiguration experimentConfiguration = configToExperimentMap.get(runConfiguration);
                 // берутся полученные результаты
                 FitResults fitResults = getFromFuture(future);
 
@@ -138,14 +146,20 @@ public class Main {
                             appProperties.getDoubleFormat());
 
                     logTimeSpent(runConfigurationToFuturesToResultsMap.get(runConfiguration),
-                            String.format("Запуск конфигурации [%s} эксперимента [%s] занял",
+                            String.format("Запуск конфигурации [%s] эксперимента [%s] занял",
                                     runConfiguration.getDescription(), experimentConfiguration.getDescription()));
                 }
 
-                if (allFuturesDone(experimentConfigurationToFuturesMap.get(experimentConfiguration))) {
+                Set<Future<FitResults>> thisExperimentFutures = runConfigurationToFuturesToResultsMap.entrySet().stream()
+                        .filter(entry -> experimentToConfigMap.get(experimentConfiguration).contains(entry.getKey()))
+                        .map(Map.Entry::getValue)
+                        .flatMap(Set::stream)
+                        .collect(Collectors.toSet());
+
+                if (allFuturesDone(thisExperimentFutures)) {
                     // аналогичная проверка перед обработкой результатов для эксперимента, соответствующему
                     // полученному результату
-                    Future<FitResults> bestFuture = findBestFuture(experimentConfigurationToFuturesMap.get(experimentConfiguration));
+                    Future<FitResults> bestFuture = findBestFuture(thisExperimentFutures);
                     RunConfiguration bestRunConfiguration = reverseSearch(runConfigurationToFuturesToResultsMap, bestFuture);
                     FitResults bestFitResults = getFromFuture(bestFuture);
 
@@ -160,7 +174,7 @@ public class Main {
                             appProperties.getSavePath(), appProperties.getSaveSerializationType(),
                             appProperties.getDoubleFormat());
 
-                    logTimeSpent(experimentConfigurationToFuturesMap.get(experimentConfiguration),
+                    logTimeSpent(thisExperimentFutures,
                             String.format("Выполнение эксперимента [%s] заняло",
                                     experimentConfiguration.getDescription()));
                 }
@@ -176,7 +190,7 @@ public class Main {
         // обработка результатов для всех экспериментов
         Future<FitResults> bestFuture = findBestFuture(allFutures);
         RunConfiguration bestRunConfiguration = reverseSearch(runConfigurationToFuturesToResultsMap, bestFuture);
-        ExperimentConfiguration bestExperimentConfiguration = reverseSearch(experimentConfigurationToFuturesMap, bestFuture);
+        ExperimentConfiguration bestExperimentConfiguration = configToExperimentMap.get(bestRunConfiguration);
         FitResults bestFitResults = getFromFuture(bestFuture);
 
         tryToPrint(appProperties.getPrintExperimentBest(), bestRunConfiguration, bestFitResults,

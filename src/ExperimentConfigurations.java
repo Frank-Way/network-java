@@ -1,6 +1,6 @@
 import models.data.approximation.ApproximationDataLoader;
 import models.data.approximation.ApproximationLoadParameters;
-import models.data.approximation.functions.examples.Sin2X;
+import models.data.approximation.functions.impl.Sin2X;
 import models.losses.MeanSquaredError;
 import models.networks.AnotherNetworkBuilder;
 import models.operations.LinearActivation;

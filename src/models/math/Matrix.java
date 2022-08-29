@@ -126,7 +126,7 @@ public class Matrix implements DeepCopyable, Serializable {
         return "Matrix {" +
                 "rows=" + rows +
                 ", cols=" + cols +
-                ", values=" + valuesToStringOneLine() +
+//                ", values=" + valuesToStringOneLine() +
                 '}';
     }
 
