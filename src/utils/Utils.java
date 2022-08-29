@@ -56,7 +56,7 @@ public abstract class Utils {
             sb.append("динамика:\n")
                     .append(trainDynamicToTable(results.getTestLossesMap(), doubleFormat)).append("\n");
 
-        sb.append("обучение заняло: ").append(millisToHMS(results.getTimeSpent())).append("\n");
+        sb.append("обучение заняло: ").append(millisToHMS(results.getTimeStop() - results.getTimeStart())).append("\n");
 
         return sb.toString();
     }

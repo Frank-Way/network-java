@@ -76,11 +76,6 @@ public class Main {
         logger.fine("Начало запуска экспериментов");
         ExecutorService executorService = Executors.newFixedThreadPool(appProperties.getThreadPoolSize());
 
-//        HashSet<Future<FitResults>> allFutures = new HashSet<>();
-//        for (ExperimentConfiguration experimentConfiguration: experimentConfigurations)
-//            for (RunConfiguration runConfiguration: experimentConfiguration.getRunConfigurations())
-//                allFutures.add(executorService.submit(new MyTask(runConfiguration.getFitParameters().deepCopy())));
-
         Map<ExperimentConfiguration, Set<RunConfiguration>> experimentToConfigMap = new HashMap<>();
         Arrays.stream(experimentConfigurations).forEach(experimentConfiguration ->
                 experimentToConfigMap.put(experimentConfiguration,
@@ -103,7 +98,6 @@ public class Main {
                 .flatMap(Set::stream).collect(Collectors.toSet());
 
         Set<Future<FitResults>> processedFutures = new HashSet<>();
-
 
         while (!allFuturesDone(allFutures)) {  // пока не завершены все запущенные попытки обучения
             for (Future<FitResults> future: allFutures.stream()  // для каждого результата
@@ -180,7 +174,9 @@ public class Main {
                 }
             }  // завершение обработки полученных результатов
             Utils.myWait(1_000);  // таймаут перед проверкой наличия новых результатов
-            logger.fine("Количество активных потоков: " + ((ThreadPoolExecutor) executorService).getActiveCount());
+            logger.fine(String.format("Количество активных потоков: %d. Завершено: %d/%d.",
+                    ((ThreadPoolExecutor) executorService).getActiveCount(),
+                    processedFutures.size(), allFutures.size()));
         }
 
         // после получения всех результатов обязательно завершается executorService, иначе программа никогда не
@@ -263,13 +259,26 @@ public class Main {
         long totalTimeSpent = futures
                 .stream()
                 .map(Main::getFromFuture)
-                .mapToLong(FitResults::getTimeSpent)
+                .mapToLong(result -> result.getTimeStop() - result.getTimeStart())
                 .sum();
 
         logger.fine(String.format("%s суммарно - %s", prompt, Utils.millisToHMS(totalTimeSpent)));
 
         logger.fine(String.format("%s в среднем - %s",
                 prompt, Utils.millisToHMS(totalTimeSpent / futures.size())));
+
+        long minStartTime = futures.stream().map(Main::getFromFuture)
+                .map(FitResults::getTimeStart)
+                .min(Long::compare)
+                .orElse(Long.MAX_VALUE);
+
+        long maxStopTime = futures.stream().map(Main::getFromFuture)
+                .map(FitResults::getTimeStop)
+                .max(Long::compare)
+                .orElse(Long.MIN_VALUE);
+
+        logger.fine(String.format("%s фактически - %s",
+                prompt, Utils.millisToHMS(maxStopTime - minStartTime)));
     }
 
     private static Future<FitResults> findBestFuture(Set<Future<FitResults>> futures) {

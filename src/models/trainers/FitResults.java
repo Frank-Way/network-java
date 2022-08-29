@@ -20,23 +20,26 @@ public class FitResults implements DeepCopyable {
     private final Network network;
     private final Errors errors;
     private final Dataset dataset;
-    private final long timeSpent;
+    private final long timeStart;
+    private final long timeStop;
 
     /**
      * Конструктор
      * @param testLossesMap  зависимость потери от эпохи
-     * @param bestNetwork  сеть, обеспечившая наименьшую потерю при обучении
+     * @param network  сеть, обеспечившая наименьшую потерю при обучении
      * @param errors  ошибки работы сети при прогоне части обучающей выборки для валидации
      * @param dataset  обучающая выборка
-     * @param timeSpent  длительность обучения по времени
+     * @param timeStart  время начала обучения
+     * @param timeStop  время окончания обучения
      */
-    public FitResults(Map<Integer, Double> testLossesMap, Network bestNetwork, Errors errors,
-                      Dataset dataset, long timeSpent) {
+    public FitResults(Map<Integer, Double> testLossesMap, Network network, Errors errors, Dataset dataset,
+                      long timeStart, long timeStop) {
         this.testLossesMap = testLossesMap;
-        this.network = bestNetwork;
+        this.network = network;
         this.errors = errors;
         this.dataset = dataset;
-        this.timeSpent = timeSpent;
+        this.timeStart = timeStart;
+        this.timeStop = timeStop;
     }
 
     public Map<Integer, Double> getTestLossesMap() {
@@ -55,10 +58,6 @@ public class FitResults implements DeepCopyable {
         return dataset;
     }
 
-    public long getTimeSpent() {
-        return timeSpent;
-    }
-
     public double getMaxAbsoluteError() {
         return errors.getMaxAbsoluteError();
     }
@@ -75,6 +74,14 @@ public class FitResults implements DeepCopyable {
         return errors.getLossMSE();
     }
 
+    public long getTimeStart() {
+        return timeStart;
+    }
+
+    public long getTimeStop() {
+        return timeStop;
+    }
+
     @Override
     public String toString() {
         return "FitResults{" +
@@ -82,13 +89,14 @@ public class FitResults implements DeepCopyable {
                 ", network=" + network +
                 ", errors=" + errors +
                 ", dataset=" + dataset +
-                ", timeSpent=" + timeSpent +
+                ", timeStart=" + timeStart +
+                ", timeStop=" + timeStop +
                 '}';
     }
 
     @Override
     public FitResults deepCopy() {
         return new FitResults(new HashMap<>(testLossesMap), network.deepCopy(),
-                errors.deepCopy(), dataset.deepCopy(), timeSpent);
+                errors.deepCopy(), dataset.deepCopy(), timeStart, timeStop);
     }
 }

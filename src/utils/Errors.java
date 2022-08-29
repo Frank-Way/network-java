@@ -33,19 +33,18 @@ public class Errors implements DeepCopyable {
     }
 
     /**
-     * Получение ошибок по целевым и вычисленным значениям
+     * Конструктор. Получение ошибок по целевым и вычисленным значениям
      * @param targets  требуемые теоретические выходы
      * @param predictions  выходы сети
-     * @return  максимальные ошибки
      */
-    public static Errors buildFromTargetsAndPredictions(Matrix targets, Matrix predictions) {
+    public Errors(Matrix targets, Matrix predictions) {
         Matrix errors = predictions.sub(targets).abs();
         double maxAbsoluteError = errors.max();
         MeanSquaredError mse = new MeanSquaredError();
-        return new Errors(maxAbsoluteError,
-                maxAbsoluteError / (targets.max() - targets.min()) * 100,
-                errors.sum() / errors.size(),
-                mse.forward(targets, predictions));
+        this.maxAbsoluteError = maxAbsoluteError;
+        this.maxRelativeError = maxAbsoluteError / (targets.max() - targets.min()) * 100;
+        this.meanAbsoluteError = errors.sum() / errors.size();
+        this.lossMSE = mse.forward(targets, predictions);
     }
 
     public double getMaxAbsoluteError() {

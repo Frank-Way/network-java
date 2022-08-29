@@ -102,12 +102,10 @@ public class Trainer {
         logger.fine(String.format("В качестве результата обучения сохранена сеть, обеспечившая потерю на тестовой выборке: " +
                 parameters.getDoubleFormat(), bestTestLoss));
 
-        return new FitResults(testLossesMap,
-                bestNetwork,
-                Errors.buildFromTargetsAndPredictions(dataset.getValidData().getOutputs(),
+        return new FitResults(testLossesMap, bestNetwork,
+                new Errors(dataset.getValidData().getOutputs(),
                         bestNetwork.forward(dataset.getValidData().getInputs())),
-                dataset,
-                System.currentTimeMillis() - startTime);
+                dataset, startTime, System.currentTimeMillis());
     }
 
     private static FitResults fitWithPreTrain(FitParameters parameters) {
