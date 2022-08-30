@@ -7,8 +7,8 @@ import models.operations.*;
 import serialization.YamlSerializationUtils;
 import serialization.formatters.Formatter;
 import serialization.formatters.yaml.YamlFormatter;
-import serialization.wrappers.ArrayWrapper;
-import serialization.wrappers.ObjectWrapper;
+import serialization.wrappers.complex.collections.ArrayWrapper;
+import serialization.wrappers.complex.ObjectWrapper;
 import utils.automatization.ExperimentConfiguration;
 
 import java.lang.reflect.InvocationTargetException;

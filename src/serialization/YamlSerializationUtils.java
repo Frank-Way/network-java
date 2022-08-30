@@ -2,6 +2,11 @@ package serialization;
 
 import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
+import serialization.exceptions.SerializationException;
+import serialization.formatters.yaml.YamlFormatter;
+import serialization.formatters.Formatter;
+import serialization.wrappers.Wrapper;
+import serialization.wrappers.WrapperFactory;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -333,15 +338,6 @@ public class YamlSerializationUtils {
         return string.substring(1) + Character.toUpperCase(string.charAt(0));
     }
 
-    public static Field[] getAllFields(Class<?> clazz) {
-        Field[] clazzFields = clazz.getDeclaredFields();
-        Class<?> superClazz = clazz.getSuperclass();
-        if (superClazz.equals(Object.class))
-            return clazzFields;
-        Field[] superClassFields = getAllFields(superClazz);
-        return combine(clazzFields, superClassFields);
-    }
-
     public static Field[] combine(Field[] ... arrays) {
         return Arrays.stream(arrays).flatMap(Arrays::stream).toArray(Field[]::new);
     }
@@ -473,9 +469,24 @@ public class YamlSerializationUtils {
     }
 
     public static Field[] getYamlFields(Class<?> clazz) {
-        Field[] fields = getAllFields(clazz);
-        return Arrays.stream(fields)
-                .filter(field -> field.isAnnotationPresent(YamlField.class)).toArray(Field[]::new);
+        Field[] fields = SerializationUtils.getAllFields(clazz);
+        Field[] result = Arrays.stream(fields)
+                .filter(field -> field.isAnnotationPresent(YamlField.class))
+                .toArray(Field[]::new);
+        Field fieldWithIncorrectName = Arrays.stream(result)
+                .filter(field ->  {
+                    String specifiedFieldName = field.getAnnotation(YamlField.class).fieldName();
+                    if (!specifiedFieldName.isEmpty())
+                        return !specifiedFieldName.matches(YAML_IDENTIFIER_PATTERN);
+                    return false;
+                })
+                .findAny().orElse(null);
+        if (fieldWithIncorrectName != null) {
+            String specifiedFieldName = fieldWithIncorrectName.getAnnotation(YamlField.class).fieldName();
+            throw new IllegalArgumentException(String.format("Поле \"%s\" имеет недопустимый Yaml-идентификатор \"%s\"",
+                    fieldWithIncorrectName.getName(), specifiedFieldName));
+        }
+        return result;
     }
 
     public static String ltrim(String source) {
@@ -484,5 +495,24 @@ public class YamlSerializationUtils {
 
     public static String rtrim(String source) {
         return source.replaceAll("\\s+$", "");
+    }
+
+    public static boolean isEqualsYamlSerializable(Object object1, Object object2) {
+        boolean result = false;
+        Class<?> class1 = object1.getClass();
+        Class<?> class2 = object2.getClass();
+        if (!class1.equals(class2))
+            return result;
+        Formatter formatter = new YamlFormatter("%10.5f");
+        Wrapper wrapper1 = WrapperFactory.createWrapper(class1, formatter);
+        Wrapper wrapper2 = WrapperFactory.createWrapper(class2, formatter);
+        String serialized1 = wrapper1.writeValue(object1);
+        String serialized2 = wrapper2.writeValue(object2);
+        String[] lines1 = serialized1.split(CRLF);
+        String[] lines2 = serialized2.split(CRLF);
+        Set<String> set1 = Arrays.stream(lines1).collect(Collectors.toSet());
+        Set<String> set2 = Arrays.stream(lines2).collect(Collectors.toSet());
+        set1.removeAll(set2);
+        return set1.isEmpty();
     }
 }

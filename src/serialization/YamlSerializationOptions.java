@@ -9,4 +9,5 @@ public class YamlSerializationOptions {
     public final static String YAML_SEPARATOR = ": ";
     public final static String YAML_SPACE = " ";
     public final static String YAML_COMMENT_START = "  # ";
+    public final static String YAML_IDENTIFIER_PATTERN = "^[a-zA-Z_][a-zA-Z_0-9]*$";
 }

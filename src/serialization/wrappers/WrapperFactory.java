@@ -1,58 +1,48 @@
 package serialization.wrappers;
 
 import serialization.formatters.Formatter;
+import serialization.wrappers.complex.*;
+import serialization.wrappers.simple.*;
+import utils.ExceptionUtils;
 
 public class WrapperFactory {
-    protected final Class<?> clazz;
+    protected Class<?> clazz;
     protected final Formatter formatter;
+    protected String source;
 
     public WrapperFactory(Class<?> clazz, Formatter formatter) {
         this.clazz = clazz;
         this.formatter = formatter;
     }
 
-    protected static WrapperType classToWrapperType(Class<?> clazz) {
-        if (BooleanWrapper.isBoolean(clazz))
-            return WrapperType.BOOLEAN;
-        if (IntegerWrapper.isInteger(clazz))
-            return WrapperType.INTEGER;
-        if (DoubleWrapper.isDouble(clazz))
-            return WrapperType.DOUBLE;
-        if (StringWrapper.isString(clazz))
-            return WrapperType.STRING;
-        if (ArrayWrapper.isArray(clazz))
-            return WrapperType.ARRAY;
-        if (ObjectWrapper.isObject(clazz))
-            return WrapperType.OBJECT;
-        if (EnumWrapper.isEnum(clazz))
-            return WrapperType.ENUM;
-        throw new IllegalArgumentException("Не известный класс: " + clazz.getCanonicalName());
+    public WrapperFactory(String source, Formatter formatter) {
+        this.formatter = formatter;
+        this.source = source;
     }
 
     public Wrapper createWrapper() {
-        WrapperType wrapperType = classToWrapperType(clazz);
-        switch (wrapperType) {
-            case OBJECT:
-                return new ObjectWrapper(clazz, formatter);
-            case STRING:
-                return new StringWrapper(clazz, formatter);
-            case ARRAY:
-                return new ArrayWrapper(clazz, formatter);
-            case BOOLEAN:
-                return new BooleanWrapper(clazz, formatter);
-            case DOUBLE:
-                return new DoubleWrapper(clazz, formatter);
-            case ENUM:
-                return new EnumWrapper(clazz, formatter);
-            case INTEGER:
-                return new IntegerWrapper(clazz, formatter);
-            default:
-                throw new IllegalArgumentException("Не известный тип: " + wrapperType);
-        }
+        if (SimpleWrapper.isSimple(clazz))
+            return new SimpleWrapperFactory(clazz, formatter).createWrapper();
+        else if (ComplexWrapper.isComplex(clazz))
+            return new ComplexWrapperFactory(clazz, formatter).createWrapper();
+        throw ExceptionUtils.newUnknownClassException(clazz);
+    }
+
+    public Wrapper createWrapperByString() {
+        if (SimpleWrapper.isSimple(source, formatter))
+            return new SimpleWrapperFactory(source, formatter).createWrapperByString();
+        else if (ComplexWrapper.isComplex(source, formatter))
+            return new ComplexWrapperFactory(source, formatter).createWrapperByString();
+        throw ExceptionUtils.newUnknownFormatException(source);
     }
 
     public static Wrapper createWrapper(Class<?> clazz, Formatter formatter) {
         WrapperFactory factory = new WrapperFactory(clazz, formatter);
         return factory.createWrapper();
+    }
+
+    public static Wrapper createWrapperByString(String source, Formatter formatter) {
+        WrapperFactory factory = new WrapperFactory(source, formatter);
+        return factory.createWrapperByString();
     }
 }

@@ -1,5 +1,6 @@
 package serialization.formatters.yaml;
 
+import serialization.YamlSerializationOptions;
 import serialization.YamlSerializationUtils;
 import serialization.formatters.Formatter;
 import utils.Utils;
@@ -8,6 +9,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static serialization.YamlSerializationOptions.*;
+import static serialization.wrappers.complex.EnumWrapper.ENUM_CLASS_FIELD;
+import static serialization.wrappers.complex.EnumWrapper.ENUM_VALUE_FIELD;
+import static serialization.wrappers.complex.MapEntryWrapper.MAP_ENTRY_KEY_FIELD;
+import static serialization.wrappers.complex.MapEntryWrapper.MAP_ENTRY_VALUE_FIELD;
+import static serialization.wrappers.complex.ObjectWrapper.OBJECT_CLASS_FIELD;
+import static serialization.wrappers.complex.collections.CollectionWrapper.COLLECTION_ITEM_FIELD;
 
 public class YamlFormatter extends Formatter {
     public YamlFormatter(String doubleFormat) {
@@ -15,20 +22,30 @@ public class YamlFormatter extends Formatter {
     }
 
     public String write(String fieldName, Map<String, String> yaml) {
+        return write(fieldName, yaml, new ArrayList<>(yaml.keySet()));
+    }
+
+    @Override
+    public String write(String fieldName, Map<String, String> yaml, List<String> orderedKeys) {
         StringBuilder sb = new StringBuilder();
         if (isObjectField(fieldName))
             sb.append(CRLF);
-        List<String> orderedKeys = yaml.keySet().stream()
-                .filter(key -> !key.equals("class"))
-                .sorted(Comparator.comparingInt(key -> yaml.get(key).split(CRLF).length))
-                .collect(Collectors.toList());
-        orderedKeys.add(0, "class");
         for (String key: orderedKeys)
             sb.append(key).append(YAML_SEPARATOR)
                     .append(YamlSerializationUtils.addIndentExcludeFirst(yaml.get(key), YAML_INDENT))
                     .append(CRLF);
         String result = YamlSerializationUtils.removeCRLFFromEnd(sb.toString());
         return result;
+    }
+
+    @Override
+    public String write(String fieldName, Map<String, String> yaml, String firstKey) {
+        List<String> orderedKeys = yaml.keySet().stream()
+                .filter(key -> !key.equals(firstKey))
+                .sorted(Comparator.comparingInt(key -> yaml.get(key).split(CRLF).length))
+                .collect(Collectors.toList());
+        orderedKeys.add(0, firstKey);
+        return write(fieldName, yaml, orderedKeys);
     }
 
     public String write(String fieldName, Collection<String> yaml) {
@@ -87,11 +104,15 @@ public class YamlFormatter extends Formatter {
     }
 
     protected static boolean isObjectField(String fieldName) {
-        return fieldName != null && !fieldName.isEmpty();
+        return fieldName != null && !isCollectionItem(fieldName);
     }
 
+//    protected static boolean isMapEntryKeyOrValue(String fieldName) {
+//        return fieldName != null && (fieldName.equals(MAP_ENTRY_KEY_FIELD))
+//    }
+
     protected static boolean isCollectionItem(String fieldName) {
-        return fieldName != null && fieldName.isEmpty();
+        return fieldName != null && fieldName.contains(COLLECTION_ITEM_FIELD);
     }
 
     @Override
@@ -108,4 +129,128 @@ public class YamlFormatter extends Formatter {
     public String appendComment(String source, String comment) {
         return source + YAML_COMMENT_START + comment;
     }
+
+    @Override
+    public String write(boolean value) {
+        return "'" + value + "'";
+    }
+
+    @Override
+    public String write(int value) {
+        return value + "";
+    }
+
+    @Override
+    public String write(double value) {
+        return String.format(doubleFormat, value);
+    }
+
+    @Override
+    public String write(String value) {
+        return '"' + value + '"';
+    }
+
+    @Override
+    public boolean readBoolean(String source) {
+        return Boolean.parseBoolean(source.substring(1, source.length() - 1));
+    }
+
+    @Override
+    public int readInteger(String source) {
+        return Integer.parseInt(source);
+    }
+
+    @Override
+    public double readDouble(String source) {
+        return Double.parseDouble(source.replace(",", "."));
+    }
+
+    @Override
+    public String readString(String source) {
+        return source.substring(source.indexOf("\"") + 1, source.lastIndexOf("\""));
+    }
+
+    @Override
+    public String getBooleanPattern() {
+        return "^'((true)|(false))'$";
+    }
+
+    @Override
+    public String getIntegerPattern() {
+        return "^(-)?\\d+$";
+    }
+
+    @Override
+    public String getDoublePattern() {
+        return "^( )*(-)?\\d+[,.]\\d+$";
+    }
+
+    @Override
+    public String getStringPattern() {
+        return "^\".*\"$";
+    }
+
+    @Override
+    public String getObjectPattern() {
+        return "^(" + getObjectFieldPattern() + "\\n)*" +
+                getObjectClassFieldPattern() +
+                "(\\n" + getObjectFieldPattern() + ")*$";
+    }
+
+    protected String getObjectFieldPattern() {
+        return YAML_IDENTIFIER_PATTERN.substring(YAML_IDENTIFIER_PATTERN.indexOf('^') + 1,
+                YAML_IDENTIFIER_PATTERN.lastIndexOf('$')) + YAML_SEPARATOR + getAnyPattern();
+    }
+
+    protected String getObjectClassFieldPattern() {
+        return YamlSerializationUtils.escapeDotsInPattern(OBJECT_CLASS_FIELD) + YAML_SEPARATOR + getFQDNPattern();
+    }
+
+    @Override
+    public String getEnumPattern() {
+        return "^((" + getEnumClassPattern() + "\\n" + getEnumValuePattern() +
+                ")|(" + getEnumValuePattern() + "\\n" + getEnumClassPattern() + "))$";
+    }
+
+    protected String getEnumClassPattern() {
+        return YamlSerializationUtils.escapeDotsInPattern(ENUM_CLASS_FIELD) + YAML_SEPARATOR + getFQDNPattern();
+    }
+
+    protected String getEnumValuePattern() {
+        return YamlSerializationUtils.escapeDotsInPattern(ENUM_VALUE_FIELD) + YAML_SEPARATOR + "[a-zA-Z][a-zA-Z0-9]*";
+    }
+
+    @Override
+    public String getMapEntryPattern() {
+        return "^((" + getMapEntryKeyPattern() + "\\n" + getMapEntryValuePattern() +
+                ")|(" + getMapEntryValuePattern() + "\\n" + getMapEntryKeyPattern() + "))$";
+    }
+
+    protected String getMapEntryKeyPattern() {
+        return YamlSerializationUtils.escapeDotsInPattern(MAP_ENTRY_KEY_FIELD) + YAML_SEPARATOR + getAnyPattern();
+    }
+
+    protected String getMapEntryValuePattern() {
+        return YamlSerializationUtils.escapeDotsInPattern(MAP_ENTRY_VALUE_FIELD) + YAML_SEPARATOR + getAnyPattern();
+    }
+
+    @Override
+    public String getCollectionPattern() {
+        return "^" + getCollectionItemPattern() +
+                "(\\n" + getCollectionItemPattern() + ")*$";
+    }
+
+    protected String getCollectionItemPattern() {
+        return YAML_LIST_PREFIX + getAnyPattern();
+    }
+
+    //    @Override
+//    public String write() {
+//        return "null";
+//    }
+//
+//    @Override
+//    public String readNull(String source) {
+//        return null;
+//    }
 }
