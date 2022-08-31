@@ -3,9 +3,11 @@ import models.data.approximation.ApproximationLoadParameters;
 import models.data.approximation.functions.impl.Sin2X;
 import models.losses.MeanSquaredError;
 import models.networks.AnotherNetworkBuilder;
+import models.networks.Network;
 import models.operations.LinearActivation;
 import models.operations.Operation;
 import models.operations.TanhActivation;
+import models.optimizers.SGD;
 import models.optimizers.SGDBuilder;
 import models.trainers.FitParameters;
 import models.trainers.QueriesRangeType;
@@ -45,7 +47,7 @@ public abstract class ExperimentConfigurations {
                                                 true,
                                                 3,
                                                 10,
-                                                new AnotherNetworkBuilder()
+                                                Network.anotherBuilder()
                                                         .sizes(new int[]{
                                                                 1,
                                                                 8,
@@ -56,7 +58,7 @@ public abstract class ExperimentConfigurations {
                                                                 new LinearActivation()
                                                         })
                                                         .loss(new MeanSquaredError()),
-                                                new SGDBuilder()
+                                                SGD.builder()
                                                         .startLR(0.1)
                                                         .stopLR(0.0001),
                                                 QueriesRangeType.NON_LINEAR
@@ -80,7 +82,7 @@ public abstract class ExperimentConfigurations {
                                                 true,
                                                 3,
                                                 10,
-                                                new AnotherNetworkBuilder()
+                                                Network.anotherBuilder()
                                                         .sizes(new int[]{
                                                                 1,
                                                                 8,
@@ -91,7 +93,7 @@ public abstract class ExperimentConfigurations {
                                                                 new LinearActivation()
                                                         })
                                                         .loss(new MeanSquaredError()),
-                                                new SGDBuilder()
+                                                SGD.builder()
                                                         .startLR(0.1)
                                                         .stopLR(0.0001),
                                                 QueriesRangeType.NON_LINEAR
@@ -115,7 +117,7 @@ public abstract class ExperimentConfigurations {
                                                 true,
                                                 3,
                                                 10,
-                                                new AnotherNetworkBuilder()
+                                                Network.anotherBuilder()
                                                         .sizes(new int[]{
                                                                 1,
                                                                 8,
@@ -126,7 +128,7 @@ public abstract class ExperimentConfigurations {
                                                                 new LinearActivation()
                                                         })
                                                         .loss(new MeanSquaredError()),
-                                                new SGDBuilder()
+                                                SGD.builder()
                                                         .startLR(0.1)
                                                         .stopLR(0.0001),
                                                 QueriesRangeType.NON_LINEAR
@@ -154,7 +156,7 @@ public abstract class ExperimentConfigurations {
                                                 true,
                                                 3,
                                                 10,
-                                                new AnotherNetworkBuilder()
+                                                Network.anotherBuilder()
                                                         .sizes(new int[]{
                                                                 1,
                                                                 8,
@@ -165,7 +167,7 @@ public abstract class ExperimentConfigurations {
                                                                 new LinearActivation()
                                                         })
                                                         .loss(new MeanSquaredError()),
-                                                new SGDBuilder()
+                                                SGD.builder()
                                                         .startLR(0.1)
                                                         .stopLR(0.0001),
                                                 QueriesRangeType.NON_LINEAR
@@ -189,7 +191,7 @@ public abstract class ExperimentConfigurations {
                                                 true,
                                                 3,
                                                 10,
-                                                new AnotherNetworkBuilder()
+                                                Network.anotherBuilder()
                                                         .sizes(new int[]{
                                                                 1,
                                                                 8,
@@ -200,7 +202,7 @@ public abstract class ExperimentConfigurations {
                                                                 new LinearActivation()
                                                         })
                                                         .loss(new MeanSquaredError()),
-                                                new SGDBuilder()
+                                                SGD.builder()
                                                         .startLR(0.1)
                                                         .stopLR(0.0001),
                                                 QueriesRangeType.NON_LINEAR
@@ -224,7 +226,7 @@ public abstract class ExperimentConfigurations {
                                                 true,
                                                 3,
                                                 10,
-                                                new AnotherNetworkBuilder()
+                                                Network.anotherBuilder()
                                                         .sizes(new int[]{
                                                                 1,
                                                                 8,
@@ -235,7 +237,7 @@ public abstract class ExperimentConfigurations {
                                                                 new LinearActivation()
                                                         })
                                                         .loss(new MeanSquaredError()),
-                                                new SGDBuilder()
+                                                SGD.builder()
                                                         .startLR(0.1)
                                                         .stopLR(0.0001),
                                                 QueriesRangeType.NON_LINEAR

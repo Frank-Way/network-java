@@ -128,4 +128,12 @@ public class Network implements DeepCopyable, Serializable {
     public int hashCode() {
         return Objects.hash(Arrays.hashCode(layers), loss);
     }
+
+    public static DefaultNetworkBuilder builder() {
+        return new DefaultNetworkBuilder();
+    }
+
+    public static AnotherNetworkBuilder anotherBuilder() {
+        return new AnotherNetworkBuilder();
+    }
 }

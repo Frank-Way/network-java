@@ -21,4 +21,8 @@ public class SGD extends Optimizer {
         return parameters.sub(parameterGradients.mul(learningRate));
     }
 
+    public static SGDBuilder builder() {
+        return new SGDBuilder();
+    }
+
 }

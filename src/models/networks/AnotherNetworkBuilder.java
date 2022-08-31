@@ -6,8 +6,6 @@ import models.losses.Loss;
 import models.operations.Operation;
 import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
-import utils.Utils;
-import utils.copy.CopyUtils;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -52,9 +50,9 @@ public class AnotherNetworkBuilder extends NetworkBuilder {
      *
      * @return билдер
      */
-    public NetworkBuilder getBasicBuilder() {
+    public DefaultNetworkBuilder getDefaultBuilder() {
         validate();
-        return new BasicNetworkBuilder().layers(getLayers()).loss(getLoss());  // в сеть попадает копия потери
+        return new DefaultNetworkBuilder().layers(getLayers()).loss(getLoss());  // в сеть попадает копия потери
     }
 
     @Override
