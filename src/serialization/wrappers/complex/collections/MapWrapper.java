@@ -1,5 +1,6 @@
 package serialization.wrappers.complex.collections;
 
+import serialization.exceptions.SerializationException;
 import serialization.formatters.Formatter;
 import serialization.wrappers.Wrapper;
 import serialization.wrappers.WrapperFactory;
@@ -50,9 +51,14 @@ public class MapWrapper extends CollectionWrapper {
         collectionToStream(value).forEach(item -> {
             Class<?> itemClass = item.getClass();
             Wrapper itemWrapper = WrapperFactory.createWrapper(itemClass, formatter);
-            String writtenItem = itemWrapper instanceof ComplexWrapper ?
-                    ((ComplexWrapper) itemWrapper).writeValueComplex(MAP_ENTRY_FIELD, item) :
-                    itemWrapper.writeValue(item);
+            String writtenItem = null;
+            try {
+                writtenItem = itemWrapper instanceof ComplexWrapper ?
+                        ((ComplexWrapper) itemWrapper).writeValueComplex(MAP_ENTRY_FIELD, item) :
+                        itemWrapper.writeValue(item);
+            } catch (SerializationException e) {
+                return;
+            }
             result.add(writtenItem);
         });
         return formatter.write(fieldName, result);
@@ -84,7 +90,11 @@ public class MapWrapper extends CollectionWrapper {
         return collectionFromStream(strings.stream().map(string -> {
             MapEntryWrapper entryWrapper = new MapEntryWrapper(
                     MapEntryWrapper.getClassFromString(string, formatter), formatter);
-            return entryWrapper.readValueComplex(MAP_ENTRY_FIELD, string);
+            try {
+                return entryWrapper.readValueComplex(MAP_ENTRY_FIELD, string);
+            } catch (SerializationException e) {
+                return null;
+            }
         }));
     }
 }

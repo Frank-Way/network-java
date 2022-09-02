@@ -1,6 +1,6 @@
 package serialization.wrappers.complex;
 
-import com.sun.xml.internal.ws.encoding.soap.SerializationException;
+import serialization.exceptions.SerializationException;
 import serialization.YamlSerializationUtils;
 import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
@@ -29,7 +29,7 @@ public class ObjectWrapper extends ComplexWrapper {
     }
 
     @Override
-    public Object readValueComplex(String fieldName, String yaml) {
+    public Object readValueComplex(String fieldName, String yaml) throws SerializationException {
         Field[] serializableFields = null;
         Map<String, String> tree = formatter.readToMap(fieldName, yaml);
         Class<?> serializedClazz;
@@ -72,7 +72,7 @@ public class ObjectWrapper extends ComplexWrapper {
     }
 
     @Override
-    public String writeValueComplex(String fieldName, Object value) {
+    public String writeValueComplex(String fieldName, Object value) throws SerializationException {
         Field[] serializableFields = YamlSerializationUtils.getYamlFields(clazz);
 
         Map<String, String> result = new HashMap<>();

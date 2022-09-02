@@ -1,5 +1,6 @@
 package serialization.wrappers;
 
+import serialization.exceptions.SerializationException;
 import serialization.formatters.Formatter;
 import utils.Utils;
 
@@ -21,9 +22,9 @@ public abstract class Wrapper {
             throw new IllegalArgumentException(getMsgIfCanNotBeWrapped());
     }
 
-    public abstract Object readValue(String source);
+    public abstract Object readValue(String source) throws SerializationException;
 
-    public abstract String writeValue(Object value);
+    public abstract String writeValue(Object value) throws SerializationException;
 
     protected abstract String getMsgIfCanNotBeWrapped();
 

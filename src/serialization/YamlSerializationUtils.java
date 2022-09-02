@@ -506,8 +506,14 @@ public class YamlSerializationUtils {
         Formatter formatter = new YamlFormatter("%10.5f");
         Wrapper wrapper1 = WrapperFactory.createWrapper(class1, formatter);
         Wrapper wrapper2 = WrapperFactory.createWrapper(class2, formatter);
-        String serialized1 = wrapper1.writeValue(object1);
-        String serialized2 = wrapper2.writeValue(object2);
+        String serialized1 = null;
+        String serialized2 = null;
+        try {
+            serialized1 = wrapper1.writeValue(object1);
+            serialized2 = wrapper2.writeValue(object2);
+        } catch (SerializationException e) {
+            return false;
+        }
         String[] lines1 = serialized1.split(CRLF);
         String[] lines2 = serialized2.split(CRLF);
         Set<String> set1 = Arrays.stream(lines1).collect(Collectors.toSet());

@@ -1,5 +1,6 @@
 package serialization.wrappers.complex;
 
+import serialization.exceptions.SerializationException;
 import serialization.formatters.Formatter;
 import serialization.wrappers.Wrapper;
 import serialization.wrappers.complex.collections.ArrayWrapper;
@@ -11,18 +12,18 @@ public abstract class ComplexWrapper extends Wrapper {
     }
 
     @Override
-    public Object readValue(String source) {
+    public Object readValue(String source) throws SerializationException {
         return readValueComplex(null, source);
     }
 
-    public abstract Object readValueComplex(String fieldName, String yaml);
+    public abstract Object readValueComplex(String fieldName, String yaml) throws SerializationException;
 
     @Override
-    public String writeValue(Object value) {
+    public String writeValue(Object value) throws SerializationException {
         return writeValueComplex(null, value);
     }
 
-    public abstract String writeValueComplex(String fieldName, Object value);
+    public abstract String writeValueComplex(String fieldName, Object value) throws SerializationException;
 
     public static boolean isComplex(Class<?> clazz) {
         return EnumWrapper.isEnum(clazz) || ObjectWrapper.isObject(clazz) ||

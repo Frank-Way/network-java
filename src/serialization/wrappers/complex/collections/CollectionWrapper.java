@@ -1,5 +1,6 @@
 package serialization.wrappers.complex.collections;
 
+import serialization.exceptions.SerializationException;
 import serialization.formatters.Formatter;
 import serialization.wrappers.Wrapper;
 import serialization.wrappers.WrapperFactory;
@@ -30,9 +31,13 @@ public abstract class CollectionWrapper extends ComplexWrapper {
         Collection<String> strings = formatter.readToCollection(fieldName, yaml);
         return collectionFromStream(strings.stream().map(string -> {
             Wrapper itemWrapper = WrapperFactory.createWrapperByString(string, formatter);
-            return itemWrapper instanceof ComplexWrapper ?
-                    ((ComplexWrapper) itemWrapper).readValueComplex("", string) :
-                    itemWrapper.readValue(string);
+            try {
+                return itemWrapper instanceof ComplexWrapper ?
+                        ((ComplexWrapper) itemWrapper).readValueComplex("", string) :
+                        itemWrapper.readValue(string);
+            } catch (SerializationException e) {
+                return null;
+            }
         }));
     }
 
@@ -42,9 +47,14 @@ public abstract class CollectionWrapper extends ComplexWrapper {
         collectionToStream(value).forEach(item -> {
             Class<?> itemClass = item.getClass();
             Wrapper itemWrapper = WrapperFactory.createWrapper(itemClass, formatter);
-            String writtenItem = itemWrapper instanceof ComplexWrapper ?
-                    ((ComplexWrapper) itemWrapper).writeValueComplex(COLLECTION_ITEM_FIELD, item) :
-                    itemWrapper.writeValue(item);
+            String writtenItem = null;
+            try {
+                writtenItem = itemWrapper instanceof ComplexWrapper ?
+                        ((ComplexWrapper) itemWrapper).writeValueComplex(COLLECTION_ITEM_FIELD, item) :
+                        itemWrapper.writeValue(item);
+            } catch (SerializationException e) {
+                return;
+            }
             result.add(writtenItem);
         });
         return formatter.write(fieldName, result);

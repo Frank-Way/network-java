@@ -1,9 +1,24 @@
+import models.data.Dataset;
+import models.data.approximation.ApproximationDataLoader;
+import models.data.approximation.ApproximationLoadParameters;
+import models.data.approximation.functions.Function;
+import models.data.approximation.functions.impl.SinX1_mul_X2;
+import models.math.Matrix;
+import models.networks.Network;
+import serialization.SerializationType;
+import serialization.SerializationUtils;
+import serialization.exceptions.SerializationException;
+import utils.Errors;
+import utils.Utils;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 /**
  * Класс для тестирования сериализованной сети
  */
-public class Test {
+public class RunSerializedNetwork {
     public static void main(String[] args) {
-        /*
         String doubleFormat = "%15.10f";
         String networksDirectory = "networks";  // путь к директории с сетями
         Path pathToNetworks = Paths.get(networksDirectory);
@@ -13,10 +28,12 @@ public class Test {
         Network network = null;
 
         try {
-            network = SerializationUtils.load(pathToNetworks.toAbsolutePath().toString(), networkFilename,
+            network = (Network) SerializationUtils.load(Network.class,
+                    pathToNetworks.toAbsolutePath().toString(), networkFilename,
                     SerializationType.YAML);  // десериализация
         } catch (SerializationException e) {
             e.printStackTrace();
+            return;
         }
 
         if (network == null)
@@ -26,16 +43,16 @@ public class Test {
         ApproximationLoadParameters parameters = new ApproximationLoadParameters(
                 function,
                 64,  // размер выборки
-                DefaultParameters.TEST_PART,  // не имеет значения
+                0.0,  // не имеет значения
                 1.0,  // 1.0, чтобы для валидации использовалась вся выборка
-                DefaultParameters.EXTENDING_FACTOR);  // не имеет значения
+                1.0);  // не имеет значения
         Dataset dataset = new ApproximationDataLoader().load(parameters);  // обучающая выборка
 
         Matrix x = dataset.getValidData().getInputs();  // входные значения выборки
         Matrix t = dataset.getValidData().getOutputs();  // требуемые выходные значения выборки
         Matrix y = network.forward(x);  // выход сети
         Matrix e = t.sub(y).abs();  // ошибки вычисления сети
-        Errors errors = Errors.buildFromTargetsAndPredictions(t, y);  // максимальные ошибки
+        Errors errors = new Errors(t, y);  //  ошибки
 
         // формирование отчёта
         StringBuilder sb = new StringBuilder(String.format("Тестовый прогон загруженной нейросети " +
@@ -51,6 +68,5 @@ public class Test {
                 .append("\n");  // таблица по всей выборке
 
         System.out.println(sb);
-        */
     }
 }

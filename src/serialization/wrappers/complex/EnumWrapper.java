@@ -1,6 +1,6 @@
 package serialization.wrappers.complex;
 
-import com.sun.xml.internal.ws.encoding.soap.SerializationException;
+import serialization.exceptions.SerializationException;
 import serialization.formatters.Formatter;
 
 import java.util.HashMap;
@@ -38,7 +38,7 @@ public class EnumWrapper extends ComplexWrapper {
     }
 
     @Override
-    public Object readValueComplex(String fieldName, String yaml) {
+    public Object readValueComplex(String fieldName, String yaml) throws SerializationException {
         Map<String, String> tree = formatter.readToMap(fieldName, yaml);
         try {
             Class enumClass = Class.forName(tree.get(ENUM_CLASS_FIELD));

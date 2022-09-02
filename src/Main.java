@@ -1,4 +1,4 @@
-import com.sun.xml.internal.ws.encoding.soap.SerializationException;
+import serialization.exceptions.SerializationException;
 import models.trainers.FitResults;
 import options.AppProperties;
 import options.PrintOptions;
@@ -52,10 +52,15 @@ public class Main {
                 experimentConfigurations = ExperimentConfigurations.getDefaultExperimentConfigurations();
                 break;
             case YAML_FILE:
-                experimentConfigurations = ExperimentConfigurations.getExperimentConfigurationsFromFile(
-                        appProperties.getExperimentsSourceYamlPath(),
-                        appProperties.getExperimentsSourceYamlFilename(),
-                        SerializationType.YAML);
+                try {
+                    experimentConfigurations = ExperimentConfigurations.getExperimentConfigurationsFromFile(
+                            appProperties.getExperimentsSourceYamlPath(),
+                            appProperties.getExperimentsSourceYamlFilename(),
+                            SerializationType.YAML);
+                } catch (serialization.exceptions.SerializationException e) {
+                    e.printStackTrace();
+                    return;
+                }
                 break;
             default:
                 throw new IllegalArgumentException("Не известный тип источника описания экспериментов: " +

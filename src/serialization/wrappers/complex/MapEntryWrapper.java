@@ -1,6 +1,6 @@
 package serialization.wrappers.complex;
 
-import com.sun.xml.internal.ws.encoding.soap.SerializationException;
+import serialization.exceptions.SerializationException;
 import serialization.formatters.Formatter;
 import serialization.wrappers.Wrapper;
 import serialization.wrappers.WrapperFactory;
@@ -18,7 +18,7 @@ public class MapEntryWrapper extends ComplexWrapper {
     }
 
     @Override
-    public String writeValueComplex(String fieldName, Object rawEntry) {
+    public String writeValueComplex(String fieldName, Object rawEntry) throws SerializationException {
         Map<String, String> result = new HashMap<>();
         Map.Entry<?, ?> entry = (Map.Entry<?, ?>) rawEntry;
         Object key = entry.getKey();
@@ -39,7 +39,7 @@ public class MapEntryWrapper extends ComplexWrapper {
     }
 
     @Override
-    public Object readValueComplex(String fieldName, String yaml) {
+    public Object readValueComplex(String fieldName, String yaml) throws SerializationException {
         HashMap<Object, Object> result = new HashMap<>();
         Map<String, String> tree = formatter.readToMap(fieldName, yaml);
 

@@ -13,6 +13,7 @@ import models.trainers.FitParameters;
 import models.trainers.QueriesRangeType;
 import serialization.SerializationType;
 import serialization.SerializationUtils;
+import serialization.exceptions.SerializationException;
 import utils.automatization.ExperimentConfiguration;
 import utils.automatization.RunConfiguration;
 
@@ -249,7 +250,7 @@ public abstract class ExperimentConfigurations {
     }
 
     public static ExperimentConfiguration[] getExperimentConfigurationsFromFile(String path, String filename,
-                                                                                SerializationType serializationType) {
+                                                                                SerializationType serializationType) throws SerializationException {
         return Arrays.stream((Object[]) SerializationUtils.load(
                     ExperimentConfiguration[].class, path, filename, serializationType))
                 .map(ExperimentConfiguration.class::cast).toArray(ExperimentConfiguration[]::new);
