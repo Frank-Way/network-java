@@ -33,13 +33,13 @@ public abstract class ExperimentConfigurations {
                                 new RunConfiguration(2, "1024 элементов",
                                         new FitParameters(
                                                 new ApproximationDataLoader(),
-                                                new ApproximationLoadParameters(
-                                                        new Sin2X(Sin2X.getDefaultVariableRanges()),
-                                                        1024,
-                                                        0.5,
-                                                        0.25,
-                                                        1.1
-                                                ),
+                                                ApproximationLoadParameters.newBuilder()
+                                                        .function(new Sin2X(Sin2X.getDefaultVariableRanges()))
+                                                        .size(1024)
+                                                        .testPart(0.5)
+                                                        .validPart(0.25)
+                                                        .extendingFactor(1.1)
+                                                        .build(),
                                                 500,
                                                 64,
                                                 10,
@@ -68,13 +68,13 @@ public abstract class ExperimentConfigurations {
                                 new RunConfiguration(2, "2048 элементов",
                                         new FitParameters(
                                                 new ApproximationDataLoader(),
-                                                new ApproximationLoadParameters(
-                                                        new Sin2X(Sin2X.getDefaultVariableRanges()),
-                                                        2048,
-                                                        0.5,
-                                                        0.25,
-                                                        1.1
-                                                ),
+                                                ApproximationLoadParameters.newBuilder()
+                                                        .function(new Sin2X(Sin2X.getDefaultVariableRanges()))
+                                                        .size(2048)
+                                                        .testPart(0.5)
+                                                        .validPart(0.25)
+                                                        .extendingFactor(1.1)
+                                                        .build(),
                                                 500,
                                                 64,
                                                 10,
@@ -103,13 +103,13 @@ public abstract class ExperimentConfigurations {
                                 new RunConfiguration(2, "4096 элементов",
                                         new FitParameters(
                                                 new ApproximationDataLoader(),
-                                                new ApproximationLoadParameters(
-                                                        new Sin2X(Sin2X.getDefaultVariableRanges()),
-                                                        4096,
-                                                        0.5,
-                                                        0.25,
-                                                        1.1
-                                                ),
+                                                ApproximationLoadParameters.newBuilder()
+                                                        .function(new Sin2X(Sin2X.getDefaultVariableRanges()))
+                                                        .size(4096)
+                                                        .testPart(0.5)
+                                                        .validPart(0.25)
+                                                        .extendingFactor(1.1)
+                                                        .build(),
                                                 500,
                                                 64,
                                                 10,
@@ -142,13 +142,13 @@ public abstract class ExperimentConfigurations {
                                 new RunConfiguration(2, "500 эпох",
                                         new FitParameters(
                                                 new ApproximationDataLoader(),
-                                                new ApproximationLoadParameters(
-                                                        new Sin2X(Sin2X.getDefaultVariableRanges()),
-                                                        1024,
-                                                        0.5,
-                                                        0.25,
-                                                        1.1
-                                                ),
+                                                ApproximationLoadParameters.newBuilder()
+                                                        .function(new Sin2X(Sin2X.getDefaultVariableRanges()))
+                                                        .size(1024)
+                                                        .testPart(0.5)
+                                                        .validPart(0.25)
+                                                        .extendingFactor(1.1)
+                                                        .build(),
                                                 500,
                                                 64,
                                                 10,
@@ -177,13 +177,13 @@ public abstract class ExperimentConfigurations {
                                 new RunConfiguration(2, "1000 эпох",
                                         new FitParameters(
                                                 new ApproximationDataLoader(),
-                                                new ApproximationLoadParameters(
-                                                        new Sin2X(Sin2X.getDefaultVariableRanges()),
-                                                        1024,
-                                                        0.5,
-                                                        0.25,
-                                                        1.1
-                                                ),
+                                                ApproximationLoadParameters.newBuilder()
+                                                        .function(new Sin2X(Sin2X.getDefaultVariableRanges()))
+                                                        .size(1024)
+                                                        .testPart(0.5)
+                                                        .validPart(0.25)
+                                                        .extendingFactor(1.1)
+                                                        .build(),
                                                 1000,
                                                 64,
                                                 10,
@@ -212,13 +212,13 @@ public abstract class ExperimentConfigurations {
                                 new RunConfiguration(2, "2000 эпох",
                                         new FitParameters(
                                                 new ApproximationDataLoader(),
-                                                new ApproximationLoadParameters(
-                                                        new Sin2X(Sin2X.getDefaultVariableRanges()),
-                                                        1024,
-                                                        0.5,
-                                                        0.25,
-                                                        1.1
-                                                ),
+                                                ApproximationLoadParameters.newBuilder()
+                                                        .function(new Sin2X(Sin2X.getDefaultVariableRanges()))
+                                                        .size(1024)
+                                                        .testPart(0.5)
+                                                        .validPart(0.25)
+                                                        .extendingFactor(1.1)
+                                                        .build(),
                                                 2000,
                                                 64,
                                                 10,

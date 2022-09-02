@@ -11,6 +11,7 @@ import models.math.MatrixUtils;
 import java.util.Arrays;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Генератор обучающей выборки для задачи аппроксимации функции
@@ -35,7 +36,7 @@ public class ApproximationDataLoader extends DataLoader {
      * @return выборка
      */
     public Dataset load(ApproximationLoadParameters parameters) {
-        return new Dataset(getExtendedData(parameters.getFunction(), parameters.getSize(), parameters.getExtendingFactor()),
+        return new Dataset(getExtendedData(parameters.getFunction(), parameters.getSize(), parameters.getExtendingFactors()),
                 getData(parameters.getFunction(), parameters.getTestSize()),
                 getData(parameters.getFunction(), parameters.getValidSize()));
     }
@@ -55,20 +56,21 @@ public class ApproximationDataLoader extends DataLoader {
      * Получение расширенной выборки
      * @param function функция
      * @param size размер выборки
-     * @param extendingFactor коэффициент расширения
+     * @param extendingFactors коэффициенты расширения
      * @return расширенная выборка
      */
-    private static Data getExtendedData(Function function, int size, double extendingFactor) {
+    private static Data getExtendedData(Function function, int size, double[] extendingFactors) {
         try {  // оборачивание в try-catch, так как в результате расширения может быть получен диапазон,
                // где функция не определена
-            Matrix inputs = getInputs(function, size, extendingFactor);
+            Matrix inputs = getInputs(function, size, extendingFactors);
             return new Data(inputs, getOutputs(function, inputs));
         } catch (Exception e) {
             logger.warning(String.format("Ошибка при вычислении функции \"%s\" от аргументов в диапазонах [%s]: %s\n" +
                             " Расширение не будет выполнено",
                     function.getExpression(),
-                    Arrays.stream(function.getVariableRanges())
-                            .map(vr -> vr.getExtendedRange(size, extendingFactor)).collect(Collectors.toList()),
+                    IntStream.range(0, function.getInputsCount())
+                            .mapToObj(i -> function.getVariableRanges()[i].getExtendedRange(size, extendingFactors[i]))
+                            .collect(Collectors.toList()),
                     e.getMessage()));
             // вычисление без расширения
             Matrix inputs = getInputs(function, size);
@@ -83,19 +85,21 @@ public class ApproximationDataLoader extends DataLoader {
      * @return входы для выборки
      */
     private static Matrix getInputs(Function function, int size) {
-        return getInputs(function, size, 1.0);
+        return getInputs(function, size, IntStream.range(0, function.getInputsCount()).mapToDouble(i -> 1.0).toArray());
     }
 
     /**
      * Получение входных значений для выборки с расширением
      * @param function функция
      * @param size размер выборки
-     * @param extendingFactor коэффициент для выборки
+     * @param extendingFactors коэффициенты для выборки
      * @return входы для выборки
      */
-    private static Matrix getInputs(Function function, int size, double extendingFactor) {
-        return MatrixUtils.cartesianProduct(Arrays.stream(function.getVariableRanges())
-                .map(vr -> vr.getExtendedRange(size, extendingFactor)).toArray(Matrix[]::new));
+    private static Matrix getInputs(Function function, int size, double[] extendingFactors) {
+        Matrix[] inputs = IntStream.range(0, function.getInputsCount())
+                .mapToObj(i -> function.getVariableRanges()[i].getExtendedRange(size, extendingFactors[i]))
+                .toArray(Matrix[]::new);
+        return MatrixUtils.cartesianProduct(inputs);
     }
 
     /**
