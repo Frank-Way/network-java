@@ -26,7 +26,7 @@ import utils.copy.DeepCopyable;
  */
 @YamlSerializable
 public class FitParameters implements DeepCopyable {
-    private Dataset dataset;
+    private final Dataset dataset;
     @YamlField private final DataLoader dataLoader;
     @YamlField private final LoadParameters loadParameters;
     @YamlField private final int epochs;
@@ -41,50 +41,51 @@ public class FitParameters implements DeepCopyable {
     @YamlField private final OptimizerBuilder optimizerBuilder;
     @YamlField private final QueriesRangeType queriesRangeType;
 
-    /**
-     * Конструктор
-     * @param epochs  количество эпох обучения
-     * @param batchSize  размер пакета
-     * @param queries  количество опросов
-     * @param earlyStopping  остановить обучение
-     * @param doubleFormat  формат вывода вещественных чисел
-     * @param preTrainRequired  нужно ли предобучение
-     * @param preTrainsCount  количество попыток предобучения
-     * @param preTrainReduceFactor  во сколько раз снижается количество эпох при предобучении
-     * @param networkBuilder  билдер сетей
-     * @param optimizerBuilder  билдер оптимизатора
-     * @param queriesRangeType  тип расчёта эпох для оценки сети
-     */
-    public FitParameters(DataLoader dataLoader,
-                         LoadParameters loadParameters,
-                         int epochs,
-                         int batchSize,
-                         int queries,
-                         boolean earlyStopping,
-                         String doubleFormat,
-                         boolean preTrainRequired,
-                         int preTrainsCount,
-                         double preTrainReduceFactor,
-                         NetworkBuilder networkBuilder,
-                         OptimizerBuilder optimizerBuilder,
-                         QueriesRangeType queriesRangeType) {
-        this.dataLoader = dataLoader;
-        this.loadParameters = loadParameters;
-        this.epochs = epochs;
-        this.batchSize = batchSize;
-        this.queries = queries;
-        this.earlyStopping = earlyStopping;
-        this.doubleFormat = doubleFormat;
-        this.preTrainRequired = preTrainRequired;
-        this.preTrainsCount = preTrainsCount;
-        this.preTrainReduceFactor = preTrainReduceFactor;
-        this.networkBuilder = networkBuilder;
-        this.optimizerBuilder = optimizerBuilder;
-        this.queriesRangeType = queriesRangeType;
-    }
+//    /**
+//     * Конструктор
+//     * @param epochs  количество эпох обучения
+//     * @param batchSize  размер пакета
+//     * @param queries  количество опросов
+//     * @param earlyStopping  остановить обучение
+//     * @param doubleFormat  формат вывода вещественных чисел
+//     * @param preTrainRequired  нужно ли предобучение
+//     * @param preTrainsCount  количество попыток предобучения
+//     * @param preTrainReduceFactor  во сколько раз снижается количество эпох при предобучении
+//     * @param networkBuilder  билдер сетей
+//     * @param optimizerBuilder  билдер оптимизатора
+//     * @param queriesRangeType  тип расчёта эпох для оценки сети
+//     */
+//    public FitParameters(DataLoader dataLoader,
+//                         LoadParameters loadParameters,
+//                         int epochs,
+//                         int batchSize,
+//                         int queries,
+//                         boolean earlyStopping,
+//                         String doubleFormat,
+//                         boolean preTrainRequired,
+//                         int preTrainsCount,
+//                         double preTrainReduceFactor,
+//                         NetworkBuilder networkBuilder,
+//                         OptimizerBuilder optimizerBuilder,
+//                         QueriesRangeType queriesRangeType) {
+//        this.dataLoader = dataLoader;
+//        this.loadParameters = loadParameters;
+//        this.epochs = epochs;
+//        this.batchSize = batchSize;
+//        this.queries = queries;
+//        this.earlyStopping = earlyStopping;
+//        this.doubleFormat = doubleFormat;
+//        this.preTrainRequired = preTrainRequired;
+//        this.preTrainsCount = preTrainsCount;
+//        this.preTrainReduceFactor = preTrainReduceFactor;
+//        this.networkBuilder = networkBuilder;
+//        this.optimizerBuilder = optimizerBuilder;
+//        this.queriesRangeType = queriesRangeType;
+//    }
 
     private FitParameters() {
         this(null,
+                null,
                 null,
                 0,
                 0,
@@ -129,13 +130,13 @@ public class FitParameters implements DeepCopyable {
         this.queriesRangeType = queriesRangeType;
     }
 
-    public Dataset loadDataset() {
-        dataset = dataLoader.load(loadParameters);
-        return dataset;
-    }
+//    public Dataset loadDataset() {
+//        dataset = dataLoader.load(loadParameters);
+//        return dataset;
+//    }
 
     public Dataset getDataset() {
-        return dataset == null ? loadDataset() : dataset;
+        return dataset;
     }
 
     public DataLoader getDataLoader() {

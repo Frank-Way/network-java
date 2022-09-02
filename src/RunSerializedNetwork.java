@@ -40,12 +40,12 @@ public class RunSerializedNetwork {
             System.exit(-1);
 
         Function function = new SinX1_mul_X2(SinX1_mul_X2.getDefaultVariableRanges());  // функция, на которую была обучена сеть
-        ApproximationLoadParameters parameters = new ApproximationLoadParameters(
-                function,
-                64,  // размер выборки
-                0.0,  // не имеет значения
-                1.0,  // 1.0, чтобы для валидации использовалась вся выборка
-                1.0);  // не имеет значения
+        ApproximationLoadParameters parameters = ApproximationLoadParameters.newBuilder()
+                .function(function)
+                .size(64)  // размер выборки
+                .testSize(64)  // не имеет значения
+                .validSize(64)  // 1.0, чтобы для валидации использовалась вся выборка
+                .build();
         Dataset dataset = new ApproximationDataLoader().load(parameters);  // обучающая выборка
 
         Matrix x = dataset.getValidData().getInputs();  // входные значения выборки

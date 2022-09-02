@@ -4,6 +4,9 @@ import models.data.LoadParameters;
 import models.data.approximation.functions.Function;
 import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
+import utils.copy.DeepCopyable;
+
+import java.util.Arrays;
 
 /**
  * Параметры метода load класса {@link ApproximationDataLoader}
@@ -14,26 +17,18 @@ public class ApproximationLoadParameters extends LoadParameters {
     @YamlField private final int size;
     @YamlField private final int testSize;
     @YamlField private final int validSize;
-    @YamlField private final double extendingFactor;
+    @YamlField private final double[] extendingFactors;
 
     private ApproximationLoadParameters() {
-        this(null, 0, 0, 0, 0);
+        this(null, 0, 0, 0, null);
     }
 
-    public ApproximationLoadParameters(Function function, int size, double testPart, double validPart, double extendingFactor) {
-        this.function = function;
-        this.size = size;
-        this.testSize = (int)(size * testPart);
-        this.validSize = (int)(size * validPart);
-        this.extendingFactor = extendingFactor;
-    }
-
-    public ApproximationLoadParameters(Function function, int size, int testSize, int validSize, double extendingFactor) {
+    public ApproximationLoadParameters(Function function, int size, int testSize, int validSize, double[] extendingFactors) {
         this.function = function;
         this.size = size;
         this.testSize = testSize;
         this.validSize = validSize;
-        this.extendingFactor = extendingFactor;
+        this.extendingFactors = extendingFactors;
     }
 
     public Function getFunction() {
@@ -52,8 +47,12 @@ public class ApproximationLoadParameters extends LoadParameters {
         return validSize;
     }
 
-    public double getExtendingFactor() {
-        return extendingFactor;
+    public double[] getExtendingFactors() {
+        return extendingFactors;
+    }
+
+    public static ApproximationLoadParametersBuilder newBuilder() {
+        return new ApproximationLoadParametersBuilder();
     }
 
     @Override
@@ -63,11 +62,13 @@ public class ApproximationLoadParameters extends LoadParameters {
                 ", size=" + size +
                 ", testSize=" + testSize +
                 ", validSize=" + validSize +
+                ", extendingFactors=" + Arrays.toString(extendingFactors) +
                 '}';
     }
 
     @Override
     public ApproximationLoadParameters deepCopy() {
-        return new ApproximationLoadParameters(function.deepCopy(), size, testSize, validSize, extendingFactor);
+        return new ApproximationLoadParameters(function.deepCopy(), size, testSize, validSize,
+                Arrays.copyOf(extendingFactors, extendingFactors.length));
     }
 }
