@@ -1,9 +1,7 @@
 package serialization.formatters.yaml;
 
-import serialization.YamlSerializationOptions;
 import serialization.YamlSerializationUtils;
 import serialization.formatters.Formatter;
-import utils.Utils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -42,7 +40,8 @@ public class YamlFormatter extends Formatter {
     public String write(String fieldName, Map<String, String> yaml, String firstKey) {
         List<String> orderedKeys = yaml.keySet().stream()
                 .filter(key -> !key.equals(firstKey))
-                .sorted(Comparator.comparingInt(key -> yaml.get(key).split(CRLF).length))
+                .sorted(Comparator.comparingInt(key -> yaml.get(key).split(CRLF).length)
+                        .thenComparing(Object::toString))
                 .collect(Collectors.toList());
         orderedKeys.add(0, firstKey);
         return write(fieldName, yaml, orderedKeys);
@@ -62,7 +61,7 @@ public class YamlFormatter extends Formatter {
 
     public Collection<String> readToCollection(String fieldName, String yaml) {
         String[] lines = yaml.split(CRLF);
-        if (!Utils.anyTrue(Arrays.stream(lines).map(s -> s.startsWith(YAML_LIST_PREFIX)).collect(Collectors.toSet())))
+        if (!Arrays.stream(lines).map(s -> s.startsWith(YAML_LIST_PREFIX)).filter(b -> b).findAny().orElse(false))
             return new ArrayList<>();
 
         String[] rawResult = yaml.replaceFirst(YAML_LIST_PREFIX, "").split("\\n" + YAML_LIST_PREFIX);

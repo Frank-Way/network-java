@@ -4,15 +4,21 @@ import models.math.Matrix;
 
 /**
  * Среднеквадратическая ошибка.
- * f(Y, T) = 1 / N * сумма[(Y - T) ^ 2], где Y - выходы сети, T - требуемые выходы сети, N - количество строк в выборке;
- * f(Y, T) - скаляр.
- * d/dY f(Y, T) = 2 * (Y - T) / N; d/dY f(Y, T) - матрица.
+ * <pre><ul>
+ * <li>f(Y, T) = 1 / N * сумма[(Y - T) ^ 2], где Y - выходы сети, T - требуемые выходы сети, N - количество строк в выборке;</li>
+ * <li>f(Y, T) - скаляр.</li>
+ * <li>d/dY f(Y, T) = 2 * (Y - T) / N.</li>
+ * <li>d/dY f(Y, T) - матрица.</li>
+ * </ul></pre>
  */
 public class MeanSquaredError extends Loss{
+    /**
+     * Конструктор
+     */
     public MeanSquaredError() {super();}
 
     /***
-     * copy-constructor
+     * Конструктор для создания глубокой копии экземпляра
      */
     protected MeanSquaredError(Matrix prediction, Matrix target, double output, Matrix inputGradient) {
         super(prediction, target, output, inputGradient);

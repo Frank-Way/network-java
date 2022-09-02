@@ -9,21 +9,23 @@ import java.util.Arrays;
  * f(x) = x
  */
 public class X extends Function {
-    private X() {
-        this(null);
+    /**
+     * Создание функции с диапазонами по умолчанию
+     */
+    public X() {
+        this(new VariableRange[]{new VariableRange(1.0, 2.0)});
     }
 
+    /**
+     * Создание функции с указанными диапазонами
+     */
     public X(VariableRange[] variableRanges) {
         super("f(x1) = x1", variableRanges);
     }
 
     @Override
-    public double calculate(double[] arguments) {
+    public double calculate(double ... arguments) {
         return arguments[0];
-    }
-
-    public static VariableRange[] getDefaultVariableRanges() {
-        return new VariableRange[]{new VariableRange(1.0, 2.0)};
     }
 
     @Override

@@ -4,14 +4,15 @@ import models.math.Matrix;
 import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
 import utils.ExceptionUtils;
-import utils.copy.CopyUtils;
 
 import java.util.Objects;
 
 /**
  * Операция с параметром, наследник {@link Operation}. Параметры модели:
- *  parameter - параметр;
- *  parameterGradient - градиент по параметру.
+ * <pre><ul>
+ *  <li>parameter         - параметр;</li>
+ *  <li>parameterGradient - градиент по параметру.</li>
+ * </ul></pre>
  */
 @YamlSerializable
 public abstract class ParametrizedOperation extends Operation {
@@ -27,6 +28,9 @@ public abstract class ParametrizedOperation extends Operation {
         this.parameter = parameter;
     }
 
+    /**
+     * Конструктор для создания глубокой копии экземпляра
+     */
     protected ParametrizedOperation(Matrix input,
                                     Matrix output,
                                     Matrix outputGradient,
@@ -108,6 +112,17 @@ public abstract class ParametrizedOperation extends Operation {
                 parameterGradient == null ? null : parameterGradient.deepCopy());
     }
 
+    /**
+     * Создание операции с параметром
+     * @param clazz             тип операции
+     * @param input             входные значения
+     * @param output            выходные значения
+     * @param outputGradient    градиент на выходе
+     * @param inputGradient     градиент на входе
+     * @param parameter         параметр
+     * @param parameterGradient градиент по параметру
+     * @return                  операция с заданными параметрами
+     */
     protected static ParametrizedOperation createParametrizedOperation(Class<? extends ParametrizedOperation> clazz,
                                                                        Matrix input,
                                                                        Matrix output,

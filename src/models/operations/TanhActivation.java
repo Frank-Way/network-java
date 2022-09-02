@@ -5,16 +5,21 @@ import models.math.functions.MatrixFunctions;
 
 /**
  * Гиперболический тангенс. Может быть выражен через сигмоидную функцию активаации:
+ * <pre>
  * f(x) = tanh(x) = = 2 * sigmoid(2 * x) - 1 = 2 / (1 + exp(-2 * x)) - 1
  * f'(x) = f(x) * (1 - f(x))
+ * </pre>
  */
 public class TanhActivation extends Operation {
+    /**
+     * Конструктор
+     */
     public TanhActivation() {
         super();
     }
 
     /**
-     * copy-constructor
+     * Конструктор для создания глубокой копии экземпляра
      */
     protected TanhActivation(Matrix input, Matrix output, Matrix outputGradient, Matrix inputGradient) {
         super(input, output, outputGradient, inputGradient);

@@ -6,9 +6,12 @@ import serialization.wrappers.Wrapper;
 import serialization.wrappers.WrapperFactory;
 import serialization.wrappers.complex.ComplexWrapper;
 import serialization.wrappers.complex.MapEntryWrapper;
-import serialization.wrappers.complex.collections.CollectionWrapper;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class MapWrapper extends CollectionWrapper {
@@ -25,10 +28,15 @@ public class MapWrapper extends CollectionWrapper {
     public static boolean isMap(String source, Formatter formatter) {
         if (!isCollection(source, formatter))
             return false;
-        Collection<String> tree = formatter.readToCollection(null, source);
-        return tree.stream()
-                .map(string -> MapEntryWrapper.isMapEntry(string, formatter))
-                .filter(b -> !b).findAny().orElse(true);
+        try {
+            Collection<String> tree = formatter.readToCollection(null, source);
+            return tree.stream()
+                    .map(string -> MapEntryWrapper.isMapEntry(string, formatter))
+                    .filter(b -> !b).findAny().orElse(true);
+        } catch (Exception e) {
+            return false;
+        }
+
     }
 
     @Override
@@ -46,21 +54,15 @@ public class MapWrapper extends CollectionWrapper {
     }
 
     @Override
-    public String writeValueComplex(String fieldName, Object value) {
+    public String writeValueComplex(String fieldName, Object value) throws SerializationException {
         ArrayList<String> result = new ArrayList<>();
-        collectionToStream(value).forEach(item -> {
+        for (Object item: collectionToStream(value).collect(Collectors.toList())) {
             Class<?> itemClass = item.getClass();
             Wrapper itemWrapper = WrapperFactory.createWrapper(itemClass, formatter);
-            String writtenItem = null;
-            try {
-                writtenItem = itemWrapper instanceof ComplexWrapper ?
-                        ((ComplexWrapper) itemWrapper).writeValueComplex(MAP_ENTRY_FIELD, item) :
-                        itemWrapper.writeValue(item);
-            } catch (SerializationException e) {
-                return;
-            }
-            result.add(writtenItem);
-        });
+            result.add(itemWrapper instanceof ComplexWrapper ?
+                    ((ComplexWrapper) itemWrapper).writeValueComplex(MAP_ENTRY_FIELD, item) :
+                    itemWrapper.writeValue(item));
+        }
         return formatter.write(fieldName, result);
     }
 
@@ -85,16 +87,14 @@ public class MapWrapper extends CollectionWrapper {
     }
 
     @Override
-    public Object readValueComplex(String fieldName, String yaml) {
+    public Object readValueComplex(String fieldName, String yaml) throws SerializationException {
         Collection<String> strings = formatter.readToCollection(fieldName, yaml);
-        return collectionFromStream(strings.stream().map(string -> {
+        Collection<Object> objects = new ArrayList<>();
+        for (String string: strings) {
             MapEntryWrapper entryWrapper = new MapEntryWrapper(
                     MapEntryWrapper.getClassFromString(string, formatter), formatter);
-            try {
-                return entryWrapper.readValueComplex(MAP_ENTRY_FIELD, string);
-            } catch (SerializationException e) {
-                return null;
-            }
-        }));
+            objects.add(entryWrapper.readValueComplex(MAP_ENTRY_FIELD, string));
+        }
+        return collectionFromStream(objects.stream());
     }
 }

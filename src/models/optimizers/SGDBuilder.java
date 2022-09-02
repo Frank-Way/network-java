@@ -1,8 +1,10 @@
 package models.optimizers;
 
 import models.networks.Network;
-import utils.copy.CopyUtils;
 
+/**
+ * Билдер для {@link SGD}, наследник {@link OptimizerBuilder}
+ */
 public class SGDBuilder extends OptimizerBuilder {
     public SGDBuilder() {
     }
@@ -12,9 +14,9 @@ public class SGDBuilder extends OptimizerBuilder {
     }
 
     @Override
-    public Optimizer build() {
+    public SGD build() {
         validate();
-        calculateDecayLR();
+        validate();
         return new SGD(network, learningRate, decayLR);
     }
 

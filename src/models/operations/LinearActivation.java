@@ -4,16 +4,21 @@ import models.math.Matrix;
 
 /**
  * Линейная функция активации (без активации).
+ * <pre>
  * f(x) = x
  * f'(x) = 1
+ * </pre>
  */
 public class LinearActivation extends Operation {
+    /**
+     * Конструктор
+     */
     public LinearActivation() {
         super();
     }
 
     /***
-     * copy-constructor
+     * Конструктор для создания глубокой копии экземпляра
      */
     protected LinearActivation(Matrix input, Matrix output, Matrix outputGradient, Matrix inputGradient) {
         super(input, output, outputGradient, inputGradient);

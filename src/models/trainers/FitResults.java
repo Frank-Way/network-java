@@ -9,11 +9,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Результаты обучения. Атрибуты модели
- *  testLossesMap - зависимость потери от эпохи;
- *  {@link Network} - сеть, обеспечившая наименьшую потерю при обучении;
- *  {@link Errors} - ошибки работы сети при прогоне части обучающей выборки для валидации;
- *  {@link models.data.Dataset} - обучающая выборка;
+ * Результаты обучения. Атрибуты модели:
+ * <pre><ul>
+ *  <li>testLossesMap - зависимость потери от эпохи;</li>
+ *  <li>{@link Network}             - сеть, обеспечившая наименьшую потерю при обучении;</li>
+ *  <li>{@link Errors}              - ошибки работы сети при прогоне части обучающей выборки для валидации;</li>
+ *  <li>{@link models.data.Dataset} - обучающая выборка;</li>
+ *  <li>timeStart                   - время начала обучения;</li>
+ *  <li>timeStop                    - время завершения обучения</li>
+ * </ul></pre>
  */
 public class FitResults implements DeepCopyable {
     private final Map<Integer, Double> testLossesMap;
@@ -24,13 +28,7 @@ public class FitResults implements DeepCopyable {
     private final long timeStop;
 
     /**
-     * Конструктор
-     * @param testLossesMap  зависимость потери от эпохи
-     * @param network  сеть, обеспечившая наименьшую потерю при обучении
-     * @param errors  ошибки работы сети при прогоне части обучающей выборки для валидации
-     * @param dataset  обучающая выборка
-     * @param timeStart  время начала обучения
-     * @param timeStop  время окончания обучения
+     * Конструктор, см. описание параметров в {@link FitResults}
      */
     public FitResults(Map<Integer, Double> testLossesMap, Network network, Errors errors, Dataset dataset,
                       long timeStart, long timeStop) {

@@ -5,6 +5,8 @@ import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
 import utils.copy.DeepCopyable;
 
+import java.io.Serializable;
+
 /**
  * Конфигурация запуска обучения сети. Атрибуты модели:
  *  {@link FitParameters} - параметры обучения для метода fit класса {@link models.trainers.Trainer};
@@ -12,10 +14,10 @@ import utils.copy.DeepCopyable;
  *  description - описание конфигурации (например, "Увеличено вдвое количество эпох").
  */
 @YamlSerializable
-public class RunConfiguration implements DeepCopyable {
-    @YamlField private final FitParameters fitParameters;
-    @YamlField private final int retries;
-    @YamlField private final String description;
+public class RunConfiguration implements DeepCopyable, Serializable {
+    @YamlField protected final FitParameters fitParameters;
+    @YamlField protected final int retries;
+    @YamlField protected final String description;
 
     /**
      * Конструктор

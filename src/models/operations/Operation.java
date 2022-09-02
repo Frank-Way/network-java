@@ -3,7 +3,6 @@ package models.operations;
 import models.math.Matrix;
 import serialization.annotations.YamlSerializable;
 import utils.ExceptionUtils;
-import utils.copy.CopyUtils;
 import utils.copy.DeepCopyable;
 
 import java.io.Serializable;
@@ -11,21 +10,28 @@ import java.util.Objects;
 
 /**
  * Операция выполняемая в слое сети. Параметры модели:
- *  input - входное значение;
- *  output - выходное значение;
- *  outputGradient - градиент на выходе (входное значение при обратном проходе);
- *  inputGradient - градиент на выходе (выходное значение при обратном проходе).
+ * <pre><ul>
+ *  <li>input          - входное значение;</li>
+ *  <li>output         - выходное значение;</li>
+ *  <li>outputGradient - градиент на выходе (входное значение при обратном проходе);</li>
+ *  <li>inputGradient  - градиент на выходе (выходное значение при обратном проходе).</li>
+ * </ul></pre>
  */
 @YamlSerializable
 public abstract class Operation implements DeepCopyable, Serializable {
-//    private static final long serialVersionUID = 2002727109271183922L;
     protected transient Matrix input;
     protected transient Matrix output;
     protected transient Matrix outputGradient;
     protected transient Matrix inputGradient;
 
+    /**
+     * Конструктор
+     */
     public Operation() {}
 
+    /**
+     * Конструктор для создания глубокой копии экземпляра
+     */
     protected Operation(Matrix input, Matrix output, Matrix outputGradient, Matrix inputGradient) {
         this.input = input;
         this.output = output;
@@ -36,7 +42,7 @@ public abstract class Operation implements DeepCopyable, Serializable {
     /**
      * Прямой проход (вычисление выхода)
      * @param input вход
-     * @return выход
+     * @return      выход
      */
     public Matrix forward(Matrix input) {
         this.input = input.deepCopy();  // сохраняется копия
@@ -47,7 +53,7 @@ public abstract class Operation implements DeepCopyable, Serializable {
     /**
      * Обратный проход (вычисление градиента)
      * @param outputGradient градиент на выходе
-     * @return градиент на входе
+     * @return               градиент на входе
      */
     public Matrix backward(Matrix outputGradient) {
         this.outputGradient = outputGradient.deepCopy();  // сохраняется копия
@@ -62,14 +68,14 @@ public abstract class Operation implements DeepCopyable, Serializable {
     /**
      * Вычисление выхода (определяется наследником)
      * @param input вход
-     * @return выход
+     * @return      выход
      */
     protected abstract Matrix computeOutput(Matrix input);
 
     /**
      * Вычисление градиента (определяется наследником)
      * @param outputGradient градиент на выходе
-     * @return градиент на входе
+     * @return               градиент на входе
      */
     protected abstract Matrix computeInputGradient(Matrix outputGradient);
 
@@ -100,14 +106,23 @@ public abstract class Operation implements DeepCopyable, Serializable {
 
     @Override
     public Operation deepCopy() {
-        if (getClass().getSuperclass().equals(ParametrizedOperation.class))
-            return ((ParametrizedOperation) this).deepCopy();
+//        if (getClass().getSuperclass().equals(ParametrizedOperation.class))
+//            return ((ParametrizedOperation) this).deepCopy();
         return createOperation(getClass(), input == null ? null : input.deepCopy(),
                 output == null ? null : output.deepCopy(),
                 outputGradient == null ? null : outputGradient.deepCopy(),
                 inputGradient == null ? null : inputGradient.deepCopy());
     }
 
+    /**
+     * Создание операции
+     * @param clazz          тип операции
+     * @param input          входные значения
+     * @param output         выходные значения
+     * @param outputGradient градиент на выходе
+     * @param inputGradient  градиент на входе
+     * @return               операция с заданными параметрами
+     */
     protected static Operation createOperation(Class<? extends Operation> clazz, Matrix input, Matrix output,
                                                Matrix outputGradient, Matrix inputGradient) {
         if (clazz.equals(LinearActivation.class))

@@ -4,10 +4,12 @@ import models.math.Matrix;
 
 /**
  * Набор функций, применяемых к каждому элементу матрицы. Доступные операции:
- * abs - f(x) = |x| (получение абсолютных значений);
- * exp - f(x) = exp(x) (экспонента);
- * pow - f(x, scale) = x ^ scale (возведение в степень);
- * tanh - f(x) = tanh(x) (гиперболический тангенс).
+ * <pre><ul>
+ * <li>abs - f(x) = |x| (получение абсолютных значений);</li>
+ * <li>exp - f(x) = exp(x) (экспонента);</li>
+ * <li>pow - f(x, scale) = x ^ scale (возведение в степень);</li>
+ * <li>tanh - f(x) = tanh(x) (гиперболический тангенс).</li>
+ * </ul></pre>
  */
 public abstract class MatrixFunctions {
     private static Abs absOperation = new Abs();
@@ -17,9 +19,8 @@ public abstract class MatrixFunctions {
 
     /**
      * Применение экспоненты
-     *
      * @param matrix исходная матрица
-     * @return матрица после применения операции
+     * @return       матрица после применения операции
      */
     public static Matrix exp(Matrix matrix) {
         return applyToEachCell(matrix, expOperation);
@@ -27,9 +28,8 @@ public abstract class MatrixFunctions {
 
     /**
      * Применение гиперболического тангенса
-     *
      * @param matrix исходная матрица
-     * @return матрица после применения операции
+     * @return       матрица после применения операции
      */
     public static Matrix tanh(Matrix matrix) {
         return applyToEachCell(matrix, tanhOperation);
@@ -37,9 +37,8 @@ public abstract class MatrixFunctions {
 
     /**
      * Получение абсолютных значений
-     *
      * @param matrix исходная матрица
-     * @return матрица после применения операции
+     * @return       матрица после применения операции
      */
     public static Matrix abs(Matrix matrix) {
         return applyToEachCell(matrix, absOperation);
@@ -47,10 +46,9 @@ public abstract class MatrixFunctions {
 
     /**
      * Возведение в степень
-     *
      * @param matrix исходная матрица
      * @param scale  степень
-     * @return матрица после применения операции
+     * @return       матрица после применения операции
      */
     public static Matrix pow(Matrix matrix, double scale) {
         powOperation = new Pow(scale);
@@ -59,10 +57,9 @@ public abstract class MatrixFunctions {
 
     /**
      * Применение операции к каждому элементу матрицы
-     *
      * @param matrix    матрица
      * @param operation операция
-     * @return матрица после применения операции
+     * @return          матрица после применения операции
      */
     private static Matrix applyToEachCell(Matrix matrix, DoubleOperation operation) {
         double[][] result = new double[matrix.getRows()][matrix.getCols()];

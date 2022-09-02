@@ -1,6 +1,6 @@
 import models.data.Dataset;
-import models.data.approximation.ApproximationDataLoader;
-import models.data.approximation.ApproximationLoadParameters;
+import models.data.approximation.ApproxDataLoader;
+import models.data.approximation.ApproxLoadParameters;
 import models.data.approximation.functions.Function;
 import models.data.approximation.functions.impl.SinX1_mul_X2;
 import models.math.Matrix;
@@ -13,6 +13,7 @@ import utils.Utils;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 /**
  * Класс для тестирования сериализованной сети
@@ -39,14 +40,14 @@ public class RunSerializedNetwork {
         if (network == null)
             System.exit(-1);
 
-        Function function = new SinX1_mul_X2(SinX1_mul_X2.getDefaultVariableRanges());  // функция, на которую была обучена сеть
-        ApproximationLoadParameters parameters = ApproximationLoadParameters.newBuilder()
+        Function function = new SinX1_mul_X2();  // функция, на которую была обучена сеть
+        ApproxLoadParameters parameters = ApproxLoadParameters.newBuilder()
                 .function(function)
                 .size(64)  // размер выборки
                 .testSize(64)  // не имеет значения
                 .validSize(64)  // 1.0, чтобы для валидации использовалась вся выборка
                 .build();
-        Dataset dataset = new ApproximationDataLoader().load(parameters);  // обучающая выборка
+        Dataset dataset = new ApproxDataLoader().load(parameters);  // обучающая выборка
 
         Matrix x = dataset.getValidData().getInputs();  // входные значения выборки
         Matrix t = dataset.getValidData().getOutputs();  // требуемые выходные значения выборки
@@ -56,8 +57,8 @@ public class RunSerializedNetwork {
 
         // формирование отчёта
         StringBuilder sb = new StringBuilder(String.format("Тестовый прогон загруженной нейросети " +
-                        "(путьКНейросети=\"%s\"; функция=\"%s\"; размерВыборки=%d",
-                networkFilename, function, parameters.getSize()))
+                        "(путьКНейросети=\"%s\"; функция=\"%s\"; размерВыборки=%s",
+                networkFilename, function, Arrays.toString(parameters.getSizes())))
                 .append("\n");  // шапка
 
         sb.append(errors).append("\n");  // максимальные ошибки

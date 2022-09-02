@@ -1,19 +1,21 @@
 package models.operations;
 
 import models.math.Matrix;
-import utils.copy.CopyUtils;
 
 /**
  * Перемножение входов на веса (взвешивание). Наследник {@link ParametrizedOperation}
  */
 public class WeightMultiply extends ParametrizedOperation {
-
+    /**
+     * Конструктор
+     * @param weight матрица весовых коэффициентов
+     */
     public WeightMultiply(Matrix weight) {
         super(weight);
     }
 
     /**
-     * copy-constructor
+     * Конструктор для создания глубокой копии экземпляра
      */
     protected WeightMultiply(Matrix input,
                              Matrix output,
@@ -24,6 +26,9 @@ public class WeightMultiply extends ParametrizedOperation {
         super(input, output, outputGradient, inputGradient, parameter, parameterGradient);
     }
 
+    /**
+     * Конструктор для сериализации
+     */
     private WeightMultiply() {
         this(null);
     }

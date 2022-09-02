@@ -1,12 +1,8 @@
 package serialization.wrappers.complex.collections;
 
 import serialization.formatters.Formatter;
-import serialization.wrappers.Wrapper;
-import serialization.wrappers.WrapperFactory;
-import serialization.wrappers.complex.ComplexWrapper;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.IntStream;
@@ -59,7 +55,7 @@ public class ArrayWrapper extends CollectionWrapper {
     }
 
     public static boolean isArray(String source, Formatter formatter) {
-        return source.matches(formatter.getCollectionPattern());
+        return isCollection(source, formatter);
     }
 
     public static boolean isArray(Object value) {

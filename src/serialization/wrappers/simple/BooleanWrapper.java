@@ -1,7 +1,6 @@
 package serialization.wrappers.simple;
 
 import serialization.formatters.Formatter;
-import serialization.wrappers.Wrapper;
 
 public class BooleanWrapper extends SimpleWrapper {
     public BooleanWrapper(Class<?> clazz, Formatter formatter) {

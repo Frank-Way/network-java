@@ -1,12 +1,13 @@
-import serialization.exceptions.SerializationException;
 import models.trainers.FitResults;
 import options.AppProperties;
 import options.PrintOptions;
 import serialization.SerializationType;
 import serialization.SerializationUtils;
+import serialization.exceptions.SerializationException;
 import utils.MyTask;
 import utils.Utils;
-import utils.automatization.ExperimentConfiguration;
+import utils.automatization.Experiment;
+import utils.automatization.ExperimentBuilder;
 import utils.automatization.RunConfiguration;
 
 import java.io.IOException;
@@ -19,13 +20,15 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * Основная программа для обучения сетей в соответствии с экспериментами, описанными в {@link ExperimentConfigurations}
+ * Основная программа для обучения сетей в соответствии с экспериментами, представленных {@link Experiment}
  */
 public class Main {
     private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
     public static void main(String[] args) {
-        long startTime = System.currentTimeMillis();
+        final long startTime = System.currentTimeMillis();  // фиксирование времени запуска программы
+
+        // чтение настроек логгирования
         try {
             LogManager logManager = LogManager.getLogManager();
             Class<Main> aClass = Main.class;
@@ -36,6 +39,8 @@ public class Main {
             e.printStackTrace();
             return;
         }
+
+        // чтение настроек приложения
         final AppProperties appProperties;
         try {
             appProperties = new AppProperties();
@@ -46,14 +51,15 @@ public class Main {
             return;
         }
 
-        final ExperimentConfiguration[] experimentConfigurations;
+        // чтение описания экспериментов
+        final ExperimentBuilder[] experimentBuilders;
         switch (appProperties.getExperimentsSourceType()) {
-            case CODE:
-                experimentConfigurations = ExperimentConfigurations.getDefaultExperimentConfigurations();
+            case CODE:  // получение из кода
+                experimentBuilders = Experiments.getDefaultExperimentBuilders(appProperties.getDoubleFormat());
                 break;
-            case YAML_FILE:
+            case YAML_FILE:  // получение из файла
                 try {
-                    experimentConfigurations = ExperimentConfigurations.getExperimentConfigurationsFromFile(
+                    experimentBuilders = Experiments.getExperimentBuildersFromFile(
                             appProperties.getExperimentsSourceYamlPath(),
                             appProperties.getExperimentsSourceYamlFilename(),
                             SerializationType.YAML);
@@ -68,49 +74,55 @@ public class Main {
         }
 
         logger.fine("Успешно считаны конфигурации экспериментов");
-        logger.finer(Arrays.toString(experimentConfigurations));
+        logger.finer(Arrays.toString(experimentBuilders));
 
-        Arrays.stream(experimentConfigurations).parallel().forEach(experimentConfiguration -> {
-            Arrays.stream(experimentConfiguration.getRunConfigurations()).parallel().forEach(runConfiguration ->  {
-                runConfiguration.getFitParameters().loadDataset();
-            });
-        });
+        // формирование всех обучающих выборок до клонирования и распихивания по потокам
+        Experiment[] experiments = Arrays.stream(experimentBuilders).map(ExperimentBuilder::build).toArray(Experiment[]::new);
 
         logger.fine("Успешно загружены все обучающие выборки");
 
         logger.fine("Начало запуска экспериментов");
+        // создание сервиса с фиксированным пулом тредов
         ExecutorService executorService = Executors.newFixedThreadPool(appProperties.getThreadPoolSize());
 
-        Map<ExperimentConfiguration, Set<RunConfiguration>> experimentToConfigMap = new HashMap<>();
-        Arrays.stream(experimentConfigurations).forEach(experimentConfiguration ->
-                experimentToConfigMap.put(experimentConfiguration,
-                        Arrays.stream(experimentConfiguration.getRunConfigurations()).collect(Collectors.toSet())));
+        // маппинг экспериментов на соответствующие им конфигурации
+        Map<Experiment, Set<RunConfiguration>> experimentToConfigMap = new HashMap<>();
+        Arrays.stream(experiments).forEach(experiment ->
+                experimentToConfigMap.put(experiment,
+                        Arrays.stream(experiment.getRunConfigurations()).collect(Collectors.toSet())));
 
-        Map<RunConfiguration, ExperimentConfiguration> configToExperimentMap = new HashMap<>();
-        Arrays.stream(experimentConfigurations).forEach(experimentConfiguration ->
-                Arrays.stream(experimentConfiguration.getRunConfigurations()).forEach(runConfiguration ->
-                        configToExperimentMap.put(runConfiguration, experimentConfiguration)));
+        // маппинг конфигураций на соответствующие им эксперимента
+        Map<RunConfiguration, Experiment> configToExperimentMap = new HashMap<>();
+        Arrays.stream(experiments).forEach(experiment ->
+                Arrays.stream(experiment.getRunConfigurations()).forEach(runConfiguration ->
+                        configToExperimentMap.put(runConfiguration, experiment)));
 
+        // асинхронный запуск обучений и маппинг конфигураций на набор результатов
+        // каждая конфигурация запускается заданное количество раз
         Map<RunConfiguration, Set<Future<FitResults>>> runConfigurationToFuturesToResultsMap = new HashMap<>();
-        for (ExperimentConfiguration experimentConfiguration: experimentConfigurations)
-            for (RunConfiguration runConfiguration: experimentConfiguration.getRunConfigurations())
+        for (Experiment experiment : experiments)
+            for (RunConfiguration runConfiguration: experiment.getRunConfigurations())
                 runConfigurationToFuturesToResultsMap.put(runConfiguration,
                         IntStream.range(0, runConfiguration.getRetries())
                                 .mapToObj(value -> executorService.submit(new MyTask(runConfiguration.getFitParameters().deepCopy())))
                                 .collect(Collectors.toSet()));
 
+        // сборка всех результатов в одно место
         Set<Future<FitResults>> allFutures = runConfigurationToFuturesToResultsMap.values().stream()
                 .flatMap(Set::stream).collect(Collectors.toSet());
 
+        // обработанные результаты обучения
         Set<Future<FitResults>> processedFutures = new HashSet<>();
 
+        // результаты обучения обрабатываются синхронно в главном потоке
+        // в цикле периодически проверяются новые необработанные результаты обучения
         while (!allFuturesDone(allFutures)) {  // пока не завершены все запущенные попытки обучения
             for (Future<FitResults> future: allFutures.stream()  // для каждого результата
                     .filter(f -> f.isDone() && !processedFutures.contains(f))  // завершенного, но не обработанного
                     .collect(Collectors.toSet())) {  // если новых результатов нет, то цикл for не запустится
                 // берётся конфигурации запуска и эксперимента
                 RunConfiguration runConfiguration = reverseSearch(runConfigurationToFuturesToResultsMap, future);
-                ExperimentConfiguration experimentConfiguration = configToExperimentMap.get(runConfiguration);
+                Experiment experiment = configToExperimentMap.get(runConfiguration);
                 // берутся полученные результаты
                 FitResults fitResults = getFromFuture(future);
 
@@ -119,7 +131,7 @@ public class Main {
                 // обработка результатов для каждого запуска
                 tryToPrint(appProperties.getPrintConfigurationEach(), runConfiguration, fitResults,
                         String.format("Результаты обучения для конфигурации запуска [%s] эксперимента [%s] \n",
-                                runConfiguration.getDescription(), experimentConfiguration.getDescription()),
+                                runConfiguration.getDescription(), experiment.getDescription()),
                         appProperties.isPrintRequired(), appProperties.isDebugMode(), appProperties.getDoubleFormat());
 
                 tryToSave(appProperties.isSaveRequired() && appProperties.isSaveConfigurationEach(),
@@ -136,7 +148,7 @@ public class Main {
 
                     tryToPrint(appProperties.getPrintConfigurationBest(), runConfiguration, bestFitResults,
                             String.format("Наилучшие результаты обучения для конфигурации запуска [%s] эксперимента [%s] \n",
-                                    runConfiguration.getDescription(), experimentConfiguration.getDescription()),
+                                    runConfiguration.getDescription(), experiment.getDescription()),
                             appProperties.isPrintRequired(), appProperties.isDebugMode(), appProperties.getDoubleFormat());
 
                     tryToSave(appProperties.isSaveRequired() && appProperties.isSaveConfigurationBest(),
@@ -146,11 +158,13 @@ public class Main {
 
                     logTimeSpent(runConfigurationToFuturesToResultsMap.get(runConfiguration),
                             String.format("Запуск конфигурации [%s] эксперимента [%s] занял",
-                                    runConfiguration.getDescription(), experimentConfiguration.getDescription()));
+                                    runConfiguration.getDescription(), experiment.getDescription()));
                 }
 
+                // формирование результатов для эксперимента, соответствующего той конфигурации,
+                // по которой пришли обрабатываемые результаты
                 Set<Future<FitResults>> thisExperimentFutures = runConfigurationToFuturesToResultsMap.entrySet().stream()
-                        .filter(entry -> experimentToConfigMap.get(experimentConfiguration).contains(entry.getKey()))
+                        .filter(entry -> experimentToConfigMap.get(experiment).contains(entry.getKey()))
                         .map(Map.Entry::getValue)
                         .flatMap(Set::stream)
                         .collect(Collectors.toSet());
@@ -165,7 +179,7 @@ public class Main {
                     tryToPrint(appProperties.getPrintExperimentBest(), bestRunConfiguration, bestFitResults,
                             String.format("Наилучшие результаты обучения для всех конфигураций запуска эксперимента [%s]" +
                                             " (соответствуют конфигурации [%s]) \n",
-                                    experimentConfiguration.getDescription(), bestRunConfiguration.getDescription()),
+                                    experiment.getDescription(), bestRunConfiguration.getDescription()),
                             appProperties.isPrintRequired(), appProperties.isDebugMode(), appProperties.getDoubleFormat());
 
                     tryToSave(appProperties.isSaveRequired() && appProperties.isSaveExperimentBest(),
@@ -175,7 +189,7 @@ public class Main {
 
                     logTimeSpent(thisExperimentFutures,
                             String.format("Выполнение эксперимента [%s] заняло",
-                                    experimentConfiguration.getDescription()));
+                                    experiment.getDescription()));
                 }
             }  // завершение обработки полученных результатов
             Utils.myWait(1_000);  // таймаут перед проверкой наличия новых результатов
@@ -191,13 +205,13 @@ public class Main {
         // обработка результатов для всех экспериментов
         Future<FitResults> bestFuture = findBestFuture(allFutures);
         RunConfiguration bestRunConfiguration = reverseSearch(runConfigurationToFuturesToResultsMap, bestFuture);
-        ExperimentConfiguration bestExperimentConfiguration = configToExperimentMap.get(bestRunConfiguration);
+        Experiment bestExperiment = configToExperimentMap.get(bestRunConfiguration);
         FitResults bestFitResults = getFromFuture(bestFuture);
 
         tryToPrint(appProperties.getPrintExperimentBest(), bestRunConfiguration, bestFitResults,
                 String.format("Наилучшие результаты обучения для всех конфигураций запуска всех экспериментов " +
                                 " (соответствуют конфигурации [%s] эксперимента [%s]) \n",
-                        bestRunConfiguration.getDescription(), bestExperimentConfiguration.getDescription()),
+                        bestRunConfiguration.getDescription(), bestExperiment.getDescription()),
                 appProperties.isPrintRequired(), appProperties.isDebugMode(), appProperties.getDoubleFormat());
 
         tryToSave(appProperties.isSaveRequired() && appProperties.isSaveExperimentBest(),
@@ -205,42 +219,87 @@ public class Main {
                 appProperties.getSavePath(), appProperties.getSaveSerializationType(),
                 appProperties.getDoubleFormat());
 
-        logTimeSpent(processedFutures, "Выполнение всех экспериментов заняло");
+        logTimeSpent(allFutures, "Выполнение всех экспериментов заняло");
 
         logger.fine("Завершение программы. Программа работала - " +
                 Utils.millisToHMS(System.currentTimeMillis() - startTime));
     }
 
+    /**
+     * Проверка, сформированы ли результаты для всех Future
+     * @param futures  набор Future
+     * @param <T>  тип результата
+     * @return  true, если для всех Future готовы результаты
+     */
     private static <T> boolean allFuturesDone(Set<Future<T>> futures) {
         return futures.stream()
+                // из каждого Future берётся факт готовности результатов
                 .map(Future::isDone)
-                .reduce((done1, done2) -> done1 && done2)
-                .orElse(false);
+                // факты фильтруются так, что остаются только false
+                .filter(aBoolean -> !aBoolean)
+                // ищется хоть один false
+                // если он есть, то false и вернётся как результат метода
+                .findAny()
+                // иначе вернётся true (т.к. нет ни одного false)
+                .orElse(true);
     }
 
+    /**
+     * Поиск ключа по одному из значений в мапе
+     * @param map  мапа для поиска, значением которой является набор элементов
+     * @param value  элемент набора, который является одним из значений мапы
+     * @param <K>  тип ключа мапы
+     * @param <V>  тип элемента набора значения мапы
+     * @return ключ мапы
+     */
     private static <K, V> K reverseSearch(Map<K, Set<V>> map, V value) {
-        for (Map.Entry<K, Set<V>> entry: map.entrySet())
-            if (entry.getValue().contains(value))
-                return entry.getKey();
-        throw new IllegalArgumentException("Не найден ключ по значению: " + value);
+        return map.entrySet().stream()
+                // мапа фильтруется так, что остаются элементы, значения которых содержат нужное значение
+                .filter(entry -> entry.getValue().contains(value))
+                // ищется хоть один элемент мапы
+                .findAny()
+                // если элемента нет, выбрасывается соответствующее исключение
+                .orElseThrow(() -> new IllegalArgumentException("Не найден ключ по значению: " + value))
+                // из элемента мапы берётся ключ, который и будет результатом метода
+                .getKey();
     }
 
+    /**
+     * Вывод результатов в лог (при необходимости)
+     * @param printOptions  настройки вывода
+     * @param runConfiguration  конфигурация
+     * @param fitResults  результаты, соответствующие конфигурации
+     * @param prompt  префикс, описывающий данный вывод (к чему он относится)
+     * @param printRequired  нужен ли этот вывод вообще
+     * @param debugMode  включен ли debug-режим
+     * @param doubleFormat  формат вывода вещественных чисел
+     */
     private static void tryToPrint(PrintOptions printOptions, RunConfiguration runConfiguration, FitResults fitResults,
                                    String prompt, boolean printRequired, boolean debugMode, String doubleFormat) {
         if (printRequired && printOptions.isRequired()) {
-            logger.info(prompt +
-                    Utils.runConfigurationAndFitResultsToString(
+            logger.info(prompt + Utils.runConfigurationAndFitResultsToString(
                             runConfiguration, fitResults, printOptions,
                             debugMode, doubleFormat));
         }
     }
 
+    /**
+     * Сохранение сети в файл
+     * @param saveRequired  нужно ли сохранять
+     * @param runConfiguration  конфигурация
+     * @param fitResults  результаты обучения
+     * @param saveFilenamePattern  паттерн для формирования имени файла
+     * @param saveFolder  папка для сохранения
+     * @param serializationType  тип сериализации
+     * @param doubleFormat  формат вывода вещественных чисел
+     */
     private static void tryToSave(boolean saveRequired, RunConfiguration runConfiguration, FitResults fitResults,
                                   String saveFilenamePattern, String saveFolder, SerializationType serializationType,
                                   String doubleFormat) {
         if (saveRequired) {
+            // при формировании имени файла используется случайный уникальный идентификатор
             String filename = String.format(saveFilenamePattern,
-                    UUID.randomUUID().toString().substring(0, 5) + '_' + System.currentTimeMillis());
+                    UUID.randomUUID().toString().substring(0, 5));
             logger.info("Сохранение нейросети в файл: " + filename);
             try {
                 SerializationUtils.save(fitResults.getNetwork(), saveFolder, filename,
@@ -251,6 +310,12 @@ public class Main {
         }
     }
 
+    /**
+     * Получение результатов из Future, исключения логируются и оборачиваются в RuntimeException
+     * @param future  Future
+     * @param <T>  тип результата Future
+     * @return  результат
+     */
     private static <T> T getFromFuture(Future<T> future) {
         try {
             return future.get();
@@ -260,10 +325,14 @@ public class Main {
         }
     }
 
+    /**
+     * Вывод таймингов в лог по набору конфигураций
+     * @param futures  набор результатов обучения
+     * @param prompt  префикс, описывающий данный вывод (к чему он относится)
+     */
     private static void logTimeSpent(Set<Future<FitResults>> futures, String prompt) {
-        long totalTimeSpent = futures
-                .stream()
-                .map(Main::getFromFuture)
+        // суммарное время обучения
+        long totalTimeSpent = futures.stream().map(Main::getFromFuture)
                 .mapToLong(result -> result.getTimeStop() - result.getTimeStart())
                 .sum();
 
@@ -272,20 +341,31 @@ public class Main {
         logger.fine(String.format("%s в среднем - %s",
                 prompt, Utils.millisToHMS(totalTimeSpent / futures.size())));
 
+        // время запуска обучения данного набора конфигураций (т.е. время запуска первой
+        // конфигурации из набора)
         long minStartTime = futures.stream().map(Main::getFromFuture)
-                .map(FitResults::getTimeStart)
-                .min(Long::compare)
+                // ищется минимальное время запуска
+                .map(FitResults::getTimeStart).min(Long::compare)
+                // иначе возвращается некорректный результат
                 .orElse(Long.MAX_VALUE);
 
+        // время завершения обучения данного набора конфигураций (т.е. время окончания
+        // обучения последней конфигурации из набора)
         long maxStopTime = futures.stream().map(Main::getFromFuture)
-                .map(FitResults::getTimeStop)
-                .max(Long::compare)
+                // ищется максимальное время завершения
+                .map(FitResults::getTimeStop).max(Long::compare)
+                // иначе возвращается некорректный результат
                 .orElse(Long.MIN_VALUE);
 
         logger.fine(String.format("%s фактически - %s",
                 prompt, Utils.millisToHMS(maxStopTime - minStartTime)));
     }
 
+    /**
+     * Поиск наилучшего результата (наилучший результат тот, у которого наименьшая абсолютная ошибка)
+     * @param futures  набор результатов
+     * @return  наилучший результат
+     */
     private static Future<FitResults> findBestFuture(Set<Future<FitResults>> futures) {
         return futures.stream()
                 .min(Comparator.comparingDouble(future -> getFromFuture(future).getMaxAbsoluteError()))

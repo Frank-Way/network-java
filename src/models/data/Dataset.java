@@ -4,9 +4,11 @@ import utils.copy.DeepCopyable;
 
 /**
  * Обучающая выборка, состоящая из трёх частей типа {@link Data}:
- *  trainData - данные для обучения (предполагается использование при обучении);
- *  testData - данные для тестов (предполагается использование для оценки во время обучения);
- *  validData - данные для валидации (предполагается использование для оценки после обучения).
+ * <pre><ul>
+ *  <li>trainData - данные для обучения (предполагается использование при обучении);</li>
+ *  <li>testData  - данные для тестов (предполагается использование для оценки во время обучения);</li>
+ *  <li>validData - данные для валидации (предполагается использование для оценки после обучения).</li>
+ * </ul></pre>
  */
 public class Dataset implements DeepCopyable {
     private final Data validData;
@@ -14,10 +16,7 @@ public class Dataset implements DeepCopyable {
     private final Data trainData;
 
     /**
-     * Конструктор
-     * @param trainData данные для обучения
-     * @param testData данные для тестов
-     * @param validData данные для валидации
+     * Конструктор, см описание параметров в {@link Dataset}
      */
     public Dataset(Data trainData, Data testData, Data validData) {
         this.validData = validData;

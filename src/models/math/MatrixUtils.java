@@ -11,11 +11,11 @@ public abstract class MatrixUtils {
 
     /**
      * Получение случайной матрицы с равномерным распределением с заданными параметрами
-     * @param rows количество строк
-     * @param cols количество столбцов
+     * @param rows     количество строк
+     * @param cols     количество столбцов
      * @param location математическое ожидание
-     * @param scale множитель (по умолчанию значения генерируются из диапазона [0; 1], множитель позволяет его расширить)
-     * @return случайная матрица
+     * @param scale    множитель (по умолчанию значения генерируются из диапазона [0; 1], множитель позволяет его расширить)
+     * @return         случайная матрица
      */
     public static Matrix getRandomMatrixUniform(int rows, int cols, double location, double scale) {
         return getRandomMatrix(RandomType.UNIFORM, rows, cols, location, scale);
@@ -25,7 +25,7 @@ public abstract class MatrixUtils {
      * Получение случайной матрицы с равномерным распределением с параметрами по умолчанию
      * @param rows количество строк
      * @param cols количество столбцов
-     * @return случайная матрица
+     * @return     случайная матрица
      */
     public static Matrix getRandomMatrixUniform(int rows, int cols) {
         return getRandomMatrixUniform(rows, cols, 0.0, 1.0);
@@ -33,11 +33,11 @@ public abstract class MatrixUtils {
 
     /**
      * Получение случайной матрицы с нормальным распределением с заданными параметрами
-     * @param rows количество строк
-     * @param cols количество столбцов
+     * @param rows     количество строк
+     * @param cols     количество столбцов
      * @param location математическое ожидание
-     * @param scale среднеквадратическое отклонение
-     * @return случайная матрица
+     * @param scale    среднеквадратическое отклонение
+     * @return         случайная матрица
      */
     public static Matrix getRandomMatrixNormal(int rows, int cols, double location, double scale) {
         return getRandomMatrix(RandomType.NORMAL, rows, cols, location, scale);
@@ -47,26 +47,31 @@ public abstract class MatrixUtils {
      * Получение случайной матрицы с нормальным распределением с параметрами по умолчанию
      * @param rows количество строк
      * @param cols количество столбцов
-     * @return случайная матрица
+     * @return     случайная матрица
      */
     public static Matrix getRandomMatrixNormal(int rows, int cols) {
         return getRandomMatrixNormal(rows, cols, 0.0, 1.0);
     }
 
     /**
-     * Получение диапазона равноотстающих значений.
-     * Например, при start = 1, stop = 2, size = 3 будет получена матрица [[1.0],
-     *                                                                     [1.5],
-     *                                                                     [2.0]]
-     * При start = 1, stop = 2, size = 5 будет получена матрица [[1.0],
-     *                                                           [1.25],
-     *                                                           [1.5],
-     *                                                           [1.75],
-     *                                                           [2.0]]
+     * Получение диапазона равноотстающих значений
+     * <pre>
+     * Пример для start=1, stop=2, size=3:
+     * |  1|
+     * |1.5|
+     * |  2|
+     *
+     * Пример для start=1, stop=2, size=5:
+     * |   1|
+     * |1.25|
+     * | 1.5|
+     * |1.75|
+     * |   2|
+     * </pre>
      * @param start начальное значение
-     * @param stop конечное значение (включительно)
-     * @param size размер диапазона
-     * @return вектор-столбец
+     * @param stop  конечное значение (включительно)
+     * @param size  размер диапазона
+     * @return      вектор-столбец
      */
     public static Matrix getLinSpace(double start, double stop, int size) {
         double[][] result = new double[size][1];
@@ -79,9 +84,9 @@ public abstract class MatrixUtils {
     /**
      * Получение диапазона равноотстающих целочисленных значений. См. getLinSpace для вещественных аргументов.
      * @param start начальное значение
-     * @param stop конечное значение (включительно)
-     * @param size размер диапазона
-     * @return вектор-столбец
+     * @param stop  конечное значение (включительно)
+     * @param size  размер диапазона
+     * @return      вектор-столбец
      */
     public static int[] getLinSpace(int start, int stop, int size) {
         int[] result = new int[size];
@@ -93,12 +98,21 @@ public abstract class MatrixUtils {
 
     /**
      * Вычисление декартового произведения заданных векторов-столбцов
+     * <pre>
+     * Пример:
+     * |1|     |4|   |1 4|
+     * |2| (x) |5| = |1 5|
+     * |3|           |2 4|
+     *               |2 5|
+     *               |3 4|
+     *               |3 5|
+     * </pre>
      * @param matrices векторы-столбцы
-     * @return результат
+     * @return         результат
      */
     public static Matrix cartesianProduct(Matrix ... matrices) {
         if (matrices.length == 0)
-            return null;
+            throw new IllegalArgumentException("Отсутствуют матрицы для декартового произведения");
         if (matrices.length == 1)
             return matrices[0];
         Arrays.stream(matrices).forEach(Matrix::assertColMatrix);
@@ -114,14 +128,19 @@ public abstract class MatrixUtils {
 
     /**
      * Скалярное умножение двух векторов-столбцов
+     * <pre>
+     * Пример:
+     * |1|   |4|
+     * |2| * |5| = 32
+     * |3|   |6|
+     * </pre>
      * @param m1 вектор-столбец
      * @param m2 вектор-столбец
-     * @return скаляр
+     * @return   скаляр
      */
     public static double mulScalar(Matrix m1, Matrix m2) {
         m1.assertSameShape(m2);
         m1.assertColMatrix();
-        m2.assertColMatrix();
         double result = 0.0;
         for (int row = 0; row < m1.getRows(); row++)
             result += m1.getValue(row, 0) * m2.getValue(row, 0);
@@ -131,7 +150,7 @@ public abstract class MatrixUtils {
     /**
      * Получение случайной перестановки последовательности целых чисел от 0 до заданного числа (не включительно)
      * @param length размер последовательности
-     * @return перестановка
+     * @return       перестановка
      */
     public static int[] getRandomRangePermutation(int length) {
         int[] array = IntStream.range(0, length).toArray();
@@ -148,10 +167,25 @@ public abstract class MatrixUtils {
 
     /**
      * Расширение и вертикальная конкатенация матрицы (конкатенируется расширенная матрица)
-     * @param matrix матрица
+     * <pre>
+     * Пример для extendingFactor=2, stacksCount=3:
+     * |1 2|     |1 2|
+     * |3 4| --> |1 2|
+     *           |3 4|
+     *           |3 4|
+     *           |1 2|
+     *           |1 2|
+     *           |3 4|
+     *           |3 4|
+     *           |1 2|
+     *           |1 2|
+     *           |3 4|
+     *           |3 4|
+     * </pre>
+     * @param matrix          матрица
      * @param extendingFactor множитель расширения
-     * @param stacksCount количество операций конкатенации
-     * @return обработанная матрица
+     * @param stacksCount     количество операций конкатенации
+     * @return                обработанная матрица
      */
     private static Matrix extendAndStack(Matrix matrix, int extendingFactor, int stacksCount) {
         Matrix extended = matrix.extend(extendingFactor, 0);
@@ -163,9 +197,13 @@ public abstract class MatrixUtils {
 
     /**
      * Перемножение элементов массива до заданного индекса
+     * <pre>
+     * Пример для index=4
+     * |4 2 3 7 8 5| = 4*2*3*7 = 168
+     * </pre>
      * @param values массив
-     * @param index индекс
-     * @return произведение
+     * @param index  индекс
+     * @return       произведение
      */
     private static int reduceIntArrayByMultiplyUpToIndex(int[] values, int index) {
         int result = 1;
@@ -176,12 +214,12 @@ public abstract class MatrixUtils {
 
     /**
      * Получение случайной матрицы с заданными параметрами
-     * @param type тип случайного распределения
-     * @param rows количество строк
-     * @param cols количество столбцов
+     * @param type     тип случайного распределения
+     * @param rows     количество строк
+     * @param cols     количество столбцов
      * @param location математическое ожидание
-     * @param scale множитель или СКО
-     * @return случайная матрица
+     * @param scale    множитель или СКО
+     * @return         случайная матрица
      */
     private static Matrix getRandomMatrix(RandomType type, int rows, int cols, double location, double scale) {
         Random random = new Random();

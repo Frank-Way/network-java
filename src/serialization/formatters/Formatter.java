@@ -3,7 +3,6 @@ package serialization.formatters;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public abstract class Formatter {
     protected final String doubleFormat;

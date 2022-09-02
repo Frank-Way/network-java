@@ -1,11 +1,8 @@
 package serialization.serializers;
 
-import serialization.SerializationUtils;
 import serialization.exceptions.SerializationException;
 
 import java.io.*;
-import java.lang.reflect.Field;
-import java.util.Arrays;
 
 public class JavaSerializer implements Serializer {
 

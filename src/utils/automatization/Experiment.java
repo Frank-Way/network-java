@@ -4,6 +4,7 @@ import models.trainers.FitResults;
 import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
@@ -14,28 +15,26 @@ import java.util.logging.Logger;
  * Параметры модели:
  *  {@link Logger} - логгер;
  *  description - описание (например, "Влияние размера выборки");
- *  список<{@link RunConfiguration}> - набор конфигураций, запускаемых в рамках эксперимента;
- *  мапа<{@link RunConfiguration}, список<{@link FitResults}>> - отражение результатов обучения для каждой конфигурации;
+ *  набор<{@link RunConfiguration}> - набор конфигураций, запускаемых в рамках эксперимента;
+ *  мапа<{@link RunConfiguration}, набор<{@link FitResults}>> - отражение результатов обучения для каждой конфигурации;
  *  мапа<{@link RunConfiguration}, <{@link FitResults}> - отражение наилучших результатов обучения для каждой конфигурации;
  */
 @YamlSerializable
-public class ExperimentConfiguration {
-    private static final transient Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-
-    @YamlField private final String description;
-    @YamlField private final RunConfiguration[] runConfigurations;
+public class Experiment implements Serializable {
+    @YamlField protected final String description;
+    @YamlField protected final RunConfiguration[] runConfigurations;
 
     /**
      * Конструктор
      * @param description  описание эксперимента (например, "Влияние размера выборки")
      * @param runConfigurations  набор {@link RunConfiguration} для запуска эксперимента
      */
-    public ExperimentConfiguration(String description, RunConfiguration[] runConfigurations) {
+    public Experiment(String description, RunConfiguration[] runConfigurations) {
         this.runConfigurations = runConfigurations;
         this.description = description;
     }
 
-    private ExperimentConfiguration() {
+    private Experiment() {
         this(null, null);
     }
 
@@ -57,7 +56,7 @@ public class ExperimentConfiguration {
 
     @Override
     public String toString() {
-        return "ExperimentConfiguration{" +
+        return "Experiment{" +
                 "description='" + description + '\'' +
                 ", runConfigurations=" + Arrays.toString(runConfigurations) +
                 '}';

@@ -1,7 +1,6 @@
 package serialization.serializers;
 
 import serialization.SerializationType;
-import utils.ExceptionUtils;
 
 public class SerializerFactory {
     protected final SerializationType serializationType;

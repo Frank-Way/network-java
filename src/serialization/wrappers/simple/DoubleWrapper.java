@@ -1,7 +1,6 @@
 package serialization.wrappers.simple;
 
 import serialization.formatters.Formatter;
-import serialization.wrappers.Wrapper;
 
 public class DoubleWrapper extends SimpleWrapper{
     public DoubleWrapper(Class<?> clazz, Formatter formatter) {

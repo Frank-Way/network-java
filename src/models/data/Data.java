@@ -8,18 +8,19 @@ import java.util.Iterator;
 
 /**
  * Элемент выборки, объединяющий входные и соответствующие им выходные значения. Атрибуты модели:
- *  inputs - входные значения;
- *  outputs - выходные значения.
+ * <pre><ul>
+ *  <li>inputs  - входные значения;</li>
+ *  <li>outputs - выходные значения.</li>
+ * </ul></pre>
  */
 public class Data implements DeepCopyable {
     private final Matrix inputs;
     private final Matrix outputs;
 
     /**
-     * Конструктор. Проверяется совпадение количества строк для входов и выходов, при несовпадении
-     * выбрасывается исключение
-     * @param inputs входные значения
-     * @param outputs выходные значения
+     * Конструктор, см. описание параметров в {@link Data}.
+     * Проверяется совпадение количества строк для входов и выходов, при несовпадении выбрасывается
+     * IllegalArgumentException
      */
     public Data(Matrix inputs, Matrix outputs) {
         if (inputs.getRows() != outputs.getRows())
@@ -28,6 +29,47 @@ public class Data implements DeepCopyable {
                     inputs.getRows(), inputs.getCols(), outputs.getRows(), outputs.getCols()));
         this.inputs = inputs;
         this.outputs = outputs;
+    }
+
+    /**
+     * Получение объекта для разбиения выборки на пакеты заданного размера для последующей итерации по нему
+     * @param batchSize    размер выборки
+     * @param needsShuffle требуется ли перемешивание выборки
+     * @return             итерируемый объект
+     */
+    public Iterable<Data> getBatchesGenerator(int batchSize, boolean needsShuffle) {
+        return () -> new Iterator<Data>() {
+            private int currentIndex = 0;  // текущий индекс, откуда начнется новый пакет
+            // индексы для перемешивания выборки
+            private final int[] indices = MatrixUtils.getRandomRangePermutation(getRows());
+            // входы и выходы выборки (полностью)
+            private final Matrix x = needsShuffle ? inputs.shuffle(indices, 0) : inputs;
+            private final Matrix y = needsShuffle ? outputs.shuffle(indices, 0) : outputs;
+
+            /**
+             * Проверка наличия следующего пакета
+             * @return  true, если есть ещё пакеты
+             */
+            @Override
+            public boolean hasNext() {
+                return currentIndex < getRows();
+            }
+
+            /**
+             * Получение следующего пакета
+             * @return пакет
+             */
+            @Override
+            public Data next() {
+                // индекс конца пакета (с проверкой на соответствие диапазону)
+                int newIndex = Math.min(currentIndex + batchSize, getRows());
+                // новый пакет формируется из срезов от currentIndex до newIndex
+                Data result = new Data(x.getRowSlice(currentIndex, newIndex, 1),
+                        y.getRowSlice(currentIndex, newIndex, 1));
+                currentIndex = newIndex;  // сохранение последнего индекса
+                return result;  // возвращение пакета
+            }
+        };
     }
 
     public Matrix getInputs() {
@@ -40,35 +82,6 @@ public class Data implements DeepCopyable {
 
     public int getRows() {
         return inputs.getRows();
-    }
-
-    /**
-     * Получение объекта для разбиения выборки на пакеты заданного размера для последующей итерации по нему
-     * @param batchSize размер выборки
-     * @param needsShuffle требуется ли перемешивание выборки
-     * @return итерируемый объект
-     */
-    public Iterable<Data> getBatchesGenerator(int batchSize, boolean needsShuffle) {
-        return () -> new Iterator<Data>() {
-            private int currentIndex = 0;
-            private final int[] indices = MatrixUtils.getRandomRangePermutation(getRows());
-            private final Matrix x = needsShuffle ? inputs.shuffle(indices, 0) : inputs;
-            private final Matrix y = needsShuffle ? outputs.shuffle(indices, 0) : outputs;
-
-            @Override
-            public boolean hasNext() {
-                return currentIndex < getRows();
-            }
-
-            @Override
-            public Data next() {
-                int newIndex = Math.min(currentIndex + batchSize, getRows());
-                Data result = new Data(x.getRowSlice(currentIndex, newIndex, 1),
-                        y.getRowSlice(currentIndex, newIndex, 1));
-                currentIndex = newIndex;
-                return result;
-            }
-        };
     }
 
     @Override

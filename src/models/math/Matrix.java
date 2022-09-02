@@ -3,24 +3,48 @@ package models.math;
 import models.math.functions.MatrixFunctions;
 import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
+import utils.ExceptionUtils;
 import utils.copy.DeepCopyable;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
+import java.util.stream.IntStream;
 
 /**
  * Двумерная матрица вещественных чисел. Внутри используется double[][]. Реализует различные полезные методы для работы
- * с матрицами. Каждая операция создаёт новую матрицу, то есть класс не-изменяемый (immutable). Атрибуты модели
- *  values - двумерный массив, хранящий числа;
- *  rows - количество строк;
- *  cols - количество столбцов.
+ * с матрицами. Каждая операция создаёт новую матрицу, то есть класс не-изменяемый (immutable). Атрибуты модели:
+ * <pre><ul>
+ *  <li>values - двумерный массив, хранящий числа;</li>
+ *  <li>rows   - количество строк;</li>
+ *  <li>cols   - количество столбцов.</li>
+ * </ul></pre>
+ * Если матрица имеет 1 строку, то она является вектором-строкой. Если матрица имеет 1 столбец, то она является
+ * вектором-строкой.
+ *
+ * Матрицы поддерживают базовые арифметические операции (сложение, вычитание, умножение, деление) с матрицами,
+ * скалярами, векторами-столбцами, векторами-строками.
+ * <pre>
+ * Пример операции с матрицей:
+ * |1 2 3|   |7 4 1|   | 8  6  4|
+ * |4 5 6| + |8 5 2| = |12 10  8|
+ * |7 8 9|   |9 6 3|   |16 14 12|
+ * Пример операции со скаляром:
+ * |1 2 3|       | 6  7  8|
+ * |4 5 6| + 5 = | 9 10 11|
+ * |7 8 9|       |12 13 14|
+ * Пример операции с вектором-столбцом:
+ * |1 2 3|   |4|   | 5  6  7|
+ * |4 5 6| + |5| = | 9 10 11|
+ * |7 8 9|   |6|   |13 14 15|
+ * Пример операции с вектором-строкой:
+ * |1 2 3|             | 4  7 10|
+ * |4 5 6| + |3 5 7| = | 7 10 13|
+ * |7 8 9|             |10 13 16|
+ * </pre>
  */
-@YamlSerializable(delegateValidationToEquals = true)
+@YamlSerializable
 public class Matrix implements DeepCopyable, Serializable {
-//    private static final transient long serialVersionUID = -5198808201700701411L;
     @YamlField private final double[][] values;
     @YamlField private final int rows;
     @YamlField private final int cols;
@@ -35,27 +59,52 @@ public class Matrix implements DeepCopyable, Serializable {
         this.cols = values[0].length;
     }
 
+    /**
+     * Конструктор для сериализации
+     */
     private Matrix() {
         this(new double[1][1]);
     }
 
     @Override
     public Matrix deepCopy() {
-        double[][] valuesCopy = new double[rows][];
+        double[][] newValues = new double[rows][];
         for (int row = 0; row < rows; row++)
-            valuesCopy[row] = Arrays.copyOf(values[row], cols);
-        return new Matrix(valuesCopy);
+            newValues[row] = Arrays.copyOf(values[row], cols);
+        return new Matrix(newValues);
     }
 
-    enum Operator {
+    /**
+     * Перечисление операторов
+     */
+    private enum Operator {
+        /**
+         * умножение
+         */
         MUL,
+        /**
+         * сложение
+         */
         ADD,
+        /**
+         * вычитание
+         */
         SUB,
+        /**
+         * деление
+         */
         DIV
     }
 
+    /**
+     * Применение оператора к операндам
+     * @param operator оператор
+     * @param value1   операнд1
+     * @param value2   операнд2
+     * @return         результат применения оператора
+     */
     private double applyOperator(Operator operator, double value1, double value2) {
-        switch (operator) {
+        switch (operator) {  // перебор операторов
             case ADD:
                 return value1 + value2;
             case SUB:
@@ -64,11 +113,17 @@ public class Matrix implements DeepCopyable, Serializable {
                 return value1 * value2;
             case DIV:
                 return value1 / value2;
-            default:
-                throw new IllegalArgumentException("Недопустимое значение operator=" + operator);
+            default:  // не известный оператор
+                throw ExceptionUtils.newUnknownEnumItemException(Operator.class, operator);
         }
     }
 
+    /**
+     * Выполнение операции с матрицей
+     * @param operator оператор
+     * @param matrix   вторая матрица
+     * @return         результат выполнения операции
+     */
     private Matrix doOperation(Operator operator, Matrix matrix) {
         assertEqualRowsAndCols(matrix,
                 "Матрицы размерности (%d; %d) и (%d; %d) имеют разное количество столбцов и/или строк");
@@ -79,6 +134,12 @@ public class Matrix implements DeepCopyable, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Выполнение операции с числом
+     * @param operator оператор
+     * @param number   число
+     * @return         результат выполнения операции
+     */
     private Matrix doOperation(Operator operator, Number number) {
         double[][] result = new double[rows][cols];
         for (int row = 0; row < rows; row++)
@@ -87,6 +148,12 @@ public class Matrix implements DeepCopyable, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Выполнение операции с вектором-столбцом
+     * @param operator  оператор
+     * @param colMatrix вектор-столбец
+     * @return          результат выполнения операции
+     */
     private Matrix doColOperation(Operator operator, Matrix colMatrix) {
         assertEqualRows(colMatrix, "Матрицы размерности (%d; %d) и (%d; %d) имеют разное количество строк");
         double[][] result = new double[rows][cols];
@@ -96,6 +163,12 @@ public class Matrix implements DeepCopyable, Serializable {
         return new Matrix(result);
     }
 
+    /**
+     * Выполнение операции с вектором-строкой
+     * @param operator  оператор
+     * @param rowMatrix вектор-строка
+     * @return          результат выполнения операции
+     */
     private Matrix doRowOperation(Operator operator, Matrix rowMatrix) {
         assertEqualCols(rowMatrix, "Матрицы размерности (%d; %d) и (%d; %d) имеют разное количество столбцов");
         double[][] result = new double[rows][cols];
@@ -133,7 +206,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Формирование строки со значениями
      * @param format формат вывода вещественных чисел
-     * @return строка со значениями
+     * @return       строка со значениями
      */
     public String valuesToString(String format) {
         StringBuilder result = new StringBuilder();
@@ -152,6 +225,11 @@ public class Matrix implements DeepCopyable, Serializable {
         return result.toString();
     }
 
+    /**
+     * Формирование строки со значениями в одну линию
+     * @param format формат вывода вещественных чисел
+     * @return       строка со значениями
+     */
     public String valuesToStringOneLine(String format) {
         StringBuilder result = new StringBuilder();
         result.append('[');
@@ -187,18 +265,19 @@ public class Matrix implements DeepCopyable, Serializable {
      * Получение значения по строке и столбцу
      * @param row номер строки
      * @param col номер столбца
-     * @return значение
+     * @return    значение
      */
     public double getValue(int row, int col) {
         return values[row][col];
     }
 
     /**
-     * Получение копии строки
+     * Получение строки
      * @param row номер строки
-     * @return строка
+     * @return    строка
      */
     public double[] getValue(int row) {
+        // возвращается копия
         return Arrays.copyOf(values[row], cols);
     }
 
@@ -219,9 +298,15 @@ public class Matrix implements DeepCopyable, Serializable {
     }
 
     /**
-     * Получение вектора-строки
+     * Получение вектора-строки из матрицы
+     * <pre>
+     * Пример для row=1:
+     * |1 2 3|
+     * |4 5 6| --> |4 5 6|
+     * |7 8 9|
+     * </pre>
      * @param row номер строки
-     * @return вектор-строка
+     * @return    вектор-строка
      */
     public Matrix getRow(int row) {
         double[][] result = new double[1][cols];
@@ -231,9 +316,15 @@ public class Matrix implements DeepCopyable, Serializable {
     }
 
     /**
-     * Получение вектора-столбца
+     * Получение вектора-столбца из матрицы
+     * <pre>
+     * Пример для col=1:
+     * |1 2 3|     |2|
+     * |4 5 6| --> |5|
+     * |7 8 9|     |8|
+     * </pre>
      * @param col номер столбца
-     * @return вектор-столбец
+     * @return    вектор-столбец
      */
     public Matrix getCol(int col) {
         double[][] result = new double[rows][1];
@@ -244,23 +335,33 @@ public class Matrix implements DeepCopyable, Serializable {
 
     /**
      * Матричное умножение
+     * <pre>
+     * Пример:
+     * | 1  2  3|           | 22  28|
+     * | 4  5  6|   |1 2|   | 49  64|
+     * | 7  8  9| x |3 4| = | 76 100|
+     * |10 11 12|   |5 6|   |103 136|
+     * |13 14 15|           |130 172|
+     * </pre>
      * @param matrix вторая матрица (её количество строк должно совпадать с количеством столбцов исходной матрицы)
-     * @return результат умножения (матрица размера rows1 x cols2)
+     * @return       результат умножения (матрица размера rows1 x cols2)
      */
     public Matrix mulMatrix(Matrix matrix) {
         assertEqualColsRows(matrix,
                 "Матрица размерности (%d; %d) не может быть умножена на предоставленную матрицу размера (%d; %d)");
         double[][] result = new double[rows][matrix.cols];
+        Matrix[] rows1 = IntStream.range(0, this.rows).mapToObj(row -> this.getRow(row).transpose()).toArray(Matrix[]::new);
+        Matrix[] cols2 = IntStream.range(0, matrix.cols).mapToObj(col -> matrix.getCol(col)).toArray(Matrix[]::new);
         for (int row = 0; row < rows; row++)
             for (int col = 0; col < matrix.cols; col++)
-                result[row][col] = MatrixUtils.mulScalar(getRow(row).transpose(), matrix.getCol(col));
+                result[row][col] = MatrixUtils.mulScalar(rows1[row], cols2[col]);
         return new Matrix(result);
     }
 
     /**
      * Поэлементное умножение соразмерных матриц
      * @param matrix вторая матрица
-     * @return результат умножения
+     * @return       результат умножения
      */
     public Matrix mul(Matrix matrix) {
         return doOperation(Operator.MUL, matrix);
@@ -270,7 +371,7 @@ public class Matrix implements DeepCopyable, Serializable {
      * Умножение на вектор-столбец (каждый элемент строки исходной матрицы умножается на один и тот же элемент
      * вектора-столбца, соответствующий строке)
      * @param colMatrix вектор-столбец (его количество строк должно совпадать с количеством строк исходной матрицы)
-     * @return результат умножения
+     * @return          результат умножения
      */
     public Matrix mulCol(Matrix colMatrix) {
         return doColOperation(Operator.MUL, colMatrix);
@@ -280,7 +381,7 @@ public class Matrix implements DeepCopyable, Serializable {
      * Умножение на вектор-строку (каждый элемент столбца исходной матрицы умножается на один и тот же элемент
      * вектора-строки, соответствующий столбцу)
      * @param rowMatrix вектор-строка (его количество столбцов должно совпадать с количеством столбцов исходной матрицы)
-     * @return результат умножения
+     * @return          результат умножения
      */
     public Matrix mulRow(Matrix rowMatrix) {
         return doRowOperation(Operator.MUL, rowMatrix);
@@ -289,7 +390,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Умножение на скаляр
      * @param number скаляр
-     * @return результат умножения
+     * @return       результат умножения
      */
     public Matrix mul(Number number) {
         return doOperation(Operator.MUL, number);
@@ -298,7 +399,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Поэлементное сложение соразмерных матриц
      * @param matrix вторая матрица
-     * @return результат сложения
+     * @return       результат сложения
      */
     public Matrix add(Matrix matrix) {
         return doOperation(Operator.ADD, matrix);
@@ -307,7 +408,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Сложение с вектором-столбцом (см. метод mulCol)
      * @param colMatrix вектор-столбец
-     * @return результат сложения
+     * @return          результат сложения
      */
     public Matrix addCol(Matrix colMatrix) {
         return doColOperation(Operator.ADD, colMatrix);
@@ -316,7 +417,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Сложение с вектором-строкой (см. метод mulRow)
      * @param rowMatrix вектор-строка
-     * @return результат сложения
+     * @return          результат сложения
      */
     public Matrix addRow(Matrix rowMatrix) {
         return doRowOperation(Operator.ADD, rowMatrix);
@@ -325,7 +426,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Сложение со скаляром
      * @param number скаляр
-     * @return результат сложения
+     * @return       результат сложения
      */
     public Matrix add(Number number) {
         return doOperation(Operator.ADD, number);
@@ -334,7 +435,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Поэлементное вычитание соразмерных матриц
      * @param matrix вторая матрица
-     * @return результат вычитания
+     * @return       результат вычитания
      */
     public Matrix sub(Matrix matrix) {
         return doOperation(Operator.SUB, matrix);
@@ -343,7 +444,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Вычитание вектора-столбца (см. метод mulCol)
      * @param colMatrix вектор-столбец
-     * @return результат вычитания
+     * @return          результат вычитания
      */
     public Matrix subCol(Matrix colMatrix) {
         return doColOperation(Operator.SUB, colMatrix);
@@ -352,7 +453,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Вычитание вектора-строки (см. метод mulCol)
      * @param rowMatrix вектор-строка
-     * @return результат вычитания
+     * @return          результат вычитания
      */
     public Matrix subRow(Matrix rowMatrix) {
         return doRowOperation(Operator.SUB, rowMatrix);
@@ -361,7 +462,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Вычитание скаляра
      * @param number скаляр
-     * @return результат вычитания
+     * @return       результат вычитания
      */
     public Matrix sub(Number number) {
         return doOperation(Operator.SUB, number);
@@ -370,7 +471,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Поэлементное деление соразмерных матриц
      * @param matrix вторая матрица
-     * @return результат деления
+     * @return       результат деления
      */
     public Matrix div(Matrix matrix) {
         return doOperation(Operator.DIV, matrix);
@@ -379,7 +480,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Деление на вектор-столбец (см. метод mulCol)
      * @param colMatrix вектор-столбец
-     * @return результат деления
+     * @return          результат деления
      */
     public Matrix divCol(Matrix colMatrix) {
         return doColOperation(Operator.DIV, colMatrix);
@@ -388,7 +489,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Деление на вектор-строку (см. метод mulRow)
      * @param rowMatrix вектор-строка
-     * @return результат деления
+     * @return          результат деления
      */
     public Matrix divRow(Matrix rowMatrix) {
         return doRowOperation(Operator.DIV, rowMatrix);
@@ -397,7 +498,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Деление на скаляр
      * @param number скаляр
-     * @return результат деления
+     * @return       результат деления
      */
     public Matrix div(Number number) {
         return doOperation(Operator.DIV, number);
@@ -405,6 +506,12 @@ public class Matrix implements DeepCopyable, Serializable {
 
     /**
      * Суммирование всех элементов матрицы
+     * <pre>
+     * Пример:
+     * |1 2 3|
+     * |4 5 6| --> 45
+     * |7 8 9|
+     * </pre>
      * @return сумма
      */
     public double sum() {
@@ -419,8 +526,19 @@ public class Matrix implements DeepCopyable, Serializable {
      * Суммирование матрицы по осям. Если ось = 0, то в результате будет получен вектор-столбец, каждый элемент которого
      * является суммой соответствующей строки исходной матрицы. Если ось = 1, то в результате будет получен-вектор
      * строка, каждый элемент которого является суммой соответствующего столбца исходной матрицы.
+     * <pre>
+     * Пример для axis=0:
+     * |1 2 3|     | 6|
+     * |4 5 6| --> |15|
+     * |7 8 9|     |24|
+     *
+     * Пример для axis=1:
+     * |1 2 3|
+     * |4 5 6| --> |12 15 18|
+     * |7 8 9|
+     * </pre>
      * @param axis ось (0 или 1)
-     * @return вектор сумм
+     * @return     вектор сумм
      */
     public Matrix sum(int axis) {
         double[][] result;
@@ -445,12 +563,18 @@ public class Matrix implements DeepCopyable, Serializable {
                 }
                 return new Matrix(result);
             default:
-                throw new IllegalArgumentException(String.format("Недопустимое значение axis = %d", axis));
+                throw ExceptionUtils.newUnknownAxisException(axis, 2);
         }
     }
 
     /**
      * Поиск минимального значения среди всех элементов матрицы
+     * <pre>
+     * Пример:
+     * |1 2 3|
+     * |4 5 6| --> 1
+     * |7 8 9|
+     * </pre>
      * @return минимальное значение
      */
     public double min() {
@@ -463,8 +587,19 @@ public class Matrix implements DeepCopyable, Serializable {
 
     /**
      * Поиск минимального значения по осям (см. метод sum(int axis))
+     * <pre>
+     * Пример для axis=0:
+     * |1 2 3|     |1|
+     * |4 5 6| --> |4|
+     * |7 8 9|     |7|
+     *
+     * Пример для axis=1:
+     * |1 2 3|
+     * |4 5 6| --> |1 2 3|
+     * |7 8 9|
+     * </pre>
      * @param axis ось
-     * @return вектор минимальных значений
+     * @return     вектор минимальных значений
      */
     public Matrix min(int axis) {
         double[][] result;
@@ -484,12 +619,18 @@ public class Matrix implements DeepCopyable, Serializable {
                 }
                 return new Matrix(result);
             default:
-                throw new IllegalArgumentException(String.format("Недопустимое значение axis = %d", axis));
+                throw ExceptionUtils.newUnknownAxisException(axis, 2);
         }
     }
 
     /**
      * Поиск максимального значения среди всех элементов матрицы
+     * <pre>
+     * Пример:
+     * |1 2 3|
+     * |4 5 6| --> 9
+     * |7 8 9|
+     * </pre>
      * @return максимальное значение
      */
     public double max() {
@@ -502,8 +643,19 @@ public class Matrix implements DeepCopyable, Serializable {
 
     /**
      * Поиск максимального значения по осям (см. метод sum(int axis))
+     * <pre>
+     * Пример для axis=0:
+     * |1 2 3|     |3|
+     * |4 5 6| --> |6|
+     * |7 8 9|     |9|
+     *
+     * Пример для axis=1:
+     * |1 2 3|
+     * |4 5 6| --> |7 8 9|
+     * |7 8 9|
+     * </pre>
      * @param axis ось
-     * @return вектор максимальных значений
+     * @return     вектор максимальных значений
      */
     public Matrix max(int axis) {
         double[][] result;
@@ -523,12 +675,18 @@ public class Matrix implements DeepCopyable, Serializable {
                 }
                 return new Matrix(result);
             default:
-                throw new IllegalArgumentException(String.format("Недопустимое значение axis = %d", axis));
+                throw ExceptionUtils.newUnknownAxisException(axis, 2);
         }
     }
 
     /**
      * Транспонирование матрицы
+     * <pre>
+     * Пример:
+     * |1 2|     |1 3 5|
+     * |3 4| --> |2 4 6|
+     * |5 6|
+     * </pre>
      * @return транспонированная матрица
      */
     public Matrix transpose() {
@@ -541,10 +699,18 @@ public class Matrix implements DeepCopyable, Serializable {
 
     /**
      * Получение среза по строкам
+     * <pre>
+     * Пример для start=1, stop=4, step=1:
+     * | 1  2  3|
+     * | 4  5  6|     | 4  5  6|
+     * | 7  8  9| --> | 7  8  9|
+     * |10 11 12|     |10 11 12|
+     * |13 14 15|
+     * </pre>
      * @param start начало
-     * @param stop конец (не включается)
-     * @param step шаг
-     * @return срез
+     * @param stop  конец (не включается)
+     * @param step  шаг
+     * @return      срез
      */
     public Matrix getRowSlice(int start, int stop, int step) {
         if (start > stop || start > rows || stop > rows || step < 1)
@@ -560,10 +726,18 @@ public class Matrix implements DeepCopyable, Serializable {
 
     /**
      * Получение среза по столбцам
+     * <pre>
+     * Пример для start=1, stop=3, step=1:
+     * | 1  2  3|     | 2  3|
+     * | 4  5  6|     | 5  6|
+     * | 7  8  9| --> | 8  9|
+     * |10 11 12|     |11 12|
+     * |13 14 15|     |14 15|
+     * </pre>
      * @param start начало
-     * @param stop конец (не включается)
-     * @param step шаг
-     * @return срез
+     * @param stop  конец (не включается)
+     * @param step  шаг
+     * @return      срез
      */
     public Matrix getColSlice(int start, int stop, int step) {
         if (start > stop || start > cols || stop > cols || step < 1)
@@ -579,14 +753,26 @@ public class Matrix implements DeepCopyable, Serializable {
 
     /**
      * Получение матрицы такой же размерности, заполненной единицами
+     * <pre>
+     * Пример:
+     * |1 2 3|     |1 1 1|
+     * |4 5 6| --> |1 1 1|
+     * |7 8 9|     |1 1 1|
+     * </pre>
      * @return матрица единиц
      */
     public Matrix onesLike() {
-        return new Matrix(new double[rows][cols]).add(1);
+        return zerosLike().add(1);
     }
 
     /**
      * Получение матрицы такой же размерности, заполненной нулями
+     * <pre>
+     * Пример:
+     * |1 2 3|     |0 0 0|
+     * |4 5 6| --> |0 0 0|
+     * |7 8 9|     |0 0 0|
+     * </pre>
      * @return матрица нулей
      */
     public Matrix zerosLike() {
@@ -594,32 +780,21 @@ public class Matrix implements DeepCopyable, Serializable {
     }
 
     /**
-     * Получение списка с пакетами заданного размера, получаемых путем разбиения исходной матрицы
-     * @param batchSize размер пакетов
-     * @return список пакетов
-     */
-    public List<Matrix> getBatches(int batchSize) {
-        List<Matrix> result = new ArrayList<>();
-        for (int i = 0; i < rows; i = i + batchSize)
-            result.add(getRowSlice(i, Math.min(i + batchSize, rows), 1));
-        return result;
-    }
-
-    /**
-     * Расширение матрицы путем заполнения пропусков одинаковыми значениями.
-     * Пусть имеется матрица [[1, 2],
-     *                        [3, 4]].
-     * Тогда при factor = 3 и axis = 0 результат будет [[1, 2],
-     *                                                  [1, 2],
-     *                                                  [1, 2],
-     *                                                  [3, 4],
-     *                                                  [3, 4],
-     *                                                  [3, 4]].
-     * А при factor = 3 и axis = 1 - [[1, 1, 1, 2, 2, 2],
-     *                                [3, 3, 3, 4, 4, 4]].
+     * Расширение матрицы путем заполнения пропусков одинаковыми значениями
+     * <pre>
+     * Пример для factor=2, axis=0:
+     * |1 2|     |1 2|
+     * |3 4| --> |1 2|
+     *           |3 4|
+     *           |3 4|
+     *
+     * Пример для factor=2, axis=1:
+     * |1 2|     |1 1 2 2|
+     * |3 4| --> |3 3 4 4|
+     * </pre>
      * @param factor множитель
-     * @param axis ось (0 или 1)
-     * @return расширенная матрица
+     * @param axis   ось (0 или 1)
+     * @return       расширенная матрица
      */
     public Matrix extend(int factor, int axis) {
         double[][] result;
@@ -639,17 +814,28 @@ public class Matrix implements DeepCopyable, Serializable {
                             result[row][col * factor + i] = values[row][col];
                 return new Matrix(result);
             default:
-                throw new IllegalArgumentException(String.format(
-                        "Недопустимый параметр extend axis=%d (допустимы: %d, %d)", axis, 0, 1));
+                throw ExceptionUtils.newUnknownAxisException(axis, 2);
         }
     }
 
     /**
      * Конкатенация матриц. Если ось = 0, то конкатенация горизонтальная (матрицы "складываются слева-направо").
      * Если ось = 1, то конкатенация вертикальная (матрицы "складываются сверху-вниз")
+     * <pre>
+     * Пример axis=0:
+     * |1 2|       |5 6 7|   |1 2 5 6 7|
+     * |3 4| stack |8 9 0| = |3 4 8 9 0|
+     *
+     * Пример для axis=1:
+     * |1 2|       |5 6|   |1 2|
+     * |3 4| stack |7 8| = |3 4|
+     *             |9 0|   |5 6|
+     *                     |7 8|
+     *                     |9 0|
+     * </pre>
      * @param matrix вторая матрица (должны совпадать размерности - при горизонтальной столбцы, при вертикальной строки)
-     * @param axis ось (0 или 1)
-     * @return конкатенированная матрица
+     * @param axis   ось (0 или 1)
+     * @return       конкатенированная матрица
      */
     public Matrix stack(Matrix matrix, int axis) {
         double[][] result;
@@ -680,24 +866,89 @@ public class Matrix implements DeepCopyable, Serializable {
                 }
                 return new Matrix(result);
             default:
-                throw new IllegalArgumentException(String.format(
-                        "Недопустимый параметр stack axis=%d (допустимы: %d, %d)", axis, 0, 1));
+                throw ExceptionUtils.newUnknownAxisException(axis, 2);
         }
     }
 
     /**
-     * Перемешивание матрицы случайным образом по строкам
+     * Перемешивание матрицы случайным образом
+     * <pre>
+     * Пример:
+     * |1 2 3|     |8 3 4|
+     * |4 5 6| --> |5 7 1|
+     * |7 8 9|     |9 2 6|
+     * </pre>
      * @return перемешанная матрица
      */
     public Matrix shuffle() {
-        return shuffle(0);
+        return flatten().   // матрица "выпрямляется", становится вектором-столбцом
+                shuffle(0)  // строки вектора-столбца перемешиваются
+                .reshape(rows, cols);  // из вектора-столбца собирается матрица такой же формы, как и исходная
     }
 
     /**
-     * Перемешивание матрицы случайным образом по заданной оси. Если ось = 0, то переставляются строки. Если ось = 1,
-     * то переставляются столбцы
+     * Получение вектора-столбца из матрицы
+     * <pre>
+     * Пример:
+     * |1 2| --> |1|
+     * |3 4|     |2|
+     *           |3|
+     *           |4|
+     * </pre>
+     * @return вектор-столбец со всеми элементами матрицы
+     */
+    public Matrix flatten() {
+        double[][] result = new double[size()][1];
+        int cnt = 0;  // количество скопированных элементов
+        for (int row = 0; row < rows; row++)
+            for (int col = 0; col < cols; col++)
+                result[cnt++][0] = values[row][col];
+        return new Matrix(result);
+    }
+
+    /**
+     * Изменение формы матрицы. Контроль за указанием правильных размеров остается за пользователем
+     * <pre>
+     * Пример для newRows=3, newCols=4:
+     * |1 2 3  4  5  6|     |1  2  3  4|
+     * |7 8 9 10 11 12| --> |5  6  7  8|
+     *                      |9 10 11 12|
+     * </pre>
+     * @param newRows требуемое количество строк
+     * @param newCols требуемое количество столбцов
+     * @return        матрица размерности (newRows; newCols)
+     */
+    public Matrix reshape(int newRows, int newCols) {
+        int newSize = newRows * newCols;
+        if (newSize != size() || newRows < 1 || newCols < 1)
+            throw new IllegalArgumentException(String.format(
+                    "Матрица формы (%d; %d) не может быть преобразована к (%d; %d)",
+                    rows, cols, newRows, newCols));
+        double[][] result = new double[newRows][newCols];
+        Matrix flat = flatten();
+        int cnt = 0;  // количество скопированных элементов
+        for (int row = 0; row < newRows; row++)
+            for (int col = 0; col < newCols; col++)
+                result[row][col] = flat.values[cnt++][0];
+        return new Matrix(result);
+    }
+
+    /**
+     * Перемешивание матрицы случайным образом по заданной оси.
+     * Если ось = 0, то переставляются строки. Если ось = 1, то переставляются столбцы
+     * <pre>
+     * Пример для axis=0:
+     * |1 2 3|     |4 5 6|
+     * |4 5 6| --> |1 2 3|
+     * |7 8 9|     |7 8 9|
+     *
+     * Пример для axis=1:
+     * |1 2 3|     |2 1 6|
+     * |4 5 6| --> |5 4 3|
+     * |7 8 9|     |8 7 9|
+     * </pre>
      * @param axis ось
-     * @return перемешанная матрица
+     * @return     перемешанная матрица
      */
     public Matrix shuffle(int axis) {
         switch (axis) {
@@ -706,17 +957,27 @@ public class Matrix implements DeepCopyable, Serializable {
             case 1:
                 return shuffle(MatrixUtils.getRandomRangePermutation(cols), axis);
             default:
-                throw new IllegalArgumentException(String.format(
-                        "Недопустимый параметр shuffle axis=%d (допустимы: %d, %d)", axis, 0, 1));
+                throw ExceptionUtils.newUnknownAxisException(axis, 2);
         }
     }
 
     /**
      * Перемешивание матрицы в соответствии с заданными индексами (контроль за корректностью указания индексов остаётся
      * за пользователем) по заданной оси
+     * <pre>
+     * Пример для indices=[3,2,1], axis=0:
+     * |1 2 3|     |7 8 9|
+     * |4 5 6| --> |4 5 6|
+     * |7 8 9|     |1 2 3|
+     *
+     * Пример для indices=[3,2,1], axis=1:
+     * |1 2 3|     |3 2 1|
+     * |4 5 6| --> |6 5 4|
+     * |7 8 9|     |9 8 7|
+     * </pre>
      * @param indices индексы
-     * @param axis ось
-     * @return перемешанная матрица
+     * @param axis    ось
+     * @return        перемешанная матрица
      */
     public Matrix shuffle(int[] indices, int axis) {
         double[][] result = new double[rows][cols];
@@ -739,14 +1000,18 @@ public class Matrix implements DeepCopyable, Serializable {
                         result[row][col] = getValue(row, indices[col]);
                 break;
             default:
-                throw new IllegalArgumentException(String.format(
-                        "Недопустимый параметр shuffle axis=%d (допустимы: %d, %d)", axis, 0, 1));
+                throw ExceptionUtils.newUnknownAxisException(axis, 2);
         }
         return new Matrix(result);
     }
 
     /**
      * Получение абсолютных значений
+     * <pre>
+     * Пример:
+     * |-1  2| --> |1 2|
+     * | 3 -4|     |3 4|
+     * </pre>
      * @return матрица абсолютных значений
      */
     public Matrix abs() {
@@ -755,8 +1020,13 @@ public class Matrix implements DeepCopyable, Serializable {
 
     /**
      * Возведение в степень
+     * <pre>
+     * Пример для scale=2:
+     * |1 2| --> |1  4|
+     * |3 4|     |9 16|
+     * </pre>
      * @param scale степень
-     * @return матрица, каждый элемент которой возведен в указанную степень
+     * @return      матрица, каждый элемент которой возведен в указанную степень
      */
     public Matrix pow(double scale) {
         return MatrixFunctions.pow(this, scale);
@@ -793,7 +1063,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Проверка равенства количества строк и столбцов
      * @param matrix вторая матрица
-     * @return true, если матрицы соразмерны; иначе false
+     * @return       true, если матрицы соразмерны; иначе false
      */
     protected boolean isRowsAndColsEqual(Matrix matrix) {
         return isRowsEqual(matrix) && isColsEqual(matrix);
@@ -802,7 +1072,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Проверка равенства количества строк
      * @param matrix вторая матрица
-     * @return true, если количество строк совпадает
+     * @return       true, если количество строк совпадает
      */
     protected boolean isRowsEqual(Matrix matrix) {
         return this.rows == matrix.rows;
@@ -811,7 +1081,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Проверка равенства количества столбцов
      * @param matrix вторая матрица
-     * @return true, если количество столбцов совпадает
+     * @return       true, если количество столбцов совпадает
      */
     protected boolean isColsEqual(Matrix matrix) {
         return this.cols == matrix.cols;
@@ -820,7 +1090,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Проверка равенства количества строк исходной матрицы и количества столбцов второй матрицы
      * @param matrix вторая матрица
-     * @return true, если количества совпадает
+     * @return       true, если количества совпадает
      */
     protected boolean isRowsColsEqual(Matrix matrix) {
         return this.rows == matrix.cols;
@@ -829,7 +1099,7 @@ public class Matrix implements DeepCopyable, Serializable {
     /**
      * Проверка равенства количества столбцов исходной матрицы и количества строк второй матрицы
      * @param matrix вторая матрица
-     * @return true, если количества совпадает
+     * @return       true, если количества совпадает
      */
     protected boolean isColsRowsEqual(Matrix matrix) {
         return this.cols == matrix.rows;
@@ -837,7 +1107,7 @@ public class Matrix implements DeepCopyable, Serializable {
 
     /**
      * Проверка, основанная на isRowsEqual, при несовпадении выбрасывается исключение
-     * @param matrix вторая матрица
+     * @param matrix  вторая матрица
      * @param message сообщение для исключения
      */
     private void assertEqualRows(Matrix matrix, String message) {
@@ -848,7 +1118,7 @@ public class Matrix implements DeepCopyable, Serializable {
 
     /**
      * Проверка, основанная на isColsEqual, при несовпадении выбрасывается исключение
-     * @param matrix вторая матрица
+     * @param matrix  вторая матрица
      * @param message сообщение для исключения
      */
     private void assertEqualCols(Matrix matrix, String message) {
@@ -859,7 +1129,7 @@ public class Matrix implements DeepCopyable, Serializable {
 
     /**
      * Проверка, основанная на isRowsColsEqual, при несовпадении выбрасывается исключение
-     * @param matrix вторая матрица
+     * @param matrix  вторая матрица
      * @param message сообщение для исключения
      */
     private void assertEqualRowsCols(Matrix matrix, String message) {
@@ -870,7 +1140,7 @@ public class Matrix implements DeepCopyable, Serializable {
 
     /**
      * Проверка, основанная на isColsRowsEqual, при несовпадении выбрасывается исключение
-     * @param matrix вторая матрица
+     * @param matrix  вторая матрица
      * @param message сообщение для исключения
      */
     private void assertEqualColsRows(Matrix matrix, String message) {
@@ -881,7 +1151,7 @@ public class Matrix implements DeepCopyable, Serializable {
 
     /**
      * Проверка, объединяющая assertEqualRows и assertEqualCols
-     * @param matrix вторая матрица
+     * @param matrix  вторая матрица
      * @param message сообщение для исключения
      */
     private void assertEqualRowsAndCols(Matrix matrix, String message) {
@@ -897,17 +1167,24 @@ public class Matrix implements DeepCopyable, Serializable {
         return rows == matrix.rows && cols == matrix.cols && equalValues(matrix);
     }
 
+    /**
+     * Сравнение значений матрицы с погрешностью по умолчанию 1e-6
+     * @param matrix матрица для сравнения
+     * @return       true, если максимальная разница соответствующих значений меньше 1e-6
+     */
     public boolean equalValues(Matrix matrix) {
-        return equalValues(matrix, 0.000001);
+        return equalValues(matrix, 1e-6);
     }
 
+    /**
+     * Сравнение значений матрицы с заданной погрешностью
+     * @param matrix  матрица для сравнения
+     * @param epsilon погрешность
+     * @return        true, если максимальная разница соответствующих значений меньше epsilon
+     */
     public boolean equalValues(Matrix matrix, double epsilon) {
         assertEqualRowsAndCols(matrix, "Матрицы не совпадают размерностями: %dx%d и %dx%d");
-        Matrix copy = this.deepCopy();
-        Matrix deltas = copy.sub(matrix);
-        Matrix absoluteDeltas = deltas.abs();
-        double maxAbsoluteDelta = absoluteDeltas.max();
-        return maxAbsoluteDelta < epsilon;
+        return this.sub(matrix).abs().max() < epsilon;
     }
 
     @Override

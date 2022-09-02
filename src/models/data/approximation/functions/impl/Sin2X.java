@@ -9,21 +9,23 @@ import java.util.Arrays;
  * f(x) = sin(2 * x)
  */
 public class Sin2X extends Function {
-    private Sin2X() {
-        this(null);
+    /**
+     * Создание функции с диапазонами по умолчанию
+     */
+    public Sin2X() {
+        this(new VariableRange[]{new VariableRange(0.0, 1.57)});
     }
 
+    /**
+     * Создание функции с указанными диапазонами
+     */
     public Sin2X(VariableRange[] variableRanges) {
         super("f(x1) = sin(2 * x1)", variableRanges);
     }
 
     @Override
-    public double calculate(double[] arguments) {
+    public double calculate(double ... arguments) {
         return Math.sin(2 * arguments[0]);
-    }
-
-    public static VariableRange[] getDefaultVariableRanges() {
-        return new VariableRange[]{new VariableRange(0.0, 1.57)};
     }
 
     @Override

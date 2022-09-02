@@ -1,13 +1,12 @@
 package serialization.wrappers.complex;
 
-import serialization.exceptions.SerializationException;
 import serialization.YamlSerializationUtils;
 import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
+import serialization.exceptions.SerializationException;
 import serialization.formatters.Formatter;
 import serialization.wrappers.Wrapper;
 import serialization.wrappers.WrapperFactory;
-import serialization.wrappers.complex.collections.ArrayWrapper;
 import serialization.wrappers.complex.collections.CollectionWrapper;
 import serialization.wrappers.complex.collections.CollectionWrapperFactory;
 
@@ -121,8 +120,15 @@ public class ObjectWrapper extends ComplexWrapper {
     }
 
     public static boolean isObject(String source, Formatter formatter) {
-        String tmp = formatter.getObjectPattern();
-        return source.matches(formatter.getObjectPattern());
+        try {
+            Map<String, String> tree = formatter.readToMap(null, source);
+            return tree.size() >=1 && tree.containsKey(OBJECT_CLASS_FIELD) &&
+                    isObject(Class.forName(tree.get(OBJECT_CLASS_FIELD)));
+        } catch (Exception e) {
+            return false;
+        }
+//        String tmp = formatter.getObjectPattern();
+//        return source.matches(formatter.getObjectPattern());
     }
 
     protected static boolean isClassAbstract(Class<?> clazz) {

@@ -4,7 +4,6 @@ import serialization.exceptions.SerializationException;
 import serialization.formatters.Formatter;
 import serialization.wrappers.Wrapper;
 import serialization.wrappers.WrapperFactory;
-import serialization.wrappers.complex.ComplexWrapper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -77,8 +76,13 @@ public class MapEntryWrapper extends ComplexWrapper {
     }
 
     public static boolean isMapEntry(String source, Formatter formatter) {
-        String tmp = formatter.getMapEntryPattern();
-        return source.matches(formatter.getMapEntryPattern());
+        try {
+            Map<String, String> tree = formatter.readToMap(null, source);
+            return tree.size() == 2 && tree.containsKey(MAP_ENTRY_KEY_FIELD) && tree.containsKey(MAP_ENTRY_VALUE_FIELD);
+        } catch (Exception e) {
+            return false;
+        }
+//        return source.matches(formatter.getMapEntryPattern());
     }
 
     public static Class<?> getClassFromString(String source, Formatter formatter) {

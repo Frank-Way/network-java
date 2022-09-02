@@ -1,8 +1,10 @@
 package serialization.wrappers;
 
 import serialization.formatters.Formatter;
-import serialization.wrappers.complex.*;
-import serialization.wrappers.simple.*;
+import serialization.wrappers.complex.ComplexWrapper;
+import serialization.wrappers.complex.ComplexWrapperFactory;
+import serialization.wrappers.simple.SimpleWrapper;
+import serialization.wrappers.simple.SimpleWrapperFactory;
 import utils.ExceptionUtils;
 
 public class WrapperFactory {

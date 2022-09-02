@@ -9,21 +9,23 @@ import java.util.Arrays;
  * f(x) = sin(x)
  */
 public class SinX extends Function {
-    private SinX() {
-        this(null);
+    /**
+     * Создание функции с диапазонами по умолчанию
+     */
+    public SinX() {
+        this(new VariableRange[]{new VariableRange(0.0, 1.57)});
     }
 
+    /**
+     * Создание функции с указанными диапазонами
+     */
     public SinX(VariableRange[] variableRanges) {
         super("f(x1) = sin(x1)", variableRanges);
     }
 
     @Override
-    public double calculate(double[] arguments) {
+    public double calculate(double ... arguments) {
         return Math.sin(arguments[0]);
-    }
-
-    public static VariableRange[] getDefaultVariableRanges() {
-        return new VariableRange[]{new VariableRange(0.0, 1.57)};
     }
 
     @Override
