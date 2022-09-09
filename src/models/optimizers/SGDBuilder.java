@@ -16,7 +16,7 @@ public class SGDBuilder extends OptimizerBuilder {
     @Override
     public SGD build() {
         validate();
-        validate();
+        prepare();
         return new SGD(network, learningRate, decayLR);
     }
 
