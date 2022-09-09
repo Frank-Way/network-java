@@ -3,8 +3,6 @@ package tests.entities.serialization;
 import serialization.annotations.YamlField;
 import tests.utils.ValuesProvider;
 
-import java.util.Arrays;
-
 public class NestedArrayFieldsClass extends TestSerializableClass {
     // поля с двумерными массивами
     @YamlField protected int[][] integerNestedArrayField;

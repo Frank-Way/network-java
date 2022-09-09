@@ -5,13 +5,13 @@ import serialization.exceptions.SerializationException;
 import serialization.serializers.Serializer;
 import tests.TestStatus;
 import tests.cases.CaseWrapper;
-import tests.entities.serialization.ArrayFieldsClass;
 import tests.entities.serialization.TestSerializableClass;
 import tests.utils.ValuesProvider;
-import utils.Utils;
 
-import java.util.*;
-import java.util.logging.Logger;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class BaseForSerialization extends CaseWrapper {
     

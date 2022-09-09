@@ -2,7 +2,6 @@ package serialization.wrappers.complex.collections;
 
 import serialization.formatters.Formatter;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,7 +17,7 @@ public class SetWrapper extends CollectionWrapper {
     }
 
     public static boolean isSet(String source, Formatter formatter) {
-        return source.matches(formatter.getCollectionPattern());
+        return isCollection(source, formatter);
     }
 
     @Override

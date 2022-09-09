@@ -6,8 +6,6 @@ import serialization.wrappers.complex.collections.CollectionWrapper;
 import serialization.wrappers.complex.collections.CollectionWrapperFactory;
 import utils.ExceptionUtils;
 
-import java.util.HashMap;
-
 public class ComplexWrapperFactory extends WrapperFactory {
     public ComplexWrapperFactory(Class<?> clazz, Formatter formatter) {
         super(clazz, formatter);

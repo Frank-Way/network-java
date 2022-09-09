@@ -3,7 +3,6 @@ package serialization.wrappers.complex;
 import serialization.exceptions.SerializationException;
 import serialization.formatters.Formatter;
 import serialization.wrappers.Wrapper;
-import serialization.wrappers.complex.collections.ArrayWrapper;
 import serialization.wrappers.complex.collections.CollectionWrapper;
 
 public abstract class ComplexWrapper extends Wrapper {
@@ -31,7 +30,9 @@ public abstract class ComplexWrapper extends Wrapper {
     }
 
     public static boolean isComplex(String source, Formatter formatter) {
-        return EnumWrapper.isEnum(source, formatter) || ObjectWrapper.isObject(source, formatter) ||
-                CollectionWrapper.isCollection(source, formatter) || MapEntryWrapper.isMapEntry(source, formatter);
+        return EnumWrapper.isEnum(source, formatter) ||
+                MapEntryWrapper.isMapEntry(source, formatter) ||
+                ObjectWrapper.isObject(source, formatter) ||
+                CollectionWrapper.isCollection(source, formatter);
     }
 }

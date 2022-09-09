@@ -6,7 +6,9 @@ import models.losses.Loss;
 import models.operations.Operation;
 import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
+import utils.copy.DeepCopyable;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.IntStream;
@@ -16,7 +18,7 @@ import java.util.stream.IntStream;
  * (размер, функция активации) и потери для сети.
  */
 @YamlSerializable
-public class AnotherNetworkBuilder extends NetworkBuilder {
+public class AnotherNetworkBuilder extends NetworkBuilder implements DeepCopyable, Serializable {
     @YamlField private int[] sizes;
     @YamlField private Operation[] activations;
     @YamlField private Loss loss;
@@ -50,7 +52,7 @@ public class AnotherNetworkBuilder extends NetworkBuilder {
      *
      * @return билдер
      */
-    public DefaultNetworkBuilder getDefaultBuilder() {
+    public DefaultNetworkBuilder defaultBuilder() {
         validate();
         return new DefaultNetworkBuilder().layers(getLayers()).loss(getLoss());  // в сеть попадает копия потери
     }
@@ -67,7 +69,10 @@ public class AnotherNetworkBuilder extends NetworkBuilder {
 
     @Override
     public AnotherNetworkBuilder deepCopy() {
-        return new AnotherNetworkBuilder(getSizes(), getActivations(), getLoss());
+        return new AnotherNetworkBuilder(
+                sizes == null ? null : Arrays.copyOf(sizes, sizes.length),
+                activations == null ? null : Arrays.stream(activations).map(Operation::deepCopy).toArray(Operation[]::new),
+                loss == null ? null : loss.deepCopy());
     }
 
     @Override

@@ -5,7 +5,6 @@ import models.losses.Loss;
 import models.math.Matrix;
 import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
-import utils.copy.CopyUtils;
 import utils.copy.DeepCopyable;
 
 import java.io.Serializable;
@@ -14,25 +13,29 @@ import java.util.Objects;
 
 /**
  * Нейросеть, представленная как набор слоёв и потеря. Атрибуты модели:
- *  список<{@link Layer}> - набор слоёв;
- *  {@link Loss} - потеря для оценки работы сети
+ * <pre><ul>
+ *  <li>набор<{@link Layer}> - набор слоёв;</li>
+ *  <li>{@link Loss}         - потеря для оценки работы сети</li>
+ * </ul></pre>
  */
 @YamlSerializable
 public class Network implements DeepCopyable, Serializable {
-//    private static final transient long serialVersionUID = 5657416029976548410L;
     @YamlField private final Layer[] layers;
     @YamlField private final Loss loss;
 
     /**
      * Конструктор
      * @param layers набор слоёв
-     * @param loss потеря
+     * @param loss   потеря
      */
     public Network(Layer[] layers, Loss loss) {
         this.layers = layers;
         this.loss = loss;
     }
 
+    /**
+     * Конструктор для сериализации
+     */
     private Network() {
         this(null, null);
     }
@@ -40,7 +43,7 @@ public class Network implements DeepCopyable, Serializable {
     /**
      * Прямой проход сети по всем слоям
      * @param inputs вход
-     * @return выход
+     * @return       выход
      */
     public Matrix forward(Matrix inputs) {
         Matrix result = inputs.deepCopy();
@@ -52,7 +55,7 @@ public class Network implements DeepCopyable, Serializable {
     /**
      * Обратный проход сети по всем слоям (в обратном направлении)
      * @param lossGradient градиент на выходе сети (градиент потери)
-     * @return градиент на входе сети
+     * @return             градиент на входе сети
      */
     public Matrix backward(Matrix lossGradient) {
         Matrix result = lossGradient.deepCopy();
@@ -63,9 +66,9 @@ public class Network implements DeepCopyable, Serializable {
 
     /**
      * Оценка (вычисление потери)
-     * @param inputs входы
+     * @param inputs  входы
      * @param targets требуемые выходы
-     * @return потеря
+     * @return        потеря
      */
     public double calculateLoss(Matrix inputs, Matrix targets) {
         Matrix prediction = forward(inputs);
@@ -74,9 +77,9 @@ public class Network implements DeepCopyable, Serializable {
 
     /**
      *
-     * @param inputs входы
+     * @param inputs  входы
      * @param targets требуемые выходы
-     * @return потеря
+     * @return        потеря
      */
     public double trainBatch(Matrix inputs, Matrix targets) {
         Matrix predictions = forward(inputs);
@@ -129,11 +132,27 @@ public class Network implements DeepCopyable, Serializable {
         return Objects.hash(Arrays.hashCode(layers), loss);
     }
 
-    public static DefaultNetworkBuilder builder() {
+    /**
+     * Получение пустого билдера по слоям
+     * @return новый билдер
+     */
+    public static DefaultNetworkBuilder newBuilder() {
         return new DefaultNetworkBuilder();
     }
 
-    public static AnotherNetworkBuilder anotherBuilder() {
+    /**
+     * Получение пустого билдера по размерам слоёв и активациям
+     * @return новый билдер
+     */
+    public static AnotherNetworkBuilder newAnotherBuilder() {
         return new AnotherNetworkBuilder();
+    }
+
+    /**
+     * Получение билдера на основе текущего экземпляра
+     * @return заполненный билдер
+     */
+    public DefaultNetworkBuilder builder() {
+        return new DefaultNetworkBuilder(this);
     }
 }

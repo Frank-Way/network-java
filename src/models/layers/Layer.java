@@ -1,13 +1,11 @@
 package models.layers;
 
-import models.data.approximation.functions.VariableRange;
 import models.math.Matrix;
 import models.operations.Operation;
 import models.operations.ParametrizedOperation;
 import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
 import utils.ExceptionUtils;
-import utils.copy.CopyUtils;
 import utils.copy.DeepCopyable;
 
 import java.io.Serializable;
@@ -17,19 +15,23 @@ import java.util.Objects;
 /**
  * Слой сети. Представляет собой набор {@link Operation}, которые выполняется при прямом и обратном проходе.
  * Атрибуты модели:
- *  input - входные значения;
- *  output - выходные значения;
- *  neurons - размер слоя;
- *  список<{@link Operation}> - набор операций
+ * <pre><ul>
+ *  <li>input                    - входные значения;</li>
+ *  <li>output                   - выходные значения;</li>
+ *  <li>neurons                  - размер слоя;</li>
+ *  <li>набор<{@link Operation}> - набор операций</li>
+ * </ul></pre>
  */
 @YamlSerializable
 public abstract class Layer implements DeepCopyable, Serializable {
-//    private static final transient long serialVersionUID = 548499734630114863L;
     protected transient Matrix input;
     protected transient Matrix output;
     @YamlField protected final int neurons;
     @YamlField protected final Operation[] operations;
 
+    /**
+     * Конструктор для создания глубокой копии экземпляра
+     */
     protected Layer(Matrix input,
                     Matrix output,
                     int neurons,
@@ -46,32 +48,35 @@ public abstract class Layer implements DeepCopyable, Serializable {
     /**
      * Прямой проход (вычисление результата)
      * @param input входные значения
-     * @return выходные значения
+     * @return      выходные значения
      */
     public Matrix forward(Matrix input) {
         // вычисления производятся с копиями
         this.input = input.deepCopy();
         Matrix result = input.deepCopy();
 
+        // вход последовательно идет через все операции слоя
         for (Operation operation: operations)
             result = operation.forward(result);
 
         output = result.deepCopy();
-
         return output;
     }
 
     /**
      * Обратный проход (вычисление градиентов)
      * @param outputGradient градиент на выходе слоя
-     * @return градиент на входе слоя
+     * @return               градиент на входе слоя
      */
     public Matrix backward(Matrix outputGradient) {
+        // вычисления производятся с копиями
         Matrix result = outputGradient.deepCopy();
         output.assertSameShape(outputGradient);
+
+        // градиент потери идет обратно через операции слоя
         for (int i = 0; i < operations.length; i++)
-            // операции берутся в обратном порядке
             result = operations[operations.length - 1 - i].backward(result);
+
         return result;
     }
 
@@ -87,12 +92,24 @@ public abstract class Layer implements DeepCopyable, Serializable {
         return neurons;
     }
 
+    private Operation[] getOperations() {
+        return operations;
+    }
+
+    public Operation getOperation(int index) {
+        return operations[index];
+    }
+
+    public int operationsCount() {
+        return operations.length;
+    }
+
     /**
      * Получение параметра по классу операции (класс - наследник {@link ParametrizedOperation}). Предполагается, что
      * в слое нет двух операций с одинаковым классом.
      * @param operationClass класс операции
-     * @param <T> класс операции
-     * @return параметр
+     * @param <T>            класс операции
+     * @return               параметр
      */
     public <T extends ParametrizedOperation> Matrix getParameter(Class<T> operationClass) {
         return Arrays.stream(operations)
@@ -104,17 +121,9 @@ public abstract class Layer implements DeepCopyable, Serializable {
                 .getParameter();  // выбор параметра операции
     }
 
-    private Operation[] getOperations() {
-        return operations;
-    }
-
-    public Operation getOperation(int index) {
-        return operations[index];
-    }
-
     /**
      * Получение операций с параметром
-     * @return список операций с параметром
+     * @return массив операций с параметром
      */
     public ParametrizedOperation[] getParametrizedOperations() {
         return Arrays.stream(operations)
@@ -123,9 +132,6 @@ public abstract class Layer implements DeepCopyable, Serializable {
                 .toArray(ParametrizedOperation[]::new);  // получение операций
     }
 
-    public int operationsCount() {
-        return operations.length;
-    }
 
     @Override
     public String toString() {
@@ -158,6 +164,15 @@ public abstract class Layer implements DeepCopyable, Serializable {
                 neurons, Arrays.stream(operations).map(Operation::deepCopy).toArray(Operation[]::new));
     }
 
+    /**
+     * Создание слоя. Позволяет реализовать копирование слоя в абстрактном классе без дублирования кода в наследниках
+     * @param clazz      тип слоя (наследник Layer)
+     * @param input      входное значение
+     * @param output     выходное значение
+     * @param neurons    размер слоя
+     * @param operations операции
+     * @return           слой с указанными параметрами
+     */
     protected static Layer createLayer(Class<? extends Layer> clazz,  Matrix input,  Matrix output, int neurons,  Operation[] operations) {
         if (clazz.equals(DenseLayer.class))
             return new DenseLayer(input, output, neurons, operations);

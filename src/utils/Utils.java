@@ -11,8 +11,6 @@ import options.PrintOptions;
 import utils.automatization.RunConfiguration;
 
 import java.util.*;
-import java.util.function.BinaryOperator;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -26,19 +24,19 @@ public abstract class Utils {
     /**
      * Получение строки с описанием конфигурации запуска и результатов обучения, представленных, соответственно,
      *  объектами {@link RunConfiguration} и {@link FitResults}
-     * @param runConfiguration  конфигурация обучения
-     * @param results  результаты обучения
-     * @param printOptions  опции вывода
-     * @param debugMode  режим вывода
-     * @param doubleFormat  формат вывода вещественных чисел
-     * @return  строка с требуемыми значениями
+     * @param runConfiguration конфигурация обучения
+     * @param results          результаты обучения
+     * @param printOptions     опции вывода
+     * @param debugMode        режим вывода
+     * @param doubleFormat     формат вывода вещественных чисел
+     * @return                 строка с требуемыми значениями
      */
     public static String runConfigurationAndFitResultsToString(RunConfiguration runConfiguration,
                                                                FitResults results,
                                                                PrintOptions printOptions,
                                                                boolean debugMode,
                                                                String doubleFormat) {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
 
         sb.append("конфигурация:\n").append(runConfiguration.toString()).append("\n");
         sb.append("результаты:\n").append(results.toString()).append("\n");
@@ -63,12 +61,12 @@ public abstract class Utils {
 
     /**
      * Формирование строки с параметрами сети по слоям
-     * @param network  сеть
-     * @param doubleFormat  формат вывода вещественных чисел
-     * @return  строка с описанием параметров сети
+     * @param network      сеть
+     * @param doubleFormat формат вывода вещественных чисел
+     * @return             строка с описанием параметров сети
      */
     public static String networkParametersToString(Network network, String doubleFormat) {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         for (int layer = 0; layer < network.layersCount(); layer++) {
             sb.append("Слой ").append(layer + 1).append("\n");
 
@@ -85,51 +83,51 @@ public abstract class Utils {
 
     /**
      * Формирование таблицы с результатами работы сети
-     * @param data  выборка для проверки
-     * @param network  сеть
-     * @param part  какую часть таблицы необходимо вывести
-     * @param doubleFormat  формат вывода вещественных чисел
-     * @return  строка с таблицей
+     * @param data         выборка для проверки
+     * @param network      сеть
+     * @param part         какую часть таблицы необходимо вывести
+     * @param doubleFormat формат вывода вещественных чисел
+     * @return             строка с таблицей
      */
     public static String networkOutputToTable(Data data, Network network, double part, String doubleFormat) {
-        Matrix x = data.getInputs();
-        Matrix t = data.getOutputs();
-        Matrix y = network.forward(x);
-        Matrix e = t.sub(y).abs();
+        final Matrix x = data.getInputs();
+        final Matrix t = data.getOutputs();
+        final Matrix y = network.forward(x);
+        final Matrix e = t.sub(y).abs();
         return networkIOToStringTable(x, t, y, e, part, doubleFormat);
     }
 
     /**
      * Формирование таблицы зависимости потери от эпохи
-     * @param map  мапа, где ключ - номер эпохи, а значение - потеря
-     * @param doubleFormat  формат вывода вещественных чисел
-     * @return  строка с таблицей
+     * @param map          мапа, где ключ - номер эпохи, а значение - потеря
+     * @param doubleFormat формат вывода вещественных чисел
+     * @return             строка с таблицей
      */
     public static String trainDynamicToTable(Map<Integer, Double> map, String doubleFormat) {
-        List<String> xHeaders = Collections.singletonList("эпоха");
-        List<String> yHeaders = Collections.singletonList("потеря");
-        int rows = map.size();
-        double[][] xValuesDA = new double[rows][1];
-        double[][] yValuesDA = new double[rows][1];
+        final List<String> leftHeaders = Collections.singletonList("эпоха");
+        final List<String> rightHeaders = Collections.singletonList("потеря");
+        final List<List<String>> leftColumns = new ArrayList<>();
+        leftColumns.add(new ArrayList<>());
+        final List<List<String>> rightColumns = new ArrayList<>();
+        rightColumns.add(new ArrayList<>());
+        final int rows = map.size();
         List<Integer> epochs = map.keySet().stream().sorted().collect(Collectors.toList());
         for (int row = 0; row < epochs.size(); row++) {
-            xValuesDA[row][0] = epochs.get(row);
-            yValuesDA[row][0] = map.get(epochs.get(row));
+            leftColumns.get(0).add(epochs.get(row) + "");
+            rightColumns.get(0).add(String.format(doubleFormat, map.get(epochs.get(row))));
         }
-        Matrix xValues = new Matrix(xValuesDA);
-        Matrix yValues = new Matrix(yValuesDA);
-        return buildStringTableFromHeadersAndBody(xHeaders, xValues, yHeaders, yValues, 1.0, doubleFormat);
+        return buildStringTableFromHeadersAndBody(leftHeaders, leftColumns, rightHeaders, rightColumns);
     }
 
     /**
      * Формирование таблицы с результатами работы сети
-     * @param inputs  входные значения
-     * @param targets  требуемые выходные значения
+     * @param inputs       входные значения
+     * @param targets      требуемые выходные значения
      * @param predictions  результаты вычислений сети
-     * @param errors  ошибки вычисления сети
-     * @param part  какую часть таблицы необходимо вывести
-     * @param doubleFormat  формат вывода вещественных чисел
-     * @return  строка с таблицей
+     * @param errors       ошибки вычисления сети
+     * @param part         какую часть таблицы необходимо вывести
+     * @param doubleFormat формат вывода вещественных чисел
+     * @return             строка с таблицей
      */
     public static String networkIOToStringTable(Matrix inputs,
                                                 Matrix targets,
@@ -158,65 +156,147 @@ public abstract class Utils {
 
     /**
      * Формирование таблицы по заголовкам и телу
-     * @param xHeaders  заголовки агрументов
-     * @param xValues  аргументы
-     * @param yHeaders  заголовки значений
-     * @param yValues  значения
-     * @param part  какую часть таблицы необходимо вывести
-     * @param doubleFormat  формат вывода вещественных чисел
-     * @return  строка с таблицей
+     * @param xHeaders     заголовки агрументов
+     * @param xValues      аргументы
+     * @param yHeaders     заголовки значений
+     * @param yValues      значения
+     * @param part         какую часть таблицы необходимо вывести
+     * @param doubleFormat формат вывода вещественных чисел
+     * @return             строка с таблицей
      */
     public static String buildStringTableFromHeadersAndBody(List<String> xHeaders,
                                                             Matrix xValues,
                                                             List<String> yHeaders,
                                                             Matrix yValues,
                                                             double part, String doubleFormat) {
-        char mainSpliterator = '|';
-        char separatorBase = '-';
-        char separatorSpliterator = '+';
-        StringBuilder separatorSB = new StringBuilder();
-        StringBuilder bodySB = new StringBuilder();
-        String format = " " + doubleFormat + " ";
-        int cellWidth = 2 + Integer.parseInt(doubleFormat.substring(
-                doubleFormat.indexOf("%") + 1,
-                doubleFormat.indexOf(".")));
-        StringBuilder headerSB = new StringBuilder(joinHeader(xHeaders, cellWidth));
-        headerSB.append(mainSpliterator);
-        headerSB.append(joinHeader(yHeaders, cellWidth));
-        for (int i = 0; i < headerSB.toString().indexOf(mainSpliterator); i++)
-            separatorSB.append(separatorBase);
-        separatorSB.append(separatorSpliterator);
-        while (separatorSB.length() < headerSB.length())
-            separatorSB.append(separatorBase);
+        final List<String> leftHeaders = new ArrayList<>(xHeaders);
+        final List<List<String>> leftColumns = IntStream.range(0, xValues.getCols()).mapToObj(i -> new ArrayList<String>()).collect(Collectors.toList());
+        final List<String> rightHeaders = new ArrayList<>(yHeaders);
+        final List<List<String>> rightColumns = IntStream.range(0, yValues.getCols()).mapToObj(i -> new ArrayList<String>()).collect(Collectors.toList());
+
         int[] indices = MatrixUtils.getLinSpace(0, xValues.getRows() - 1, (int)Math.round(xValues.getRows() * part));
         for (int row: indices) {
             for (int col = 0; col < xValues.getCols(); col++)
-                bodySB.append(String.format(format, xValues.getValue(row, col)));
-            bodySB.append(mainSpliterator);
+                leftColumns.get(col).add(String.format(doubleFormat, xValues.getValue(row, col)).trim());
             for (int col = 0; col < yValues.getCols(); col++)
-                bodySB.append(String.format(format, yValues.getValue(row, col)));
-            bodySB.append("\n");
+                rightColumns.get(col).add(String.format(doubleFormat, yValues.getValue(row, col)).trim());
+        }
+
+        return buildStringTableFromHeadersAndBody(leftHeaders, leftColumns, rightHeaders, rightColumns);
+    }
+
+    /**
+     * Формирование таблицы по заголовкам и телу
+     * @param leftHeaders  левые заголовки
+     * @param leftColumns  левые значения
+     * @param rightHeaders правые заголовки
+     * @param rightColumns правые значения
+     * @return             строка с таблицей
+     */
+    public static String buildStringTableFromHeadersAndBody(List<String> leftHeaders,
+                                                            List<List<String>> leftColumns,
+                                                            List<String> rightHeaders,
+                                                            List<List<String>> rightColumns) {
+        final char leftRightSpliterator = '|';
+        final char upDownSpliterator = '-';
+        final char spliteratorsIntersection = '+';
+        final char spaceFiller = ' ';
+
+        final StringBuilder headerSB = new StringBuilder();
+        final StringBuilder separatorSB = new StringBuilder();
+        final StringBuilder bodySB = new StringBuilder();
+
+        final List<String> combinedHeaders = new ArrayList<>(leftHeaders);
+        final List<List<String>> combinedColumns = new ArrayList<>(leftColumns);
+        combinedHeaders.addAll(rightHeaders);
+        combinedColumns.addAll(rightColumns);
+
+        final int[] cellWidths = calcCellWidths(combinedHeaders, combinedColumns);
+
+        headerSB.append(buildRow(leftHeaders, rightHeaders, cellWidths, spaceFiller, leftRightSpliterator, 1, 1));
+
+        for (int i = 0; i < headerSB.toString().indexOf(leftRightSpliterator); i++)
+            separatorSB.append(upDownSpliterator);
+        separatorSB.append(spliteratorsIntersection);
+        while (separatorSB.length() < headerSB.length())
+            separatorSB.append(upDownSpliterator);
+
+        for (int row = 0; row < leftColumns.get(0).size(); row++) {
+            int finalRow = row;
+            bodySB.append(buildRow(
+                    leftColumns.stream().map(leftColumn -> leftColumn.get(finalRow)).collect(Collectors.toList()),
+                    rightColumns.stream().map(leftColumn -> leftColumn.get(finalRow)).collect(Collectors.toList()),
+                    cellWidths, spaceFiller, leftRightSpliterator, 1, 1
+            )).append("\n");
         }
         return String.join("\n", headerSB.toString(), separatorSB.toString(), bodySB.toString());
     }
 
     /**
-     * Вычисление значения, если оно null
-     * @param nullableValue  nullable значение
-     * @param supplier  поставщик значения
-     * @param <T>  тип значения
-     * @return  t или значение от поставщика
+     * Вычисление ширины столбца, как максимальной ширины заголовка или значений столбца
+     * @param headers заголовки
+     * @param columns значения столбцов
+     * @return        набор максимальных длин значений столбцов
      */
-    public static <T> T computeIfAbsent(T nullableValue, Supplier<T> supplier) {
-        if (nullableValue != null)
-            return nullableValue;
-        return supplier.get();
+    private static int[] calcCellWidths(List<String> headers,
+                                        List<List<String>> columns) {
+        return IntStream.range(0, headers.size())                              // перебираем столбцы
+                .map(i -> Math.max(headers.get(i).length(),                    // берем максимум из заголовка или столбца
+                        columns.get(i).stream()                                // перебираем значения из столбца
+                                .mapToInt(String::length)                      // из строк берем длины
+                                .max()                                         // берем максимальное значение
+                                .orElseThrow(IllegalArgumentException::new)))  // иначе пробрасываем ошибку
+                .toArray();                                                    // формируем массив
+    }
+
+    /**
+     * Формирование строки
+     * @param leftStrings          значения до разделителя
+     * @param rightStrings         значения после разделителя
+     * @param cellWidths           ширины столбцов
+     * @param spaceFiller          заполнитель пустого пространства
+     * @param leftRightSpliterator разделитель левой и правой части столбца
+     * @param leftPadding          буфер слева
+     * @param rightPadding         буфер справа
+     * @return                     строка
+     */
+    private static String buildRow(List<String> leftStrings, List<String> rightStrings, int[] cellWidths,
+                                   char spaceFiller, char leftRightSpliterator, int leftPadding, int rightPadding) {
+        final StringBuilder sb = new StringBuilder();
+        int cnt = 0;  // количество обработанных значений
+        for (String string: leftStrings)
+            sb.append(buildCell(string, cellWidths[cnt++], leftPadding, rightPadding, spaceFiller));
+        sb.append(leftRightSpliterator);
+        for (String string: rightStrings)
+            sb.append(buildCell(string, cellWidths[cnt++], leftPadding, rightPadding, spaceFiller));
+        return sb.toString();
+    }
+
+    /**
+     * Формирование ячейки строки
+     * @param value        значение
+     * @param cellWidth    ширина ячейки
+     * @param leftPadding  буфер слева
+     * @param rightPadding буфер справа
+     * @param spaceFiller  заполнитель пустого пространства
+     * @return             ячейка
+     */
+    private static String buildCell(String value, int cellWidth, int leftPadding, int rightPadding, char spaceFiller) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < leftPadding; i++)
+            sb.append(spaceFiller);
+        for (int i = 0; i < cellWidth - value.length(); i++)
+            sb.append(spaceFiller);
+        sb.append(value);
+        for (int i = 0; i < rightPadding; i++)
+            sb.append(spaceFiller);
+        return sb.toString();
     }
 
     /**
      * Получение потока по его ID
-     * @param threadId  ID потока
-     * @return  поток
+     * @param threadId ID потока
+     * @return         поток
      */
     public static Optional<Thread> getThread(long threadId) {
         return Thread.getAllStackTraces().keySet().stream()
@@ -227,7 +307,7 @@ public abstract class Utils {
     /**
      * Перевод времени (не время суток!) из миллисекунд в формат "HH:MM:SS.mmm"
      * @param millis время в миллисекундах
-     * @return время в нужном формате
+     * @return       время в нужном формате
      */
     public static String millisToHMS(long millis) {
         final int MILLIS_PER_SECOND = 1000;
@@ -240,59 +320,15 @@ public abstract class Utils {
         return String.format("%d:%d:%d.%d", hours, minutes, seconds, milliseconds);
     }
 
+    /**
+     * Ожидание обертка Thread.sleep() с try-catch
+     * @param timeout величина таймаута
+     */
     public static void myWait(int timeout) {
         try {
             Thread.sleep(timeout);
         } catch (InterruptedException e) {
             logger.severe("Ошибка во время ожидания: " + e.getMessage());
         }
-    }
-
-    public static boolean allTrue(Collection<Boolean> booleans) {
-        return !booleans.contains(false);
-    }
-
-    public static boolean anyTrue(Collection<Boolean> booleans) {
-        return booleans.contains(true);
-    }
-
-    protected static <T> T reduceCollection(Collection<T> collection, BinaryOperator<T> accumulator, T defaultValue) {
-        return collection.stream().reduce(accumulator).orElse(defaultValue);
-    }
-
-    public static <T> boolean listsDeepEquals(List<T> list1, List<T> list2) {
-        return list1.size() == list2.size() && allTrue(IntStream.range(0, list1.size())
-                .mapToObj(i -> list1.get(i).equals(list2.get(i)))
-                .collect(Collectors.toSet()));
-    }
-
-    public static <T> T computeOrGetNull(T nullableValue, Supplier<T> supplier) {
-        if (nullableValue == null)
-            return null;
-        return supplier.get();
-    }
-
-    public static <T> boolean contains(T[] array, T value) {
-        boolean result = false;
-        int i = 0;
-        while (!result || i++ < array.length)
-            result = array[i].equals(value);
-        return result;
-    }
-
-    /**
-     * Формирование заголовка таблицы с заданной шириной ячейки/столбца
-     * @param headers  заголовки
-     * @param cellWidth  ширина ячейки/столбца
-     * @return  объединенные заголовки
-     */
-    private static String joinHeader(List<String> headers, int cellWidth) {
-        StringBuilder sb = new StringBuilder();
-        for (String header: headers) {
-            for (int i = 0; i < cellWidth - header.length() - 1; i++)
-                sb.append(" ");
-            sb.append(header).append(" ");
-        }
-        return sb.toString();
     }
 }

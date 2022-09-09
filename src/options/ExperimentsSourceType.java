@@ -1,6 +1,16 @@
 package options;
 
+/**
+ * Тип источника описания экспериментов
+ */
 public enum ExperimentsSourceType {
-    CODE,  // из кода - ExperimentConfigurations.getDefaultExperimentConfigurations
-    YAML_FILE  // из файла в формате YAML
+    /**
+     * Из кода - Experiments.getDefaultExperimentConfigurations
+     */
+    CODE,
+
+    /**
+     * Из файла в формате YAML
+     */
+    YAML_FILE
 }

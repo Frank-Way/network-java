@@ -17,7 +17,7 @@ public class ListWrapper extends CollectionWrapper {
     }
 
     public static boolean isList(String source, Formatter formatter) {
-        return source.matches(formatter.getCollectionPattern());
+        return isCollection(source, formatter);
     }
 
     @Override

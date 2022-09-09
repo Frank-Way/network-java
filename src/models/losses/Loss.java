@@ -3,7 +3,6 @@ package models.losses;
 import models.math.Matrix;
 import serialization.annotations.YamlSerializable;
 import utils.ExceptionUtils;
-import utils.copy.CopyUtils;
 import utils.copy.DeepCopyable;
 
 import java.io.Serializable;
@@ -11,21 +10,28 @@ import java.util.Objects;
 
 /**
  * Потеря. Позволяет оценить точность работы сети. Атрибуты модели:
- *  prediction - результат вычислений сети;
- *  target - требуемые выходы сети (из обучающей выборки);
- *  output - потеря (оценка);
- *  inputGradient - градиент на входе потери
+ * <pre><ul>
+ *  <li>prediction    - результат вычислений сети;</li>
+ *  <li>target        - требуемые выходы сети (из обучающей выборки);</li>
+ *  <li>output        - потеря (оценка);</li>
+ *  <li>inputGradient - градиент на входе потери</li>
+ * </ul></pre>
  */
 @YamlSerializable
 public abstract class Loss implements DeepCopyable, Serializable {
-//    private static final transient long serialVersionUID = -4963149158685226973L;
     protected transient Matrix prediction;
     protected transient Matrix target;
     protected transient double output;
     protected transient Matrix inputGradient;
 
+    /**
+     * Конструктор
+     */
     public Loss() {}
 
+    /**
+     * Конструктор для создания глубокой копии экземпляра
+     */
     protected Loss(Matrix prediction, Matrix target, double output, Matrix inputGradient) {
         this.prediction = prediction;
         this.target = target;
@@ -36,11 +42,12 @@ public abstract class Loss implements DeepCopyable, Serializable {
     /**
      * Прямой проход (вычисление потери)
      * @param prediction результаты сети
-     * @param target требуемые выходы
-     * @return потеря
+     * @param target     требуемые выходы
+     * @return           потеря
      */
     public double forward(Matrix prediction, Matrix target) {
         prediction.assertSameShape(target);
+
         // вычисления производятся с копиями
         this.prediction = prediction.deepCopy();
         this.target = target.deepCopy();
@@ -102,6 +109,15 @@ public abstract class Loss implements DeepCopyable, Serializable {
                 output, inputGradient == null ? null : inputGradient.deepCopy());
     }
 
+    /**
+     * Создание потери. Позволяет реализовать копирование слоя в абстрактном классе без дублирования кода в наследниках
+     * @param clazz         тип потери (наследник Loss)
+     * @param prediction    выходное значение сети
+     * @param target        требуемое выходное значение сети
+     * @param output        выходное значение потери
+     * @param inputGradient градиент на входе
+     * @return              потеря с указанными параметрами
+     */
     protected static Loss createLoss(Class<? extends Loss> clazz, Matrix prediction, Matrix target,
                                      double output, Matrix inputGradient) {
         if (clazz.equals(MeanSquaredError.class))

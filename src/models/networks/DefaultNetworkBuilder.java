@@ -4,24 +4,32 @@ import models.layers.Layer;
 import models.losses.Loss;
 import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
+import utils.copy.DeepCopyable;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.stream.IntStream;
 
 /**
- * Билдер для сети
+ * Дефолтный билдер для сети
  */
 @YamlSerializable
-public class DefaultNetworkBuilder extends NetworkBuilder {
+public class DefaultNetworkBuilder extends NetworkBuilder implements DeepCopyable, Serializable {
     @YamlField private Layer[] layers;
     @YamlField private Loss loss;
 
     public DefaultNetworkBuilder() {
     }
 
+    public DefaultNetworkBuilder(Network network) {
+        this.layers = IntStream.range(0, network.layersCount()).mapToObj(network::getLayer).toArray(Layer[]::new);
+        this.loss = network.getLoss().deepCopy();
+    }
+
     private DefaultNetworkBuilder(Layer[] layers, Loss loss) {
-        this.layers = layers;
-        this.loss = loss;
+        this.layers = Arrays.stream(layers).map(Layer::deepCopy).toArray(Layer[]::new);
+        this.loss = loss.deepCopy();
     }
 
     public DefaultNetworkBuilder layers(Layer[] layers) {
@@ -36,12 +44,12 @@ public class DefaultNetworkBuilder extends NetworkBuilder {
 
     @Override
     protected Layer[] getLayers() {
-        return layers == null ? null : Arrays.stream(layers).map(Layer::deepCopy).toArray(Layer[]::new);
+        return layers;
     }
 
     @Override
     protected Loss getLoss() {
-        return loss == null ? null : loss.deepCopy();
+        return loss;
     }
 
     @Override
@@ -52,7 +60,9 @@ public class DefaultNetworkBuilder extends NetworkBuilder {
 
     @Override
     public DefaultNetworkBuilder deepCopy() {
-        return new DefaultNetworkBuilder(getLayers(), getLoss());
+        return new DefaultNetworkBuilder(
+                layers == null ? null : Arrays.stream(layers).map(Layer::deepCopy).toArray(Layer[]::new),
+                loss == null ? null : loss.deepCopy());
     }
 
     @Override

@@ -1,6 +1,5 @@
 package serialization.serializers;
 
-import serialization.SerializationType;
 import serialization.exceptions.SerializationException;
 
 public interface Serializer {

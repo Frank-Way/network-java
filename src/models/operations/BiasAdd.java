@@ -6,7 +6,10 @@ import models.math.Matrix;
  * Добавление смещения
  */
 public class BiasAdd extends ParametrizedOperation {
-
+    /**
+     * Конструктор
+     * @param bias вектор-столбец смещений
+     */
     public BiasAdd(Matrix bias) {
         super(bias);
         if (bias != null && !bias.isCol())
@@ -14,15 +17,18 @@ public class BiasAdd extends ParametrizedOperation {
                     "Размерность матрицы (%d; %d) недопустима для смещения", bias.getRows(), bias.getCols()));
     }
 
-    private BiasAdd() {
-        this(null);
-    }
-
     /**
-     * copy-constructor
+     * Конструктор для создания глубокой копии экземпляра
      */
     protected BiasAdd(Matrix input, Matrix output, Matrix outputGradient, Matrix inputGradient, Matrix parameter, Matrix parameterGradient) {
         super(input, output, outputGradient, inputGradient, parameter, parameterGradient);
+    }
+
+    /**
+     * Конструктор для сериализации
+     */
+    private BiasAdd() {
+        this(null);
     }
 
     @Override

@@ -34,7 +34,14 @@ public class EnumWrapper extends ComplexWrapper {
     }
 
     public static boolean isEnum(String source, Formatter formatter) {
-        return source.matches(formatter.getEnumPattern());
+        try {
+            Map<String, String> tree = formatter.readToMap(null, source);
+            return tree.size() == 2 && tree.containsKey(ENUM_CLASS_FIELD) && tree.containsKey(ENUM_VALUE_FIELD)  &&
+                    isEnum(Class.forName(tree.get(ENUM_CLASS_FIELD)));
+        } catch (Exception e) {
+            return false;
+        }
+//        return source.matches(formatter.getEnumPattern());
     }
 
     @Override

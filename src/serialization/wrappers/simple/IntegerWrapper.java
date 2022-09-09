@@ -1,7 +1,6 @@
 package serialization.wrappers.simple;
 
 import serialization.formatters.Formatter;
-import serialization.wrappers.Wrapper;
 
 public class IntegerWrapper extends SimpleWrapper{
     public IntegerWrapper(Class<?> clazz, Formatter formatter) {

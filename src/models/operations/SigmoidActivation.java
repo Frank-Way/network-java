@@ -5,16 +5,21 @@ import models.math.functions.MatrixFunctions;
 
 /**
  * Логистическая (сигмоидная, лог-сигмоидная) функция активации.
+ * <pre>
  * f(x) = 1 / (1 + exp(-x))
  * f'(x) = f(x) * (1 - f(x))
+ * </pre>
  */
 public class SigmoidActivation extends Operation {
+    /**
+     * Конструктор
+     */
     public SigmoidActivation() {
         super();
     }
 
     /***
-     * copy-constructor
+     * Конструктор для создания глубокой копии экземпляра
      */
     protected SigmoidActivation(Matrix input, Matrix output, Matrix outputGradient, Matrix inputGradient) {
         super(input, output, outputGradient, inputGradient);

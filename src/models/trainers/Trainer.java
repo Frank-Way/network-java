@@ -10,19 +10,15 @@ import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * Тренер, запускающий обучение сети. Атрибуты модели:
- *  {@link Logger} - логгер;
- *  ABORT_THRESHOLD - порог, сколько раз подряд потеря должна не уменьшиться по мере обучения (используется, если
- *                    earlyStopping в {@link FitParameters} true).
+ * Тренер, запускающий обучение сети.
  */
 public class Trainer {
     private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-    private static final int ABORT_THRESHOLD = 2;
 
     /**
      * Запуск обучения по заданным параметрам
      * @param parameters параметры обучения
-     * @return результаты обучения
+     * @return           результаты обучения
      */
     public static FitResults fit(FitParameters parameters) {
         if (parameters.isPreTrainRequired())
@@ -31,17 +27,17 @@ public class Trainer {
     }
 
     /**
-     * Запуск обучения заданной сети
-     * @param parameters  параметры обучения
-     * @param network  сеть
-     * @return  результаты корректировки
+     * Запуск обучения заданной сети. Основной метод, реализующий обучение
+     * @param parameters параметры обучения
+     * @param network    сеть
+     * @return           результаты корректировки
      */
     private static FitResults fitSingleTry(FitParameters parameters, Network network) {
-        long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();  // фиксирование момента запуска метода
         double bestTestLoss = Double.MAX_VALUE;  // наилучшая потеря на тестовой выборке
         Network bestNetwork = network;  // сеть, обеспечившая наилучшую потерю
 
-        Dataset dataset = parameters.getDataset();
+        Dataset dataset = parameters.getDataset();  // получение обучающей выборки
 
         Map<Integer, Double> testLossesMap = new HashMap<>();  // мапа зависимости потери от эпохи
 
@@ -51,11 +47,10 @@ public class Trainer {
                 .epochs(parameters.getEpochs())
                 .build();
 
+        // мапа для проверки ранней остановки
         Map<EarlyStopLossType, Integer> earlyStopTriggeredMap = new HashMap<>();
         for (EarlyStopLossType type: EarlyStopLossType.values())
             earlyStopTriggeredMap.put(type, 0);
-
-        List<Integer> queryAt = calcQueryAt(parameters.getEpochs(), parameters.getQueries(), parameters.getQueriesRangeType());
 
         MyQueue lastTrainLosses = new MyQueue((int)Math.ceil(parameters.getQueries() * 1.0 / 10));
         MyQueue lastTestLosses = new MyQueue((int)Math.ceil(parameters.getQueries() * 1.0 / 10));
@@ -63,22 +58,34 @@ public class Trainer {
         lastTrainLosses.setMax();
         lastTestLosses.setMax();
 
+        // вычисление номеров эпох, когда нужно выполнять опросы
+        List<Integer> queryAt = calcQueryAt(parameters.getEpochs(), parameters.getQueries(), parameters.getQueriesRangeType());
+
         for (int epoch = 1; epoch <= parameters.getEpochs(); epoch++) {
             double trainLoss = 0.0;  // потеря на обучающей выборке
-            for (Data batch: dataset.getTrainData().getBatchesGenerator(parameters.getBatchSize(),
-                    true)) {
-                // обучение
-                trainLoss += network.trainBatch(batch.getInputs(), batch.getOutputs());
+
+            // разбиение обучающей выборки на пакеты с перемешиванием
+            Iterable<Data> trainBatches = dataset.getTrainData().getBatchesGenerator(
+                    parameters.getBatchSize(),
+                    true);
+
+            for (Data batch: trainBatches) {  // перебор пакетов
+                trainLoss += network.trainBatch(batch.getInputs(), batch.getOutputs());  // обучение по пакету
                 optimizer.step();  // корректировка параметров
             }
 
             optimizer.decay();  // снижение скорости обучения
             if (!queryAt.contains(epoch))  // нужна ли оценка
-                continue;
+                continue;  // если не нужна, то запускается очередная эпоха обучения
 
             double testLoss = 0.0;  // потеря на тестовой выборке
-            for (Data batch: dataset.getTestData().getBatchesGenerator(parameters.getBatchSize(),
-                    true))
+
+            // разбиение тестовой выборки на пакеты без перемешивания
+            Iterable<Data> testBatches = dataset.getTestData().getBatchesGenerator(
+                    parameters.getBatchSize(),
+                    false);
+
+            for (Data batch: testBatches)  // вычисление потери на тестовой выборке
                 testLoss += network.calculateLoss(batch.getInputs(), batch.getOutputs());
 
             if (testLoss < bestTestLoss) {  // сохранение наилучших результатов
@@ -86,6 +93,7 @@ public class Trainer {
                 bestNetwork = network.deepCopy();
             }
 
+            // сохранение значений потерь
             testLossesMap.put(epoch, testLoss);
             lastTrainLosses.push(trainLoss);
             lastTestLosses.push(testLoss);
@@ -94,44 +102,76 @@ public class Trainer {
                     parameters.getDoubleFormat(), epoch, trainLoss, testLoss));
 
             if (!parameters.isEarlyStopping())  // нужна ли ранняя остановка
-                continue;
-            if (abortTrain(trainLoss, lastTrainLosses, parameters.getDoubleFormat(), earlyStopTriggeredMap, EarlyStopLossType.TRAIN) ||
-                    abortTrain(testLoss, lastTestLosses, parameters.getDoubleFormat(), earlyStopTriggeredMap, EarlyStopLossType.TEST))
-                break;
+                continue;  // если не нужна, то запускается очередная эпоха обучения
+
+            if (abortTrain(trainLoss, lastTrainLosses, parameters.getDoubleFormat(), earlyStopTriggeredMap,
+                    EarlyStopLossType.TRAIN, parameters.getEarlyStoppingThreshold()) ||
+                abortTrain(testLoss, lastTestLosses, parameters.getDoubleFormat(), earlyStopTriggeredMap,
+                    EarlyStopLossType.TEST, parameters.getEarlyStoppingThreshold()))
+                break;  // если сработало условие ранней остановки, то цикл завершается
         }
         logger.fine(String.format("В качестве результата обучения сохранена сеть, обеспечившая потерю на тестовой выборке: " +
                 parameters.getDoubleFormat(), bestTestLoss));
 
-        return new FitResults(testLossesMap, bestNetwork,
-                new Errors(dataset.getValidData().getOutputs(),
-                        bestNetwork.forward(dataset.getValidData().getInputs())),
-                dataset, startTime, System.currentTimeMillis());
+        // формирование результатов обучения
+        return new FitResults(testLossesMap,                                   // зависимость потери от эпохи
+                bestNetwork,                                                   // обученная сеть
+                new Errors(                                                    // ошибки
+                    dataset.getValidData().getOutputs(),                       // целевые значения
+                    bestNetwork.forward(dataset.getValidData().getInputs())),  // вычисленные значения
+                dataset,                                                       // обучающая выборка
+                startTime,                                                     // время начала обучения
+                System.currentTimeMillis());                                   // время окончания обучения
     }
 
+    /**
+     * Обучение сети с предобучением. Механизм предобучения:
+     * <pre><ul>
+     * <li>FitParameters.preTrainsCount раз запускается попытка обучить сеть с уменьшенным в
+     * FitParameters.preTrainReduceFactor раз количеством эпох.</li>
+     * <li>По каждой попытке обучения фиксируется потеря.</li>
+     * <li>Из всех попыток для дальнейшего обучения со всеми эпохами выбирается та сеть, которая
+     * обеспечила наименьшую потерю.</li>
+     * </ul></pre>
+     * @param parameters параметры обучения
+     * @return           результаты обучения
+     */
     private static FitResults fitWithPreTrain(FitParameters parameters) {
         Network bestNetwork = null;
         double bestLoss = Double.MAX_VALUE;
-        Dataset dataset = parameters.getDataLoader().load(parameters.getLoadParameters());
+        Dataset dataset = parameters.getDataset();
         FitParameters preTrainParameters = parameters.preTrainCopy();
         for (int preTrain = 0; preTrain < parameters.getPreTrainsCount(); preTrain++) {
+            Network untrainedNetwork = parameters.getNetworkBuilder().build();
             FitResults results = fitSingleTry(preTrainParameters.deepCopy(),
-                    parameters.getNetworkBuilder().build());
-            Network network = results.getNetwork();
-            double loss = network.calculateLoss(dataset.getValidData().getInputs(),
+                    untrainedNetwork.deepCopy());
+            Network trainedNetwork = results.getNetwork();
+            double loss = trainedNetwork.calculateLoss(dataset.getValidData().getInputs(),
                     dataset.getValidData().getOutputs());
             if (loss < bestLoss) {
                 bestLoss = loss;
-                bestNetwork = network;
+                bestNetwork = untrainedNetwork;
             }
         }
         return fitSingleTry(parameters, bestNetwork);
     }
 
+    /**
+     * Ранняя остановка при обучении
+     * @param loss           текущая потеря
+     * @param lastLosses     несколько последних потерь
+     * @param doubleFormat   формат вывода двоичных чисел
+     * @param map            потери
+     * @param type           тип потери
+     * @param abortThreshold сколько раз подряд текущая потеря должна быть не лучше, чем предыдущие потери
+     * @return               true, если обучение необходимо остановить
+     */
     private static boolean abortTrain(double loss,
                                       MyQueue lastLosses,
                                       String doubleFormat,
                                       Map<EarlyStopLossType, Integer> map,
-                                      EarlyStopLossType type) {
+                                      EarlyStopLossType type,
+                                      int abortThreshold) {
         String name = null;
         switch (type) {
             case TRAIN:
@@ -141,27 +181,35 @@ public class Trainer {
                 name = "тестах";
                 break;
         }
-        if (lastLosses.getActualSize() > 1 && loss >= lastLosses.mean()) {
+        if (lastLosses.getActualSize() > 1 && loss >= lastLosses.mean()) {  // если текущая потеря хуже предыдущих
             logger.warning(String.format("Потеря при %s " + doubleFormat + " превышает последние %d потерь (" + doubleFormat + ")",
                     name, loss, lastLosses.getSize(), lastLosses.mean()));
-            map.put(type, map.get(type) + 1);
-            if (map.get(type) >= ABORT_THRESHOLD) {
+            map.put(type, map.get(type) + 1);  // увеличение счетчика сработавших проверок
+            if (map.get(type) >= abortThreshold) {  // если достигнут порог
                 logger.info(String.format("Ранняя остановка сработала %d раз подряд. Завершение обучения",
                         map.get(type)));
-                return true;
+                return true;  // то обучение надо прекратить
             }
-        } else
-            map.put(type, 0);
-        return false;
+        } else  // если потеря не хуже предыдущих
+            map.put(type, 0);  // то счетчик сработавших проверок сбрасывается
+        return false;  // обучение прекращать не надо
     }
 
+    /**
+     * Вычисление эпох, когда надо выполнять опросы
+     * @param epochs  количество эпох
+     * @param queries количество опросов
+     * @param type    стратегия опросов
+     * @return        номера эпох, когда надо выполнять опросы
+     */
     private static List<Integer> calcQueryAt(int epochs, int queries, QueriesRangeType type) {
-        if (queries == 1)
+        if (queries == 1)  // если опрос 1, то выполняется в конце
             return Collections.singletonList(epochs);
-        if (queries == 2)
+        if (queries == 2)  // если опроса 2, то они выполняются в начале и в конце
             return Arrays.asList(1, epochs);
+
         List<Integer> queryAt = new ArrayList<>();
-        queryAt.add(1);
+        queryAt.add(1);  // первый опрос всегда выполняется в начале обучения
         switch (type) {
             case LINEAR:
                 int queryStep = epochs / queries;
@@ -178,12 +226,22 @@ public class Trainer {
                 } while (queryAt.size() < queries - 1 && query < epochs);
                 break;
         }
-        queryAt.add(epochs);
+        queryAt.add(epochs);  // последний опрос всегда выполняется в конце обучения
         return queryAt;
     }
 
+    /**
+     * Тип потери, по которой осуществляется ранняя остановка
+     */
     enum EarlyStopLossType {
+        /**
+         * Потеря при обучении
+         */
         TRAIN,
+
+        /**
+         * Потеря на тестовой выборке
+         */
         TEST
     }
 }

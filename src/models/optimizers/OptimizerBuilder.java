@@ -5,13 +5,14 @@ import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
 import utils.copy.DeepCopyable;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * Билдер для оптимизаторов
+ * Билдер для {@link Optimizer}
  */
 @YamlSerializable
-public abstract class OptimizerBuilder implements DeepCopyable {
+public abstract class OptimizerBuilder implements DeepCopyable, Serializable {
     protected transient Network network;
     protected transient double learningRate;
     protected transient double decayLR;
@@ -57,15 +58,15 @@ public abstract class OptimizerBuilder implements DeepCopyable {
     public abstract OptimizerBuilder deepCopy();
 
     protected void validate() {
-        learningRate = startLR;
         if (network == null)
             throw new IllegalStateException("Не задана сеть для построения оптимизатора");
-        if (startLR <= stopLR)
+        if (startLR < stopLR)
             throw new IllegalStateException("Неверно заданы начальная и конечная скорости обучения");
     }
 
-    protected void calculateDecayLR() {
+    protected void prepare() {
         decayLR = (startLR - stopLR) / (epochs - 1);
+        learningRate = startLR;
     }
 
     public double getStartLR() {

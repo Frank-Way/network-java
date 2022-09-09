@@ -9,71 +9,62 @@ import java.io.InputStream;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+/**
+ * Оболочка над файлом настроек "app.properties". Список настроек:
+ * <pre><ul>
+ *     <li>debugMode                     - включен ли режим отладки; при true выводится больше информации;</li>
+ *     <li>doubleFormat                  - формат вывода дробных чисел (до точки - общее количество цифр, после -
+ *                                         количество цифр дробной части);</li>
+ *     <li>printRequired                 - нужно ли выводить какую-либо информацию, флаг объединяется с другими
+ *                                         настройками вывода по И, так что можно в одном месте "выключить" весь
+ *                                         вывод, не меняя остальные настройки вывода;</li>
+ *     <li>printConfigurationEach        - вывод по каждой попытке обучения;</li>
+ *     <li>printConfigurationBest        - вывод по наилучшей попытке обучения для каждой конфигурации;</li>
+ *     <li>printExperimentEach           - вывод по наилучшей попытке обучения для всех конфигураций каждого эксперимента;</li>
+ *     <li>printExperimentBest           - вывод по наилучшей попытке обучения для всех экспериментов;</li>
+ *     <li>saveRequired                  - флаг, аналогичный printRequired, но для сохранения обученных сетей;</li>
+ *     <li>savePath                      - папка для сохранения обученных сетей;</li>
+ *     <li>saveFilenamePattern           - шаблон для имени файлов с сетями;</li>
+ *     <li>saveConfigurationEach         - сохранение сети по попытке обучения;</li>
+ *     <li>saveConfigurationBest         - сохранение сети по наилучшей попытке обучения для каждой конфигурации;</li>
+ *     <li>saveExperimentEach            - сохранение сети по наилучшей попытке обучения для всех конфигураций каждого эксперимента;</li>
+ *     <li>saveExperimentBest            - сохранение сети по наилучшей попытке обучения для всех экспериментов;</li>
+ *     <li>saveSerializationType         - тип сериализации;</li>
+ *     <li>threadPoolSize                - максимальный размер пула тредов;</li>
+ *     <li>experimentsSourceType         - откуда считывать описание экспериментов;</li>
+ *     <li>experimentsSourceYamlPath     - папка с YAML-файлом с описанием экспериментов;</li>
+ *     <li>experimentsSourceYamlFilename - имя YAML-файла с описанием экспериментов;</li>
+ * </ul></pre>
+ */
 public class AppProperties {
     private final static Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
     private final static String userDir = System.getProperty("user.dir");
     private final static String propertiesFileName = userDir + File.separator + "src" +
             File.separator + "app.properties";
 
-    private final boolean debugMode;  // режим вывода; при true выводится больше информации
-
-    // формат вывода дробных чисел (до точки - общее количество цифр, после - количество цифр дробной части
+    private final boolean debugMode;
     private final String doubleFormat;
-
-    // нужно ли выводить какую-либо информацию
-    // флаг объединяется с другими настройками вывода по И, так что можно в одном месте "выключить" весь вывод, не меняя
-    // остальные настройки вывода
     private final boolean printRequired;
 
-    /**
-     * секция задания настроек, что именно выводить в разных случаях
-     * для опций см. {@link PrintOptions}
-     */
-    // вывод по каждой попытке обучения
     private final PrintOptions printConfigurationEach;
-
-    // вывод по наилучшей попытке обучения для каждой конфигурации
     private final PrintOptions printConfigurationBest;
-
-    // вывод по наилучшей попытке обучения для всех конфигураций каждого эксперимента
     private final PrintOptions printExperimentEach;
-
-    // вывод по наилучшей попытке обучения для всех экспериментов
     private final PrintOptions printExperimentBest;
 
-    // флаг, аналогичный PRINT_REQUIRED, но для сохранения обученных сетей
+    private final String savePath;
+    private final String saveFilenamePattern;
+    private final SerializationType saveSerializationType;
     private final boolean saveRequired;
 
-    // папка для сохранения обученных сетей
-    private final String savePath;
-    // шаблон для имени файлов с сетями
-    private final String saveFilenamePattern;
-
-    // сохранение сети по попытке обучения
     private final boolean saveConfigurationEach;
-
-    // сохранение сети по наилучшей попытке обучения для каждой конфигурации
     private final boolean saveConfigurationBest;
-
-    // сохранение сети по наилучшей попытке обучения для всех конфигураций каждого эксперимента
     private final boolean saveExperimentEach;
-
-    // сохранение сети по наилучшей попытке обучения для всех экспериментов
     private final boolean saveExperimentBest;
 
-    // тип сериализации
-    private final SerializationType saveSerializationType;
-
-    // максимальный размер пула тредов
     private final int threadPoolSize;
 
-    // откуда считывать описание экспериментов
     private final ExperimentsSourceType experimentsSourceType;
-
-    // папка с YAML-файлом с описанием экспериментов
     private final String experimentsSourceYamlPath;
-
-    // имя YAML-файла с описанием экспериментов
     private final String experimentsSourceYamlFilename;
 
     public AppProperties() throws IOException {

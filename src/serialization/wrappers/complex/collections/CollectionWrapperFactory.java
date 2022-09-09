@@ -2,7 +2,6 @@ package serialization.wrappers.complex.collections;
 
 import serialization.formatters.Formatter;
 import serialization.wrappers.complex.ComplexWrapperFactory;
-import serialization.wrappers.complex.ObjectWrapper;
 import utils.ExceptionUtils;
 
 import java.util.ArrayList;

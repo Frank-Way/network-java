@@ -2,18 +2,19 @@ package models.data.approximation.functions;
 
 import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import utils.copy.DeepCopyable;
 
 import java.io.Serializable;
 import java.util.Arrays;
 
 /**
- * Описание функции, для воспроизведения которого будет обучена сеть. Функция может быть многомерной (при этом выход ё
+ * Описание функции, для воспроизведения которого будет обучена сеть. Функция может быть многомерной (при этом выход
  * всегда один). Функция должна быть гладкой. Контроль за указанием правильных значений (на которых функция определена)
  * остается за пользователем. Атрибуты модели:
- *  expression - строковое представление функции;
- *  список<{@link VariableRange}> - набор диапазонов изменения каждой входной переменной.
+ * <pre><ul>
+ *  <li>expression                   - строковое представление функции;</li>
+ *  <li>набор<{@link VariableRange}> - набор диапазонов изменения каждой входной переменной.</li>
+ * </ul></pre>
  */
 @YamlSerializable
 public abstract class Function implements DeepCopyable, Serializable {
@@ -21,11 +22,9 @@ public abstract class Function implements DeepCopyable, Serializable {
     @YamlField protected final VariableRange[] variableRanges;
 
     /**
-     * Конструктор
-     * @param expression строковое представление
-     * @param variableRanges диапазоны входных переменных
+     * Конструктор, cм. описание параметров в {@link Function}
      */
-    public Function(String expression, VariableRange[] variableRanges) {
+    protected Function(String expression, VariableRange[] variableRanges) {
         this.expression = expression;
         this.variableRanges = variableRanges;
     }
@@ -43,7 +42,7 @@ public abstract class Function implements DeepCopyable, Serializable {
     }
 
     // логика вычислений определяется наследниками
-    public abstract double calculate(double[] arguments);
+    public abstract double calculate(double ... arguments);
 
     @Override
     public String toString() {
@@ -51,10 +50,6 @@ public abstract class Function implements DeepCopyable, Serializable {
                 "expression='" + expression + '\'' +
                 ", variableRanges=" + Arrays.toString(variableRanges) +
                 '}';
-    }
-
-    protected static VariableRange[] getDefaultVariableRanges() {
-        throw new NotImplementedException();
     }
 
     @Override

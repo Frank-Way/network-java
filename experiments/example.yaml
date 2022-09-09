@@ -1,0 +1,55 @@
+- object.class: utils.automatization.ExperimentBuilder
+  description: "Пример эксперимента 1"
+  runConfigurationBuilders:
+    - object.class: utils.automatization.RunConfigurationBuilder
+      description: "Пример конфигурации 1.1"
+      retries: 3
+      fitParametersBuilder:
+        object.class: models.trainers.FitParametersBuilder
+        batchSize: 10
+        doubleFormat: "%13.10f"
+        earlyStopping: 'false'
+        earlyStoppingThreshold: 0
+        earlyStoppingTriggered: 'false'
+        epochs: 100000
+        preTrainReduceFactor:  0,0000000000
+        preTrainRequired: 'false'
+        preTrainsCount: 0
+        queries: 0
+        dataLoader:
+          object.class: models.data.approximation.ApproxDataLoader
+        queriesRangeType:
+          enum.class: models.trainers.QueriesRangeType
+          enum.value: NON_LINEAR
+        optimizerBuilder:
+          object.class: models.optimizers.SGDBuilder
+          startLR:  0,1000000000
+          stopLR:  0,0001000000
+        networkBuilder:
+          object.class: models.networks.AnotherNetworkBuilder
+          loss:
+            object.class: models.losses.MeanSquaredError
+          activations:
+            - object.class: models.operations.TanhActivation
+            - object.class: models.operations.LinearActivation
+          sizes:
+            - 1
+            - 8
+            - 1
+        loadParameters:
+          object.class: models.data.approximation.ApproxLoadParameters
+          extendingFactors:
+            -  1,0000000000
+          sizes:
+            - 10
+          testSizes:
+            - 10
+          validSizes:
+            - 10
+          function:
+            object.class: models.data.approximation.functions.impl.Sin2X
+            expression: "f(x1) = sin(2 * x1)"
+            variableRanges:
+              - object.class: models.data.approximation.functions.VariableRange
+                left:  0,0000000000
+                right:  1,5700000000

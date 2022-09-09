@@ -5,23 +5,24 @@ import models.math.Matrix;
 import models.networks.Network;
 import models.operations.ParametrizedOperation;
 import utils.ExceptionUtils;
-import utils.copy.CopyUtils;
 import utils.copy.DeepCopyable;
 
 /**
  * Оптимизатор, обучающий сеть по определённому правилу. Атрибуты модели:
- *  {@link Network} - сеть для обучения;
- *  learningRate - скорость обучения;
- *  decayLR - величина снижения скорости обучения;
- *  startLR - начальная скорость обучения;
- *  stopLR - конечная скорость обучения;
- *  epochs - длительность обучения;
+ * <pre><ul>
+ *  <li>{@link Network} - сеть для обучения;</li>
+ *  <li>learningRate    - скорость обучения;</li>
+ *  <li>decayLR         - величина снижения скорости обучения;</li>
+ * </ul></pre>
  */
 public abstract class Optimizer implements DeepCopyable {
     protected final Network network;
     protected double learningRate;
     protected final double decayLR;
 
+    /**
+     * Конструктор, см. описание параметров в {@link Optimizer}
+     */
     public Optimizer(Network network, double learningRate, double decayLR) {
         this.network = network;
         this.learningRate = learningRate;
@@ -51,9 +52,9 @@ public abstract class Optimizer implements DeepCopyable {
 
     /**
      * Обновление параметров сети (правило задаётся в наследнике)
-     * @param parameters  параметр
-     * @param parameterGradients  градиент параметра
-     * @return  обновлённый параметр
+     * @param parameters         параметр
+     * @param parameterGradients градиент параметра
+     * @return                   обновлённый параметр
      */
     protected abstract Matrix update(Matrix parameters, Matrix parameterGradients);
 
@@ -71,6 +72,14 @@ public abstract class Optimizer implements DeepCopyable {
         return createOptimizer(getClass(), network == null ? null : network.deepCopy(), learningRate, decayLR);
     }
 
+    /**
+     * Создание оптимизатора
+     * @param clazz        тип оптимизатора
+     * @param network      сеть
+     * @param learningRate скорость обучения
+     * @param decayLR      величина снижения скорости обучения
+     * @return             оптимизатор с заданными параметрами
+     */
     protected static Optimizer createOptimizer(Class<? extends Optimizer> clazz, Network network,
                                                double learningRate, double decayLR) {
         if (clazz.equals(SGD.class))

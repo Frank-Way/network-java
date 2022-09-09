@@ -3,8 +3,8 @@ package serialization;
 import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
 import serialization.exceptions.SerializationException;
-import serialization.formatters.yaml.YamlFormatter;
 import serialization.formatters.Formatter;
+import serialization.formatters.yaml.YamlFormatter;
 import serialization.wrappers.Wrapper;
 import serialization.wrappers.WrapperFactory;
 
