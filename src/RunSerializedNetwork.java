@@ -2,6 +2,7 @@ import models.data.Dataset;
 import models.data.approximation.ApproxDataLoader;
 import models.data.approximation.ApproxLoadParameters;
 import models.data.approximation.functions.Function;
+import models.data.approximation.functions.impl.Sin2X;
 import models.data.approximation.functions.impl.SinX1_mul_X2;
 import models.math.Matrix;
 import models.networks.Network;
@@ -20,7 +21,7 @@ import java.util.Arrays;
  */
 public class RunSerializedNetwork {
     public static void main(String[] args) {
-        String doubleFormat = "%15.10f";
+        String doubleFormat = "%25.20f";
         String networksDirectory = "networks";  // путь к директории с сетями
         Path pathToNetworks = Paths.get(networksDirectory);
 
@@ -40,12 +41,12 @@ public class RunSerializedNetwork {
         if (network == null)
             System.exit(-1);
 
-        Function function = new SinX1_mul_X2();  // функция, на которую была обучена сеть
+        Function function = new Sin2X();  // функция, на которую была обучена сеть
         ApproxLoadParameters parameters = ApproxLoadParameters.newBuilder()
                 .function(function)
-                .size(64)  // размер выборки
-                .testSize(64)  // не имеет значения
-                .validSize(64)  // 1.0, чтобы для валидации использовалась вся выборка
+                .size(100)
+                .testSize(100)
+                .validSize(100)
                 .build();
         Dataset dataset = new ApproxDataLoader().load(parameters);  // обучающая выборка
 
