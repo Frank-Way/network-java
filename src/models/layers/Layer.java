@@ -100,6 +100,10 @@ public abstract class Layer implements DeepCopyable, Serializable {
         return operations[index];
     }
 
+    public int getOperationsCount() {
+        return operations.length;
+    }
+
     public int operationsCount() {
         return operations.length;
     }
@@ -173,7 +177,7 @@ public abstract class Layer implements DeepCopyable, Serializable {
      * @param operations операции
      * @return           слой с указанными параметрами
      */
-    protected static Layer createLayer(Class<? extends Layer> clazz,  Matrix input,  Matrix output, int neurons,  Operation[] operations) {
+    public static Layer createLayer(Class<? extends Layer> clazz,  Matrix input,  Matrix output, int neurons,  Operation[] operations) {
         if (clazz.equals(DenseLayer.class))
             return new DenseLayer(input, output, neurons, operations);
         throw ExceptionUtils.newUnknownClassException(clazz);

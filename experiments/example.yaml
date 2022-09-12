@@ -11,7 +11,7 @@
         earlyStopping: 'false'
         earlyStoppingThreshold: 0
         earlyStoppingTriggered: 'false'
-        epochs: 100000
+        epochs: 10000
         preTrainReduceFactor:  0,0000000000
         preTrainRequired: 'false'
         preTrainsCount: 0
@@ -41,14 +41,14 @@
           extendingFactors:
             -  1,0000000000
           sizes:
-            - 10
+            - 100
           testSizes:
-            - 10
+            - 100
           validSizes:
-            - 10
+            - 100
           function:
-            object.class: models.data.approximation.functions.impl.Sin2X
-            expression: "f(x1) = sin(2 * x1)"
+            object.class: models.data.approximation.functions.impl.SinX
+            expression: "f(x1) = sin(x1)"
             variableRanges:
               - object.class: models.data.approximation.functions.VariableRange
                 left:  0,0000000000

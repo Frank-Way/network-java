@@ -2,6 +2,9 @@ package models.data;
 
 import utils.copy.DeepCopyable;
 
+import java.util.Comparator;
+import java.util.stream.Stream;
+
 /**
  * Обучающая выборка, состоящая из трёх частей типа {@link Data}:
  * <pre><ul>
@@ -34,6 +37,28 @@ public class Dataset implements DeepCopyable {
 
     public Data getTrainData() {
         return trainData;
+    }
+
+    public double getMinValue() {
+        return Stream.of(trainData, testData, validData)
+                .map(data -> Math.min(data.getInputs().min(), data.getOutputs().min()))
+                .min(Comparator.comparingDouble(Double::doubleValue))
+                .orElse(Double.MAX_VALUE);
+    }
+
+    public double getMaxValue() {
+        return Stream.of(trainData, testData, validData)
+                .map(data -> Math.max(data.getInputs().max(), data.getOutputs().max()))
+                .min(Comparator.comparingDouble(Double::doubleValue))
+                .orElse(Double.MIN_VALUE);
+    }
+
+    public int getInputsCount() {
+        return trainData.getInputs().getCols();
+    }
+
+    public int getOutputsCount() {
+        return trainData.getOutputs().getCols();
     }
 
     @Override

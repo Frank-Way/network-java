@@ -7,6 +7,7 @@ import models.networks.NetworkBuilder;
 import models.optimizers.OptimizerBuilder;
 import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
+import utils.ExceptionUtils;
 import utils.copy.DeepCopyable;
 
 import java.io.Serializable;
@@ -157,7 +158,7 @@ public class FitParametersBuilder implements Serializable, DeepCopyable {
         if ((dataset == null && (dataLoader == null || loadParameters == null)) ||
                 networkBuilder == null || optimizerBuilder == null ||
                 epochs < 1)
-            throw new IllegalStateException("Некорректное состояние билдера: " + this);
+            throw ExceptionUtils.newWrongBuilderException(this.toString());
     }
 
     /**
