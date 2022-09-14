@@ -1,7 +1,9 @@
 package models.data.approximation.functions;
 
+import models.data.approximation.functions.impl.*;
 import serialization.annotations.YamlField;
 import serialization.annotations.YamlSerializable;
+import utils.ExceptionUtils;
 import utils.copy.DeepCopyable;
 
 import java.io.Serializable;
@@ -54,4 +56,18 @@ public abstract class Function implements DeepCopyable, Serializable {
 
     @Override
     public abstract Function deepCopy();
+
+    private static Function createFunction(Class<?> type, VariableRange[] variableRanges) {
+        if (type.equals(Sin2X.class))
+            return new Sin2X(variableRanges);
+        else if (type.equals(SinX.class))
+            return new SinX(variableRanges);
+        else if (type.equals(SinX1_mul_X2.class))
+            return new SinX1_mul_X2(variableRanges);
+        else if (type.equals(X.class))
+            return new X(variableRanges);
+        else if (type.equals(XOR.class))
+            return new XOR(variableRanges);
+        throw ExceptionUtils.newUnknownClassException(type);
+    }
 }

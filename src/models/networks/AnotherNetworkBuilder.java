@@ -32,12 +32,12 @@ public class AnotherNetworkBuilder extends NetworkBuilder implements DeepCopyabl
         this.loss = loss;
     }
 
-    public AnotherNetworkBuilder sizes(int[] sizes) {
+    public AnotherNetworkBuilder sizes(int ... sizes) {
         this.sizes = sizes;
         return this;
     }
 
-    public AnotherNetworkBuilder activations(Operation[] activations) {
+    public AnotherNetworkBuilder activations(Operation ... activations) {
         this.activations = activations;
         return this;
     }

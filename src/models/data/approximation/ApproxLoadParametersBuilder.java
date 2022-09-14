@@ -1,6 +1,7 @@
 package models.data.approximation;
 
 import models.data.approximation.functions.Function;
+import utils.copy.DeepCopyable;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -10,7 +11,7 @@ import java.util.stream.IntStream;
  * использовать значения по умолчанию, также указывать размер тестовой (и валидационной) выборки как часть от
  * обучающей выборки или в абсолютных единицах, а также указывать одно значение в качестве коэффициента расширения.
  */
-public class ApproxLoadParametersBuilder {
+public class ApproxLoadParametersBuilder implements DeepCopyable {
     private static final double defaultTestPart = 0.5;
     private static final double defaultValidPart = 0.25;
     private static final double defaultExtendingFactor = 1.0;
@@ -100,6 +101,22 @@ public class ApproxLoadParametersBuilder {
         return this;
     }
 
+    public int getSize() {
+        return size;
+    }
+
+    public int[] getSizes() {
+        return sizes;
+    }
+
+    public double getExtendingFactor() {
+        return extendingFactor;
+    }
+
+    public double[] getExtendingFactors() {
+        return extendingFactors;
+    }
+
     /**
      * Получение {@link ApproxLoadParameters} по заданным параметрам. При построении происходит валидация.
      * В случае провала валидации выбрасывается IllegalStateException
@@ -167,5 +184,23 @@ public class ApproxLoadParametersBuilder {
                 ", extendingFactor=" + extendingFactor +
                 ", extendingFactors=" + Arrays.toString(extendingFactors) +
                 '}';
+    }
+
+    @Override
+    public ApproxLoadParametersBuilder deepCopy() {
+        return new ApproxLoadParametersBuilder()
+                .function(function == null ? null : function.deepCopy())
+                .size(size)
+                .sizes(sizes)
+                .testPart(testPart)
+                .testParts(testParts)
+                .testSize(testSize)
+                .testSizes(testSizes)
+                .validPart(validPart)
+                .validParts(validParts)
+                .validSize(validSize)
+                .validSizes(validSizes)
+                .extendingFactor(extendingFactor)
+                .extendingFactors(extendingFactors);
     }
 }

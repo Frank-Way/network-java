@@ -99,6 +99,11 @@ public class FitParametersBuilder implements Serializable, DeepCopyable {
         return this;
     }
 
+    private FitParametersBuilder retriggerEarlyStopping(boolean value) {
+        this.earlyStoppingTriggered = value;
+        return this;
+    }
+
     public FitParametersBuilder earlyStoppingThreshold(int earlyStoppingThreshold) {
         this.earlyStoppingThreshold = earlyStoppingThreshold;
         return this;
@@ -137,6 +142,14 @@ public class FitParametersBuilder implements Serializable, DeepCopyable {
     public FitParametersBuilder queriesRangeType(QueriesRangeType queriesRangeType) {
         this.queriesRangeType = queriesRangeType;
         return this;
+    }
+
+    public int getEpochs() {
+        return epochs;
+    }
+
+    public LoadParameters getLoadParameters() {
+        return loadParameters;
     }
 
     /**
@@ -201,6 +214,7 @@ public class FitParametersBuilder implements Serializable, DeepCopyable {
 
     @Override
     public FitParametersBuilder deepCopy() {
+        boolean wasTriggered = earlyStoppingTriggered;
         return new FitParametersBuilder()
                 .dataset(dataset == null ? null : dataset.deepCopy())
                 .dataLoader(dataLoader == null ? null : dataLoader.deepCopy())
@@ -209,6 +223,7 @@ public class FitParametersBuilder implements Serializable, DeepCopyable {
                 .batchSize(batchSize)
                 .queries(queries)
                 .earlyStopping(earlyStopping)
+                .retriggerEarlyStopping(wasTriggered)
                 .earlyStoppingThreshold(earlyStoppingThreshold)
                 .doubleFormat(doubleFormat)
                 .preTrainRequired(preTrainRequired)
