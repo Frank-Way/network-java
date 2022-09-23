@@ -42,11 +42,25 @@ public class FitParameters implements DeepCopyable {
     @YamlField private final NetworkBuilder networkBuilder;
     @YamlField private final OptimizerBuilder optimizerBuilder;
     @YamlField private final QueriesRangeType queriesRangeType;
+    @YamlField private final boolean renoiseData;
 
     /**
      * Конструктор, см. описание в {@link FitParameters}
      */
-    public FitParameters(Dataset dataset, int epochs, int batchSize, int queries, boolean earlyStopping, int earlyStoppingThreshold, String doubleFormat, boolean preTrainRequired, int preTrainsCount, double preTrainReduceFactor, NetworkBuilder networkBuilder, OptimizerBuilder optimizerBuilder, QueriesRangeType queriesRangeType) {
+    public FitParameters(Dataset dataset,
+                         int epochs,
+                         int batchSize,
+                         int queries,
+                         boolean earlyStopping,
+                         int earlyStoppingThreshold,
+                         String doubleFormat,
+                         boolean preTrainRequired,
+                         int preTrainsCount,
+                         double preTrainReduceFactor,
+                         NetworkBuilder networkBuilder,
+                         OptimizerBuilder optimizerBuilder,
+                         QueriesRangeType queriesRangeType,
+                         boolean renoiseData) {
         this.dataset = dataset;
         this.epochs = epochs;
         this.batchSize = batchSize;
@@ -60,6 +74,7 @@ public class FitParameters implements DeepCopyable {
         this.networkBuilder = networkBuilder;
         this.optimizerBuilder = optimizerBuilder;
         this.queriesRangeType = queriesRangeType;
+        this.renoiseData = renoiseData;
     }
 
     /**
@@ -78,7 +93,8 @@ public class FitParameters implements DeepCopyable {
                 0,
                 null,
                 null,
-                null);
+                null,
+                false);
     }
 
     public Dataset getDataset() {
@@ -132,7 +148,11 @@ public class FitParameters implements DeepCopyable {
     public QueriesRangeType getQueriesRangeType() {
         return queriesRangeType;
     }
-    
+
+    public boolean isRenoiseData() {
+        return renoiseData;
+    }
+
     /**
      * Получение копии {@link FitParameters} с уменьшенным количеством эпох для выполнения предобучения
      * @return  нужные параметры
@@ -166,6 +186,7 @@ public class FitParameters implements DeepCopyable {
                 ", networkBuilder=" + networkBuilder +
                 ", optimizerBuilder=" + optimizerBuilder +
                 ", queriesRangeType=" + queriesRangeType +
+                ", renoiseData=" + renoiseData +
                 '}';
     }
 

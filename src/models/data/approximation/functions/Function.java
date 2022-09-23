@@ -66,8 +66,8 @@ public abstract class Function implements DeepCopyable, Serializable {
             return new SinX1_mul_X2(variableRanges);
         else if (type.equals(X.class))
             return new X(variableRanges);
-        else if (type.equals(XOR.class))
-            return new XOR(variableRanges);
+//        else if (type.equals(XOR.class))
+//            return new XOR(variableRanges);
         throw ExceptionUtils.newUnknownClassException(type);
     }
 }

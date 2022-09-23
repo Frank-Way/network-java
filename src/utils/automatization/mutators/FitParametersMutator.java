@@ -3,6 +3,7 @@ package utils.automatization.mutators;
 import models.data.LoadParameters;
 import models.data.approximation.ApproxLoadParameters;
 import models.data.approximation.ApproxLoadParametersBuilder;
+import models.data.approximation.NoiseMode;
 import models.trainers.FitParameters;
 import models.trainers.FitParametersBuilder;
 import serialization.annotations.YamlField;
@@ -16,6 +17,7 @@ public class FitParametersMutator {
     @YamlField private double[] epochsFactors;
     @YamlField private double[] sizesFactors;
     @YamlField private double[] extendingFactorsBiases;
+    @YamlField private NoiseMode[] noiseModes;
 
     public FitParametersMutator(FitParameters fitParameters) {
         this.fitParametersBuilder = fitParameters.builder();
@@ -27,9 +29,8 @@ public class FitParametersMutator {
 
     public FitParametersBuilder[] mutate() {
         LoadParameters loadParameters = fitParametersBuilder.getLoadParameters();
-        if (!(loadParameters instanceof ApproxLoadParameters)) {
+        if (!(loadParameters instanceof ApproxLoadParameters))
             return new FitParametersBuilder[] {fitParametersBuilder.deepCopy()};
-        }
         ApproxLoadParameters approxLoadParameters = (ApproxLoadParameters) loadParameters;
 
         final FitParametersBuilder[] mutatedByEpochs = mutateEpochsImpl();
@@ -59,6 +60,11 @@ public class FitParametersMutator {
         return this;
     }
 
+    public FitParametersMutator mutateNoiseModes(NoiseMode ... noiseModes) {
+        this.noiseModes = noiseModes;
+        return this;
+    }
+
     private FitParametersBuilder[] mutateEpochsImpl() {
         if (epochsFactors == null)
             return new FitParametersBuilder[] {fitParametersBuilder.deepCopy()};
@@ -80,7 +86,8 @@ public class FitParametersMutator {
         final ApproxLoadParametersMutator approxLoadParametersMutator;
         approxLoadParametersMutator = new ApproxLoadParametersMutator(approxLoadParameters)
                 .mutateSizes(sizesFactors)
-                .mutateExtendingFactors(extendingFactorsBiases);
+                .mutateExtendingFactors(extendingFactorsBiases)
+                .mutateNoiseModes(noiseModes);
         final ApproxLoadParametersBuilder[] mutatedApproxLoadParameters = approxLoadParametersMutator.mutate();
 
         final FitParametersBuilder[] result = IntStream.range(0, mutatedApproxLoadParameters.length)

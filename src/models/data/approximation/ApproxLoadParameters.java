@@ -17,6 +17,7 @@ import java.util.Arrays;
  *  <li>testSizes        - размеры тестовой выборки;</li>
  *  <li>validSizes       - размеры валидационной выборки;</li>
  *  <li>extendingFactors - коэффициенты расширения диапазонов входных переменных</li>
+ *  <li>noiseMode        - тип зашумления выборки</li>
  * </ul></pre>
  */
 @YamlSerializable
@@ -31,7 +32,8 @@ public class ApproxLoadParameters extends LoadParameters implements DeepCopyable
      * Конструктор, см. описание параметров в {@link ApproxLoadParameters}
      */
     public ApproxLoadParameters(Function function, int[] sizes, int[] testSizes,
-                                int[] validSizes, double[] extendingFactors) {
+                                int[] validSizes, double[] extendingFactors, NoiseMode noiseMode) {
+        super(noiseMode);
         this.function = function;
         this.sizes = sizes;
         this.testSizes = testSizes;
@@ -43,7 +45,12 @@ public class ApproxLoadParameters extends LoadParameters implements DeepCopyable
      * Конструктор для сериализации
      */
     private ApproxLoadParameters() {
-        this(null, null, null, null, null);
+        this(null,
+                null,
+                null,
+                null,
+                null,
+                null);
     }
 
     public Function getFunction() {
@@ -65,6 +72,7 @@ public class ApproxLoadParameters extends LoadParameters implements DeepCopyable
     public double[] getExtendingFactors() {
         return extendingFactors;
     }
+
 
     /**
      * Получение пустого билдера

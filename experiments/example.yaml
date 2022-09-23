@@ -46,6 +46,9 @@
             - 100
           validSizes:
             - 100
+          noiseMode:
+            enum.class: models.data.approximation.NoiseMode
+            enum.value: NONE
           function:
             object.class: models.data.approximation.functions.impl.SinX
             expression: "f(x1) = sin(x1)"

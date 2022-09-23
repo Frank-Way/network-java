@@ -64,10 +64,10 @@ public class Trainer {
         for (int epoch = 1; epoch <= parameters.getEpochs(); epoch++) {
             double trainLoss = 0.0;  // потеря на обучающей выборке
 
-            // разбиение обучающей выборки на пакеты с перемешиванием
+            // разбиение обучающей выборки на пакеты с перемешиванием и опциональным зашумлением
             Iterable<Data> trainBatches = dataset.getTrainData().getBatchesGenerator(
                     parameters.getBatchSize(),
-                    true);
+                    true, parameters.isRenoiseData());
 
             for (Data batch: trainBatches) {  // перебор пакетов
                 trainLoss += network.trainBatch(batch.getInputs(), batch.getOutputs());  // обучение по пакету
@@ -80,10 +80,10 @@ public class Trainer {
 
             double testLoss = 0.0;  // потеря на тестовой выборке
 
-            // разбиение тестовой выборки на пакеты без перемешивания
+            // разбиение тестовой выборки на пакеты без перемешивания и зашумления
             Iterable<Data> testBatches = dataset.getTestData().getBatchesGenerator(
                     parameters.getBatchSize(),
-                    false);
+                    false, false);
 
             for (Data batch: testBatches)  // вычисление потери на тестовой выборке
                 testLoss += network.calculateLoss(batch.getInputs(), batch.getOutputs());

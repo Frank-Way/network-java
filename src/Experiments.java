@@ -31,13 +31,10 @@ public abstract class Experiments {
                                                         new FitParametersBuilder()
                                                                 .networkBuilder(
                                                                         Network.newAnotherBuilder()
-                                                                                .sizes(new int[] {
-                                                                                        1, 8, 1})
+                                                                                .sizes(1, 8, 1)
                                                                                 .activations(
-                                                                                        new Operation[] {
-                                                                                                new TanhActivation(),
-                                                                                                new LinearActivation()
-                                                                                        })
+                                                                                        new TanhActivation(),
+                                                                                        new LinearActivation())
                                                                                 .loss(new MeanSquaredError()))
                                                                 .optimizerBuilder(SGD.newBuilder()
                                                                         .startLR(0.1)

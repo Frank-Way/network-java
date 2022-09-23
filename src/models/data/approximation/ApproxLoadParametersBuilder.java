@@ -15,6 +15,8 @@ public class ApproxLoadParametersBuilder implements DeepCopyable {
     private static final double defaultTestPart = 0.5;
     private static final double defaultValidPart = 0.25;
     private static final double defaultExtendingFactor = 1.0;
+    private static final NoiseMode defaultNoiseMode = NoiseMode.NONE;
+
 
     private Function function;
 
@@ -33,6 +35,8 @@ public class ApproxLoadParametersBuilder implements DeepCopyable {
 
     private double extendingFactor;
     private double[] extendingFactors;
+
+    private NoiseMode noiseMode;
 
     public ApproxLoadParametersBuilder() {}
 
@@ -101,6 +105,11 @@ public class ApproxLoadParametersBuilder implements DeepCopyable {
         return this;
     }
 
+    public ApproxLoadParametersBuilder noiseMode(NoiseMode noiseMode) {
+        this.noiseMode = noiseMode;
+        return this;
+    }
+
     public int getSize() {
         return size;
     }
@@ -117,6 +126,10 @@ public class ApproxLoadParametersBuilder implements DeepCopyable {
         return extendingFactors;
     }
 
+    public NoiseMode getNoiseMode() {
+        return noiseMode;
+    }
+
     /**
      * Получение {@link ApproxLoadParameters} по заданным параметрам. При построении происходит валидация.
      * В случае провала валидации выбрасывается IllegalStateException
@@ -125,7 +138,7 @@ public class ApproxLoadParametersBuilder implements DeepCopyable {
     public ApproxLoadParameters build() {
         validate();
         prepare();
-        return new ApproxLoadParameters(function, sizes, testSizes, validSizes, extendingFactors);
+        return new ApproxLoadParameters(function, sizes, testSizes, validSizes, extendingFactors, noiseMode);
     }
 
     /**
@@ -147,6 +160,8 @@ public class ApproxLoadParametersBuilder implements DeepCopyable {
         validSize = validSize < 1 ? (int) (validPart * size) : validSize;
         
         extendingFactor = extendingFactor < 1.0 ? defaultExtendingFactor : extendingFactor;
+
+        noiseMode = noiseMode == null ? defaultNoiseMode : noiseMode;
 
         int inputsCount = function.getInputsCount();
 

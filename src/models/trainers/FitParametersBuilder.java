@@ -3,6 +3,7 @@ package models.trainers;
 import models.data.DataLoader;
 import models.data.Dataset;
 import models.data.LoadParameters;
+import models.data.approximation.NoiseMode;
 import models.networks.NetworkBuilder;
 import models.optimizers.OptimizerBuilder;
 import serialization.annotations.YamlField;
@@ -43,7 +44,8 @@ public class FitParametersBuilder implements Serializable, DeepCopyable {
     @YamlField private NetworkBuilder networkBuilder;
     @YamlField private OptimizerBuilder optimizerBuilder;
     @YamlField private QueriesRangeType queriesRangeType;
-    
+    @YamlField private boolean renoiseData;
+
     public FitParametersBuilder() {
     }
 
@@ -61,6 +63,7 @@ public class FitParametersBuilder implements Serializable, DeepCopyable {
         this.networkBuilder = fitParameters.getNetworkBuilder().deepCopy();
         this.optimizerBuilder = fitParameters.getOptimizerBuilder().deepCopy();
         this.queriesRangeType = fitParameters.getQueriesRangeType();
+        this.renoiseData = fitParameters.isRenoiseData();
     }
     
     public FitParametersBuilder dataset(Dataset dataset) {
@@ -161,7 +164,7 @@ public class FitParametersBuilder implements Serializable, DeepCopyable {
         prepare();
         return new FitParameters(dataset.deepCopy(), epochs, batchSize, queries, earlyStopping, earlyStoppingThreshold,
                 doubleFormat, preTrainRequired, preTrainsCount, preTrainReduceFactor, networkBuilder.deepCopy(),
-                optimizerBuilder.deepCopy(), queriesRangeType);
+                optimizerBuilder.deepCopy(), queriesRangeType, renoiseData);
     }
 
     /**
@@ -188,7 +191,7 @@ public class FitParametersBuilder implements Serializable, DeepCopyable {
         queriesRangeType = queriesRangeType == null ? defaultQueriesRangeType : queriesRangeType;
         if (dataset == null)
             dataset = dataLoader.load(loadParameters);
-
+        renoiseData = loadParameters.getNoiseMode() == NoiseMode.REPLACING;
     }
 
     @Override
@@ -209,6 +212,7 @@ public class FitParametersBuilder implements Serializable, DeepCopyable {
                 ", networkBuilder=" + networkBuilder +
                 ", optimizerBuilder=" + optimizerBuilder +
                 ", queriesRangeType=" + queriesRangeType +
+                ", renoiseData=" + renoiseData +
                 '}';
     }
 

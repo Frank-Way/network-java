@@ -2,14 +2,19 @@ package utils.automatization.mutators;
 
 import models.data.approximation.ApproxLoadParameters;
 import models.data.approximation.ApproxLoadParametersBuilder;
+import models.data.approximation.NoiseMode;
 import models.trainers.FitParametersBuilder;
+import serialization.annotations.YamlField;
+import serialization.annotations.YamlSerializable;
 
 import java.util.stream.IntStream;
 
+@YamlSerializable
 public class ApproxLoadParametersMutator {
-    private final ApproxLoadParametersBuilder approxLoadParametersBuilder;
-    private double[] sizesFactors;
-    private double[] extendingFactorsBiases;
+    @YamlField private final ApproxLoadParametersBuilder approxLoadParametersBuilder;
+    @YamlField private double[] sizesFactors;
+    @YamlField private double[] extendingFactorsBiases;
+    @YamlField private NoiseMode[] noiseModes;
 
     public ApproxLoadParametersMutator(ApproxLoadParameters approxLoadParameters) {
         this.approxLoadParametersBuilder = approxLoadParameters.builder();
@@ -29,16 +34,25 @@ public class ApproxLoadParametersMutator {
         return this;
     }
 
+    public ApproxLoadParametersMutator mutateNoiseModes(NoiseMode ... noiseModes) {
+        this.noiseModes = noiseModes;
+        return this;
+    }
+
     public ApproxLoadParametersBuilder[] mutate() {
         final ApproxLoadParametersBuilder[] mutatedBySizes = mutateSizesImpl();
         final ApproxLoadParametersBuilder[] mutatedByExtendingFactors = mutateExtendingFactorsImpl();
+        final ApproxLoadParametersBuilder[] mutatedByNoiseModes = mutateNoiseModesImpl();
         final ApproxLoadParametersBuilder[] result;
         result = new ApproxLoadParametersBuilder[mutatedBySizes.length * mutatedByExtendingFactors.length];
 
         int cnt = 0;
         for (ApproxLoadParametersBuilder mutatedBySize : mutatedBySizes)
             for (ApproxLoadParametersBuilder mutatedByExtendingFactor : mutatedByExtendingFactors)
-                result[cnt++] = squashByExtendingFactors(mutatedBySize, mutatedByExtendingFactor);
+                for (ApproxLoadParametersBuilder mutatedByNoiseMode : mutatedByNoiseModes)
+                    result[cnt++] = squashByNoiseModes(
+                            squashByExtendingFactors(mutatedBySize, mutatedByExtendingFactor),
+                            mutatedByNoiseMode);
         return result;
     }
 
@@ -133,6 +147,22 @@ public class ApproxLoadParametersMutator {
         return result;
     }
 
+    private ApproxLoadParametersBuilder[] mutateNoiseModesImpl() {
+        if (noiseModes == null)
+            return new ApproxLoadParametersBuilder[] {approxLoadParametersBuilder.deepCopy()};
+
+        final int totalCount = noiseModes.length + 1;
+
+        final ApproxLoadParametersBuilder[] result = IntStream.range(0, totalCount)
+                .mapToObj(i -> approxLoadParametersBuilder.deepCopy())
+                .toArray(ApproxLoadParametersBuilder[]::new);
+
+        for (int i = 0; i < noiseModes.length; i++)
+            result[i].noiseMode(noiseModes[i]);
+
+        return result;
+    }
+
     private static ApproxLoadParametersBuilder squashBySizes(ApproxLoadParametersBuilder builder1,
                                                              ApproxLoadParametersBuilder builder2) {
         return builder1.deepCopy().sizes(builder2.getSizes());
@@ -141,5 +171,10 @@ public class ApproxLoadParametersMutator {
     private static ApproxLoadParametersBuilder squashByExtendingFactors(ApproxLoadParametersBuilder builder1,
                                                                         ApproxLoadParametersBuilder builder2) {
         return builder1.deepCopy().extendingFactors(builder2.getExtendingFactors());
+    }
+
+    private static ApproxLoadParametersBuilder squashByNoiseModes(ApproxLoadParametersBuilder builder1,
+                                                                  ApproxLoadParametersBuilder builder2) {
+        return builder1.deepCopy().noiseMode(builder2.getNoiseMode());
     }
 }

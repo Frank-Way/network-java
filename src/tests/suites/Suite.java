@@ -1,15 +1,19 @@
-package tests.cases;
+package tests.suites;
 
-import tests.TestStatus;
+import tests.cases.CaseWrapper;
 
-public abstract class CaseWrapper {
+public abstract class Suite {
+    public abstract CaseWrapper[] getCases();
+
+    public abstract Object[][] getArgs();
+
     public abstract String getId();
+
     public abstract String getDescription();
-    public abstract TestStatus process(Object ... args);
 
     @Override
     public String toString() {
-        return "CaseWrapper{" +
+        return "Suite{" +
                 "id=" + getId() +
                 ", description=\"" + getDescription() + "\"" +
                 "}";

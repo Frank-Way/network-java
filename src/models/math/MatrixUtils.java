@@ -166,6 +166,15 @@ public abstract class MatrixUtils {
     }
 
     /**
+     * Получение матрицы нормального шума с СКО, равным 1 / <размер матрицы>
+     * @param source исходная матрица
+     * @return       шум
+     */
+    public static Matrix getNoise(Matrix source) {
+        return getRandomMatrixNormal(source.getRows(), source.getCols(), 0.0, 1.0 / source.size());
+    }
+
+    /**
      * Расширение и вертикальная конкатенация матрицы (конкатенируется расширенная матрица)
      * <pre>
      * Пример для extendingFactor=2, stacksCount=3:
