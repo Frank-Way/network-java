@@ -3,82 +3,53 @@ package tests.cases.serialization;
 import serialization.YamlSerializationUtils;
 import serialization.exceptions.SerializationException;
 import serialization.serializers.Serializer;
+import serialization.serializers.YamlSerializer;
 import tests.TestStatus;
 import tests.cases.CaseWrapper;
 import tests.entities.serialization.TestSerializableClass;
 import tests.utils.ValuesProvider;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public abstract class BaseForSerialization extends CaseWrapper {
     
     protected final static String doubleFormat = "%13.8f";
 
-    protected String[] getIdsByStatus(Map<CaseWrapper, TestStatus> testStatusMap, TestStatus status) {
-        return testStatusMap.entrySet().stream()
-                .filter(entry -> entry.getValue().equals(status))
-                .map(Map.Entry::getKey).map(CaseWrapper::getId)
-                .toArray(String[]::new);
-    }
-
-    protected String[] getArgsByStatus(Map<String, TestStatus> argsStatusMap, TestStatus status) {
-        return argsStatusMap.entrySet().stream()
-                .filter(entry -> entry.getValue().equals(status))
-                .map(Map.Entry::getKey)
-                .toArray(String[]::new);
-    }
-
-    protected abstract Object[][] getArgs();
-
-    protected static String argsToString(TestSerializableClass testSerializableClassInstance, ValuesProvider valuesProvider, Boolean isDeserializationRequired, Serializer serializer) {
-        return "{testSerializableClassInstance: " + testSerializableClassInstance +
-                ", valuesProvider: " + valuesProvider +
-                ", isDeserializationRequired: " + isDeserializationRequired +
-                ", serializer: " + serializer + "}";
-    }
-
-    public TestStatus innerTest(TestSerializableClass testSerializableClassInstance, ValuesProvider valuesProvider, Boolean isDeserializationRequired, Serializer serializer) {
-        System.out.println(new Date() + "    " + "start innerTest");
-        System.out.println(new Date() + "    " + argsToString(testSerializableClassInstance, valuesProvider, isDeserializationRequired, serializer));
-        testSerializableClassInstance.set(valuesProvider);
-        System.out.println(new Date() + "    " + "testSerializableClassInstance: " + testSerializableClassInstance);
-        byte[] testSerializableClassSerialized = null;
+    protected TestStatus innerTest(Object object, Boolean isDeserializationRequired, Serializer serializer) {
+        System.out.println(new Date() + "    " + "object: " + object);
+        byte[] objectSerialized = null;
         try {
-            testSerializableClassSerialized = serializer.serialize(testSerializableClassInstance);
+            objectSerialized = serializer.serialize(object);
         } catch (SerializationException se) {
             System.out.println(new Date() + "    " + se.getMessage());
             return TestStatus.FAILED;
         }
-        System.out.println(new Date() + "    " + "testSerializableClassSerialized:\n" + serializedToString(testSerializableClassSerialized));
+        if (serializer instanceof YamlSerializer)
+            System.out.println(new Date() + "    " + "objectSerialized:\n" + 
+                    new String(objectSerialized, StandardCharsets.UTF_8));
         if (isDeserializationRequired) {
-            TestSerializableClass testSerializableClassDeserialized = null;
+            Object objectDeserialized = null;
             try {
-                testSerializableClassDeserialized = (TestSerializableClass) serializer.deserialize(
-                        testSerializableClassSerialized, testSerializableClassInstance.getClass());
+                objectDeserialized = serializer.deserialize(
+                        objectSerialized, object.getClass());
             } catch (SerializationException se) {
                 System.out.println(new Date() + "    " + se.getMessage());
                 return TestStatus.FAILED;
             }
-            System.out.println(new Date() + "    " + "testSerializableClassDeserialized: " + testSerializableClassDeserialized);
+            System.out.println(new Date() + "    " + "objectDeserialized: " + objectDeserialized);
 
-            boolean isEquals = YamlSerializationUtils.isEqualsYamlSerializable(testSerializableClassInstance,
-                    testSerializableClassDeserialized);
-//            byte[] serializedAgain;
-//            try {
-//                serializedAgain = serializer.serialize(testSerializableClassDeserialized);
-//                isEquals = Arrays.equals(testSerializableClassSerialized, serializedAgain);
-//            } catch (SerializationException se) {
-//                System.out.println(new Date() + "    " + se.getMessage());
-//                return TestStatus.FAILED;
-//            }
+            boolean isEquals = YamlSerializationUtils.isEqualsYamlSerializable(object,
+                    objectDeserialized);
             System.out.println(new Date() + "    " + "isEquals: " + isEquals);
             if (!isEquals) {
-                System.out.println(new Date() + "    " + "Объекты не совпали\ntestSerializableClassInstance: " +
-                        testSerializableClassInstance + "\ntestSerializableClassDeserialized: " +
-                        testSerializableClassDeserialized);
+                System.out.println(new Date() + "    " + "Объекты не совпали\nobject: " +
+                        object + "\nobjectDeserialized: " +
+                        objectDeserialized);
                 return TestStatus.FAILED;
             }
             else {
@@ -89,48 +60,28 @@ public abstract class BaseForSerialization extends CaseWrapper {
         return TestStatus.PASSED;
     }
     
-    protected abstract String serializedToString(byte[] source);
-    protected abstract ValuesProvider getValuesProvider();
-    protected abstract Serializer getSerializer();
-
     @Override
     public String getId() {
         return getClass().getCanonicalName();
     }
 
-    @Override
-    public String getDescription() {
-        return "";
+    protected static Class<?>[] convertObjectsToClasses(Object[] objects) {
+        return Arrays.stream(objects)
+                .map(Object::getClass)
+                .toArray(Class[]::new);
     }
 
-    @Override
-    public TestStatus process(Object... args) {
-        Object[][] testArgs = getArgs();
-        int count = testArgs.length;
-        TestStatus[] statuses = new TestStatus[count];
-        Map<String, TestStatus> argsStatusMap = new HashMap<>();
-        for (int i = 0; i < count; i++) {
-            Object[] arg = testArgs[i];
-            TestSerializableClass testSerializableClassInstance = (TestSerializableClass) arg[0];
-            ValuesProvider valuesProvider = (ValuesProvider) arg[1];
-            Boolean isDeserializationRequired = (Boolean) arg[2];
-            Serializer serializer = (Serializer) arg[3];
-            try {
-                statuses[i] = innerTest(testSerializableClassInstance, valuesProvider, isDeserializationRequired, serializer);
-            } catch (Exception e) {
-                statuses[i] = TestStatus.BROKEN;
-            }
-            argsStatusMap.put(argsToString(testSerializableClassInstance, valuesProvider, isDeserializationRequired, serializer), statuses[i]);
-        }
-        String[] passedArgs = getArgsByStatus(argsStatusMap, TestStatus.PASSED);
-        String[] failedArgs = getArgsByStatus(argsStatusMap, TestStatus.FAILED);
-        String[] brokenArgs = getArgsByStatus(argsStatusMap, TestStatus.BROKEN);
-        System.out.println(new Date() + "    " + "Тестов успешно прошло: " + passedArgs.length + ", провалилось: " + failedArgs.length +
-                ", сломалось: " + brokenArgs.length);
-        if (failedArgs.length > 0)
-            System.out.println(new Date() + "    " + "Проваленные тесты: " + Arrays.toString(failedArgs));
-        if (brokenArgs.length > 0)
-            System.out.println(new Date() + "    " + "Сломанные тесты: " + Arrays.toString(brokenArgs));
-        return failedArgs.length + brokenArgs.length == 0 ? TestStatus.PASSED : TestStatus.FAILED;
+    protected static String[] convertObjectsToClassNames(Object[] objects) {
+        return Arrays.stream(objects)
+                .map(Object::getClass)
+                .map(Class::getCanonicalName)
+                .toArray(String[]::new);
+    }
+
+    protected static String convertObjectsToJoinedClassNames(Object[] objects) {
+        return Arrays.stream(objects)
+                .map(Object::getClass)
+                .map(Class::getCanonicalName)
+                .collect(Collectors.joining(", "));
     }
 }

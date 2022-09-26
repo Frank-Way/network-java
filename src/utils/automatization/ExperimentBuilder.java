@@ -22,12 +22,12 @@ public class ExperimentBuilder implements DeepCopyable {
         return this;
     }
 
-    public ExperimentBuilder runConfigurations(RunConfiguration[] runConfigurations) {
+    public ExperimentBuilder runConfigurations(RunConfiguration ... runConfigurations) {
         this.runConfigurations = runConfigurations;
         return this;
     }
 
-    public ExperimentBuilder runConfigurationBuilders(RunConfigurationBuilder[] runConfigurationBuilders) {
+    public ExperimentBuilder runConfigurationBuilders(RunConfigurationBuilder ... runConfigurationBuilders) {
         this.runConfigurationBuilders = runConfigurationBuilders;
         return this;
     }

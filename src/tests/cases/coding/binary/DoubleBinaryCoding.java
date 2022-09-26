@@ -14,7 +14,6 @@ public class DoubleBinaryCoding extends BaseForBinaryCoding{
 
     @Override
     public TestStatus process(Object... args) {
-        System.out.println(getId() + " [" + getDescription() + "]");
         final BinaryCoder binaryCoder = new BinaryCoder();
         final int testCasesCount = (int) args[0];
         final double maxMagnitude = (double) args[1];

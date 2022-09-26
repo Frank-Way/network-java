@@ -19,7 +19,6 @@ public class NoNoise extends BaseForNoise {
 
     @Override
     public TestStatus process(Object... args) {
-        System.out.println(getId() + " [" + getDescription() + "]");
         final int size = 100;
         final Function function = new SinX();
         final DataLoader dataLoader = new ApproxDataLoader();
