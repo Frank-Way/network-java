@@ -23,32 +23,30 @@ public abstract class Experiments {
                 new ExperimentBuilder()
                         .description("Пример эксперимента 1")
                         .runConfigurationBuilders(
-                                new RunConfigurationBuilder[] {
-                                        new RunConfigurationBuilder()
-                                                .description("Пример конфигурации 1.1")
-                                                .retries(3)
-                                                .fitParametersBuilder(
-                                                        new FitParametersBuilder()
-                                                                .networkBuilder(
-                                                                        Network.newAnotherBuilder()
-                                                                                .sizes(1, 8, 1)
-                                                                                .activations(
-                                                                                        new TanhActivation(),
-                                                                                        new LinearActivation())
-                                                                                .loss(new MeanSquaredError()))
-                                                                .optimizerBuilder(SGD.newBuilder()
-                                                                        .startLR(0.1)
-                                                                        .stopLR(0.0001))
-                                                                .dataLoader(new ApproxDataLoader())
-                                                                .loadParameters(ApproxLoadParameters.newBuilder()
-                                                                        .function(new SinX())
-                                                                        .size(10)
-                                                                        .build())
-                                                                .doubleFormat(doubleFormat)
-                                                                .epochs(10000)
-                                                                .queriesRangeType(QueriesRangeType.NON_LINEAR)
-                                        )
-                                }
+                        new RunConfigurationBuilder()
+                                .description("Пример конфигурации 1.1")
+                                .retries(3)
+                                .fitParametersBuilder(
+                                        new FitParametersBuilder()
+                                                .networkBuilder(
+                                                        Network.newAnotherBuilder()
+                                                                .sizes(1, 8, 1)
+                                                                .activations(
+                                                                        new TanhActivation(),
+                                                                        new LinearActivation())
+                                                                .loss(new MeanSquaredError()))
+                                                .optimizerBuilder(SGD.newBuilder()
+                                                        .startLR(0.1)
+                                                        .stopLR(0.0001))
+                                                .dataLoader(new ApproxDataLoader())
+                                                .loadParameters(ApproxLoadParameters.newBuilder()
+                                                        .function(new SinX())
+                                                        .size(10)
+                                                        .build())
+                                                .doubleFormat(doubleFormat)
+                                                .epochs(10000)
+                                                .queriesRangeType(QueriesRangeType.NON_LINEAR)
+                        )
                 )
         };
     }

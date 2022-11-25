@@ -9,6 +9,8 @@ public class DoubleWrapper extends SimpleWrapper{
 
     @Override
     public Object readValue(String yaml) {
+        if (yaml == null)
+            return 0.0;
         return formatter.readDouble(yaml);
     }
 

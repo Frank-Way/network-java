@@ -9,6 +9,8 @@ public class BooleanWrapper extends SimpleWrapper {
 
     @Override
     public Object readValue(String yaml) {
+        if (yaml == null)
+            return false;
         return formatter.readBoolean(yaml);
     }
 

@@ -9,6 +9,8 @@ public class StringWrapper extends SimpleWrapper{
 
     @Override
     public Object readValue(String yaml) {
+        if (yaml == null)
+            return "";
         return formatter.readString(yaml);
     }
 

@@ -191,7 +191,7 @@ public class FitParametersBuilder implements Serializable, DeepCopyable {
         queriesRangeType = queriesRangeType == null ? defaultQueriesRangeType : queriesRangeType;
         if (dataset == null)
             dataset = dataLoader.load(loadParameters);
-        renoiseData = loadParameters.getNoiseMode() == NoiseMode.REPLACING;
+        renoiseData = loadParameters != null && loadParameters.getNoiseMode() == NoiseMode.REPLACING;
     }
 
     @Override

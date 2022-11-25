@@ -9,6 +9,8 @@ public class IntegerWrapper extends SimpleWrapper{
 
     @Override
     public Object readValue(String yaml) {
+        if (yaml == null)
+            return 0;
         return formatter.readInteger(yaml);
     }
 

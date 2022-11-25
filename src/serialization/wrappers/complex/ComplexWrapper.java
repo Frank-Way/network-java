@@ -12,6 +12,8 @@ public abstract class ComplexWrapper extends Wrapper {
 
     @Override
     public Object readValue(String source) throws SerializationException {
+        if (source == null)
+            return null;
         return readValueComplex(null, source);
     }
 
